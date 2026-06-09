@@ -17,7 +17,7 @@ export async function POST(_request: Request, { params }: DomainRouteProps) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) throw userError;
+    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to verify domains." }, { status: 401 });
     }

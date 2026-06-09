@@ -15,7 +15,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) throw userError;
+    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
     if (!payload.status) return NextResponse.json({ error: "Status is required." }, { status: 400 });
 
@@ -59,7 +59,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) throw userError;
+    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
 
     const { error } = await supabase.from("sites").delete().eq("id", siteId).eq("user_id", user.id);

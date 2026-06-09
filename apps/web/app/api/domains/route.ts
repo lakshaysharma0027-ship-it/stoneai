@@ -10,7 +10,7 @@ export async function GET() {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) throw userError;
+    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to view domains." }, { status: 401 });
     }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) throw userError;
+    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to connect domains." }, { status: 401 });
     }
