@@ -7,6 +7,7 @@ import type { StoredProject } from "@/lib/projects";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { getCreditCost } from "@/lib/billing/credits";
 import { creditService } from "@/services/billing/creditService";
+import { planLimitService } from "@/services/billing/planLimitService";
 
 type ProjectRow = {
   id: string;
@@ -53,9 +54,11 @@ export async function POST(request: Request) {
 
     const creditCost = getCreditCost("generate_website");
     const subscription = await creditService.ensureSubscription(supabase, user.id);
-    if (subscription.creditsRemaining < creditCost) {
+    try {
+      planLimitService.assertHasCredits(subscription, creditCost, "generate websites");
+    } catch (error) {
       return NextResponse.json(
-        { error: "You are out of credits. Upgrade your plan to generate more websites." },
+        { error: error instanceof Error ? error.message : "You are out of credits." },
         { status: 402 },
       );
     }

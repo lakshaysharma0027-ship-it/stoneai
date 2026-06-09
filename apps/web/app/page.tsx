@@ -26,15 +26,33 @@ type PublishedSiteRow = {
 
 type BillingSummary = {
   subscription: {
-    plan: "free" | "starter" | "pro" | "agency";
+    plan: "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
     creditsRemaining: number;
     monthlyCredits: number;
     status: "active" | "trialing" | "past_due" | "canceled";
+    subscriptionId: string | null;
+    renewalDate: string | null;
+    billingCycle: "monthly" | "yearly";
+    cancelAtPeriodEnd: boolean;
   };
   plan: {
+    id: "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
     name: string;
     monthlyCredits: number;
+    siteLimit: number;
   };
+};
+
+type MediaGenerationRow = {
+  id: string;
+  media_type: "image" | "video";
+  capability: string;
+  prompt: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  credits_used: number;
+  asset_url: string | null;
+  error_message: string | null;
+  created_at: string;
 };
 
 type CustomDomainRow = {
@@ -100,7 +118,14 @@ export default function StoneAIDashboard() {
   const [projects, setProjects] = useState<StoredProject[]>([]);
   const [publishedSites, setPublishedSites] = useState<PublishedSiteRow[]>([]);
   const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
+  const [billingAction, setBillingAction] = useState<string | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
   const [connectedDomains, setConnectedDomains] = useState<CustomDomainRow[]>([]);
+  const [mediaPrompt, setMediaPrompt] = useState("");
+  const [mediaMode, setMediaMode] = useState<"image" | "video">("image");
+  const [mediaGenerating, setMediaGenerating] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [mediaHistory, setMediaHistory] = useState<MediaGenerationRow[]>([]);
   const [domainHost, setDomainHost] = useState("");
   const [domainSiteId, setDomainSiteId] = useState("");
   const [domainVerificationType, setDomainVerificationType] = useState<"txt" | "cname">("txt");
@@ -144,6 +169,11 @@ export default function StoneAIDashboard() {
         const billingPayload = (await billingResponse.json()) as BillingSummary;
         setBillingSummary(billingPayload);
       }
+      const mediaResponse = await fetch("/api/media/history");
+      if (mediaResponse.ok) {
+        const mediaPayload = (await mediaResponse.json()) as { media?: MediaGenerationRow[] };
+        setMediaHistory(mediaPayload.media ?? []);
+      }
       const domainsResponse = await fetch("/api/domains");
       if (domainsResponse.ok) {
         const domainsPayload = (await domainsResponse.json()) as { domains?: CustomDomainRow[] };
@@ -181,6 +211,84 @@ export default function StoneAIDashboard() {
     if (!response.ok) return;
     const payload = (await response.json()) as { domains?: CustomDomainRow[] };
     setConnectedDomains(payload.domains ?? []);
+  };
+
+  const refreshBilling = async () => {
+    const response = await fetch("/api/billing/summary");
+    if (!response.ok) return;
+    const payload = (await response.json()) as BillingSummary;
+    setBillingSummary(payload);
+  };
+
+  const refreshMediaHistory = async () => {
+    const response = await fetch("/api/media/history");
+    if (!response.ok) return;
+    const payload = (await response.json()) as { media?: MediaGenerationRow[] };
+    setMediaHistory(payload.media ?? []);
+  };
+
+  const handleCheckout = async (plan: BillingSummary["plan"]["id"]) => {
+    setBillingAction(plan);
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const payload = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !payload.url) throw new Error(payload.error ?? "Could not start checkout.");
+      window.location.href = payload.url;
+    } catch (error) {
+      setBillingError(error instanceof Error ? error.message : "Could not start checkout.");
+    } finally {
+      setBillingAction(null);
+    }
+  };
+
+  const handleCancelBilling = async () => {
+    setBillingAction("cancel");
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/billing/cancel", { method: "POST" });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not cancel subscription.");
+      await refreshBilling();
+    } catch (error) {
+      setBillingError(error instanceof Error ? error.message : "Could not cancel subscription.");
+    } finally {
+      setBillingAction(null);
+    }
+  };
+
+  const handleGenerateMedia = async () => {
+    const prompt = mediaPrompt.trim();
+    if (!prompt) {
+      setMediaError("Enter a prompt first.");
+      return;
+    }
+
+    setMediaGenerating(true);
+    setMediaError(null);
+    try {
+      const response = await fetch(mediaMode === "image" ? "/api/media/images" : "/api/media/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          capability: mediaMode === "image" ? "hero_image" : "hero_video",
+          aspectRatio: "16:9",
+        }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not generate media.");
+      setMediaPrompt("");
+      await Promise.all([refreshMediaHistory(), refreshBilling()]);
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : "Could not generate media.");
+    } finally {
+      setMediaGenerating(false);
+    }
   };
 
   const handleConnectDomain = async (event: React.FormEvent) => {
@@ -325,7 +433,7 @@ export default function StoneAIDashboard() {
     ctx.putImageData(imageData, 0, 0);
   }, []);
 
-  const navItems = ["Projects", "Published Sites", "Credits", "Deployments", "Settings"];
+  const navItems = ["Projects", "Published Sites", "Media", "Billing", "Credits", "Deployments", "Settings"];
 
   return (
     <div
@@ -734,6 +842,198 @@ export default function StoneAIDashboard() {
             {billingSummary?.subscription.creditsRemaining ?? 0} / {billingSummary?.subscription.monthlyCredits ?? 100} credits
           </p>
         </div>
+
+        {activeNav === "Billing" ? (
+          <section style={{ marginBottom: 48 }}>
+            <div style={{ marginBottom: 18, textAlign: "center" }}>
+              <p style={{ color: "#52525B", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: "0 0 10px", textTransform: "uppercase" }}>
+                StoneAI Plans
+              </p>
+              <h2 style={{ color: "#FAFAFA", fontSize: 34, letterSpacing: "-0.05em", lineHeight: 1.05, margin: 0 }}>
+                Scale credits, sites, and AI media.
+              </h2>
+            </div>
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+              {[
+                { id: "free_trial", name: "Free Trial", credits: 100, sites: 1 },
+                { id: "basic", name: "Basic", credits: 1500, sites: 2 },
+                { id: "basic_plus", name: "Basic Plus", credits: 2500, sites: 4 },
+                { id: "pro", name: "Pro", credits: 6000, sites: 7 },
+                { id: "premium", name: "Premium", credits: 25000, sites: 30 },
+              ].map((plan) => {
+                const current = billingSummary?.plan.id === plan.id;
+                return (
+                  <div
+                    key={plan.id}
+                    style={{
+                      background: current ? "#18181B" : "#111111",
+                      border: `1px solid ${current ? "#FAFAFA" : "#27272A"}`,
+                      borderRadius: 16,
+                      padding: 18,
+                    }}
+                  >
+                    <p style={{ color: current ? "#FAFAFA" : "#71717A", fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", margin: "0 0 8px", textTransform: "uppercase" }}>
+                      {plan.name}
+                    </p>
+                    <p style={{ color: "#FAFAFA", fontSize: 30, fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 4px" }}>
+                      {plan.credits.toLocaleString()}
+                    </p>
+                    <p style={{ color: "#52525B", fontSize: 12, margin: "0 0 14px" }}>
+                      credits/month - {plan.sites} published site{plan.sites === 1 ? "" : "s"}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={current || plan.id === "free_trial" || billingAction === plan.id}
+                      onClick={() => void handleCheckout(plan.id as BillingSummary["plan"]["id"])}
+                      style={{
+                        background: current ? "#27272A" : "#FAFAFA",
+                        border: 0,
+                        borderRadius: 10,
+                        color: current ? "#A1A1AA" : "#09090B",
+                        cursor: current || plan.id === "free_trial" || billingAction === plan.id ? "not-allowed" : "pointer",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        padding: "10px 12px",
+                        width: "100%",
+                      }}
+                    >
+                      {current ? "Current Plan" : billingAction === plan.id ? "Starting..." : "Upgrade"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {billingError ? <p style={{ color: "#FCA5A5", fontSize: 12, margin: "14px 0 0" }}>{billingError}</p> : null}
+            {billingSummary?.subscription.subscriptionId ? (
+              <button
+                type="button"
+                onClick={() => void handleCancelBilling()}
+                disabled={billingAction === "cancel"}
+                style={{
+                  background: "transparent",
+                  border: "1px solid #3F1D1D",
+                  borderRadius: 10,
+                  color: "#FCA5A5",
+                  cursor: billingAction === "cancel" ? "wait" : "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  marginTop: 14,
+                  padding: "10px 12px",
+                }}
+              >
+                {billingAction === "cancel" ? "Cancelling..." : "Cancel Subscription"}
+              </button>
+            ) : null}
+          </section>
+        ) : null}
+
+        {activeNav === "Media" ? (
+          <section style={{ marginBottom: 48 }}>
+            <div style={{ background: "#111111", border: "1px solid #18181B", borderRadius: 16, padding: 18 }}>
+              <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+                <div>
+                  <p style={{ color: "#52525B", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: "0 0 8px", textTransform: "uppercase" }}>
+                    Media Studio
+                  </p>
+                  <h2 style={{ color: "#FAFAFA", fontSize: 24, letterSpacing: "-0.04em", margin: 0 }}>
+                    Generate image and video assets.
+                  </h2>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["image", "video"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setMediaMode(mode)}
+                      style={{
+                        background: mediaMode === mode ? "#FAFAFA" : "#080808",
+                        border: "1px solid #27272A",
+                        borderRadius: 8,
+                        color: mediaMode === mode ? "#09090B" : "#A1A1AA",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        padding: "8px 10px",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                value={mediaPrompt}
+                onChange={(event) => setMediaPrompt(event.target.value)}
+                placeholder="A cinematic dark minimalist SaaS hero image with glass panels and soft monochrome lighting..."
+                rows={3}
+                style={{
+                  background: "#050505",
+                  border: "1px solid #27272A",
+                  borderRadius: 10,
+                  color: "#FAFAFA",
+                  fontSize: 14,
+                  outline: "none",
+                  padding: 12,
+                  resize: "vertical",
+                  width: "100%",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleGenerateMedia()}
+                disabled={mediaGenerating}
+                style={{
+                  background: "#FAFAFA",
+                  border: 0,
+                  borderRadius: 10,
+                  color: "#09090B",
+                  cursor: mediaGenerating ? "wait" : "pointer",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  marginTop: 12,
+                  padding: "11px 14px",
+                }}
+              >
+                {mediaGenerating ? "Generating..." : `Generate ${mediaMode}`}
+              </button>
+              {mediaError ? <p style={{ color: "#FCA5A5", fontSize: 12, margin: "12px 0 0" }}>{mediaError}</p> : null}
+            </div>
+            <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+              {mediaHistory.length === 0 ? (
+                <div style={{ border: "1px dashed #1E1E21", borderRadius: 16, color: "#3F3F46", fontSize: 13, padding: 22, textAlign: "center" }}>
+                  No media generations yet.
+                </div>
+              ) : (
+                mediaHistory.map((item) => (
+                  <div key={item.id} style={{ alignItems: "center", background: "#111111", border: "1px solid #18181B", borderRadius: 16, display: "flex", gap: 12, padding: 14 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ color: "#FAFAFA", fontSize: 14, fontWeight: 700, margin: 0 }}>
+                        {item.media_type} - {item.capability}
+                      </p>
+                      <p style={{ color: "#52525B", fontSize: 12, margin: "3px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.prompt}
+                      </p>
+                    </div>
+                    <span style={{ color: "#A1A1AA", fontSize: 12, fontWeight: 700 }}>{item.credits_used} credits</span>
+                    <span style={{ color: item.status === "failed" ? "#FCA5A5" : "#A1A1AA", fontSize: 12, fontWeight: 700, textTransform: "capitalize" }}>
+                      {item.status}
+                    </span>
+                    {item.asset_url ? (
+                      <button
+                        type="button"
+                        onClick={() => window.open(item.asset_url!, "_blank", "noopener,noreferrer")}
+                        style={{ background: "transparent", border: "1px solid #27272A", borderRadius: 8, color: "#A1A1AA", cursor: "pointer", fontSize: 12, fontWeight: 700, padding: "8px 10px" }}
+                      >
+                        Download
+                      </button>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <div
           style={{

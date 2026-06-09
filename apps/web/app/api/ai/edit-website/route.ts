@@ -5,6 +5,7 @@ import type { TemplateSchema } from "@/lib/templateSchemas";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { getCreditCost } from "@/lib/billing/credits";
 import { creditService } from "@/services/billing/creditService";
+import { planLimitService } from "@/services/billing/planLimitService";
 
 export async function POST(request: Request) {
   try {
@@ -36,9 +37,11 @@ export async function POST(request: Request) {
 
     const creditCost = getCreditCost("ai_edit");
     const subscription = await creditService.ensureSubscription(supabase, user.id);
-    if (subscription.creditsRemaining < creditCost) {
+    try {
+      planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
+    } catch (error) {
       return NextResponse.json(
-        { error: "You are out of credits. Upgrade your plan to edit with AI." },
+        { error: error instanceof Error ? error.message : "You are out of credits." },
         { status: 402 },
       );
     }

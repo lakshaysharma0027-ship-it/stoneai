@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Website } from "@/lib/editor/schema";
 import { getPublicSiteUrl, normalizeSiteSlug } from "@/lib/sites/siteResolver";
+import { creditService } from "@/services/billing/creditService";
+import { planLimitService } from "@/services/billing/planLimitService";
 
 const isWebsite = (value: unknown): value is Website => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -75,6 +77,20 @@ export async function POST(request: Request) {
     if (projectError) throw projectError;
     if ((project as { user_id: string }).user_id !== user.id) {
       return NextResponse.json({ error: "You cannot publish this project." }, { status: 403 });
+    }
+
+    const subscription = await creditService.ensureSubscription(supabase, user.id);
+    try {
+      await planLimitService.assertCanCreateSite(supabase, {
+        userId: user.id,
+        subscription,
+        currentProjectId: website.projectId,
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Your plan limit has been reached." },
+        { status: 402 },
+      );
     }
 
     const slug = await resolveAvailableSlug(
