@@ -21,6 +21,9 @@ coverage
 # Vercel
 .vercel
 
+# Supabase local CLI artifacts
+supabase/.temp/
+
 # Build Outputs
 .next/
 out/
