@@ -27,6 +27,9 @@ out/
 build
 dist
 
+# Raw template source archives are not required by the deployed app.
+templates-source/
+
 
 # Debug
 npm-debug.log*

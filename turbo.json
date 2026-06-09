@@ -1,5 +1,19 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
+  "globalEnv": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "DATABASE_URL",
+    "RESEND_API_KEY",
+    "RESEND_FROM_EMAIL",
+    "SUPABASE_PROJECT_REF",
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL",
+    "NEXT_PUBLIC_STONEAI_ROOT_DOMAIN",
+    "NEXT_PUBLIC_STONEAI_APP_HOST",
+    "NEXT_PUBLIC_STONEAI_APP_HOSTS",
+    "NEXT_PUBLIC_STONEAI_CUSTOM_DOMAIN_TARGET"
+  ],
   "ui": "tui",
   "tasks": {
     "build": {

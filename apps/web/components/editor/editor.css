@@ -1,0 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap");
+
+:root {
+  --bg-base: #050505;
+  --bg-panel: #0A0A0A;
+  --bg-input: #050505;
+  --bg-hover: #0E0E0E;
+  --bg-active: #111111;
+  --border-subtle: #0D0D0D;
+  --border-default: #161616;
+  --border-strong: #222222;
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #4B5563;
+  --text-ghost: #3D3D3D;
+  --text-faint: #2D2D2D;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1A1A1A;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a2a2a;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+.canvas-grid {
+  background-image: radial-gradient(circle, #161616 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.snap-line {
+  position: absolute;
+  pointer-events: none;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: pulse-dot 1.2s ease infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.msg-in {
+  animation: fadeIn 0.1s ease;
+}
+
+.no-select {
+  user-select: none;
+}
