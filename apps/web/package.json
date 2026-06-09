@@ -19,6 +19,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "resend": "^6.12.4",
+    "standardwebhooks": "^1.0.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
