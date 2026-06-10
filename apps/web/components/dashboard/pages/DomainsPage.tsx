@@ -1,137 +1,222 @@
 "use client";
 
+import { useState } from "react";
 import { Globe, Plus } from "lucide-react";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { Button } from "../ui/Button";
-import { Chip, statusToChip } from "../ui/Chip";
-import { DashSelect } from "../ui/FilterBar";
-import { EmptyState } from "../ui/EmptyState";
-import { PageHeader } from "../ui/PageHeader";
-import { Panel, PanelHead } from "../ui/Panel";
+import "../domains-analytics.css";
+import {
+  copyToClipboard,
+  domainStatusClass,
+  getDomainDisplayStatus,
+} from "../domains/domainUtils";
 
 export function DomainsPage({ data }: { data: DashboardDataContext }) {
-  const canConnectDomains = (data.billingSummary?.plan.siteLimit ?? 1) > 1 || data.billingSummary?.plan.id !== "free_trial";
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const canConnectDomains =
+    (data.billingSummary?.plan.siteLimit ?? 1) > 1 ||
+    data.billingSummary?.plan.id !== "free_trial";
+
+  const scrollToAdd = () => {
+    document.getElementById("da-add-domain")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("domain-host")?.focus();
+  };
+
+  const handleCopy = async (key: string, value: string) => {
+    await copyToClipboard(value);
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const getSiteLabel = (siteId: string | null) => {
+    if (!siteId) return "First published site";
+    const site = data.publishedSites.find((item) => item.id === siteId);
+    return site?.seo_title ?? site?.slug ?? "Published site";
+  };
+
+  const headerMeta =
+    data.connectedDomains.length === 0 && !canConnectDomains
+      ? "0 connected · Upgrade to connect custom domains"
+      : `${data.connectedDomains.length} connected`;
 
   return (
-    <div className="dashboard-content-inner">
-      <PageHeader
-        title="Domains"
-        subtitle={`${data.connectedDomains.length} connected${!canConnectDomains && data.connectedDomains.length === 0 ? " · Upgrade to connect custom domains" : ""}`}
-        action={
-          <Button
-            variant="primary"
-            onClick={() => document.getElementById("domain-form")?.scrollIntoView({ behavior: "smooth" })}
-          >
-            <Plus size={13} />
-            Add domain
-          </Button>
-        }
-      />
+    <div className="da-page">
+      <header className="pg-header">
+        <h1>Domains</h1>
+        <p>Connect custom domains to your published sites</p>
+      </header>
 
-      <Panel>
-        <PanelHead title="Connected domains" />
+      <div className="section-card">
+        <div className="card-header">
+          <h2>Connected domains</h2>
+          <small>{headerMeta}</small>
+        </div>
+
         {data.connectedDomains.length === 0 ? (
-          <EmptyState
-            icon={<Globe size={22} />}
-            title="No domains connected yet"
-            description="Connect a custom domain and point it to one of your published sites. Supports apex domains and subdomains."
-            action={
-              <Button size="sm" onClick={() => document.getElementById("domain-host")?.focus()}>
-                <Plus size={12} />
-                Add domain
-              </Button>
-            }
-          />
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Globe size={20} />
+            </div>
+            <h3>No domains connected yet</h3>
+            <p>
+              Connect a custom domain and point it to one of your published sites. Supports apex
+              domains and subdomains.
+            </p>
+            <button type="button" className="add-domain-link" onClick={scrollToAdd}>
+              <Plus size={12} />
+              Add domain
+            </button>
+          </div>
         ) : (
-          <div>
-            {data.connectedDomains.map((domain) => (
-              <div
-                key={domain.id}
-                className="flex flex-wrap items-center gap-3 border-b border-[var(--dash-border)] px-4 py-2.5 last:border-b-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-xs text-[var(--dash-text)]">{domain.domain}</p>
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--dash-hint)]">
-                    Add {domain.verificationType.toUpperCase()} {domain.verificationHost} ={" "}
-                    {domain.verificationValue}
-                  </p>
+          <div className="domain-list">
+            {data.connectedDomains.map((domain) => {
+              const isVerifying = data.domainActionId === domain.id;
+              const displayStatus = getDomainDisplayStatus(domain, isVerifying);
+              return (
+                <div key={domain.id} className="domain-row">
+                  <div className="domain-row-top">
+                    <div>
+                      <div className="domain-name">{domain.domain}</div>
+                      <div className="domain-site">Connected to {getSiteLabel(domain.siteId)}</div>
+                    </div>
+                    <div className="domain-actions">
+                      <span className={`tag ${domainStatusClass(displayStatus)}`}>
+                        {displayStatus}
+                      </span>
+                      <button
+                        type="button"
+                        className="domain-action-btn"
+                        onClick={() => void data.handleVerifyDomain(domain.id)}
+                        disabled={isVerifying}
+                      >
+                        {isVerifying ? "Checking…" : "Verify"}
+                      </button>
+                      <button
+                        type="button"
+                        className="domain-action-btn danger"
+                        onClick={() => void data.handleRemoveDomain(domain.id)}
+                        disabled={isVerifying}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="dns-card">
+                    <div className="dns-card-title">DNS verification</div>
+                    <div className="dns-record">
+                      <span className="dns-record-label">Type</span>
+                      <span className="dns-record-value">{domain.verificationType.toUpperCase()}</span>
+                    </div>
+                    <div className="dns-record">
+                      <span className="dns-record-label">Host</span>
+                      <span className="dns-record-value">{domain.verificationHost}</span>
+                      <button
+                        type="button"
+                        className="copy-btn"
+                        onClick={() => void handleCopy(`${domain.id}-host`, domain.verificationHost)}
+                      >
+                        {copiedKey === `${domain.id}-host` ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <div className="dns-record">
+                      <span className="dns-record-label">Value</span>
+                      <span className="dns-record-value">{domain.verificationValue}</span>
+                      <button
+                        type="button"
+                        className="copy-btn"
+                        onClick={() =>
+                          void handleCopy(`${domain.id}-value`, domain.verificationValue)
+                        }
+                      >
+                        {copiedKey === `${domain.id}-value` ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    {domain.failureReason ? (
+                      <p className="domain-error-inline">{domain.failureReason}</p>
+                    ) : null}
+                  </div>
                 </div>
-                <Chip variant={statusToChip(domain.status)}>{domain.status}</Chip>
-                <Button
-                  size="sm"
-                  onClick={() => void data.handleVerifyDomain(domain.id)}
-                  disabled={data.domainActionId === domain.id}
-                >
-                  {data.domainActionId === domain.id ? "Checking…" : "Verify"}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => void data.handleRemoveDomain(domain.id)}
-                  disabled={data.domainActionId === domain.id}
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
-      </Panel>
+      </div>
 
-      <Panel id="domain-form" className="mb-0">
-        <PanelHead title="Add domain" />
-        <form onSubmit={data.handleConnectDomain} className="grid gap-3 p-4 lg:grid-cols-[1fr_220px_150px_auto]">
-          <input
-            id="domain-host"
-            value={data.domainHost}
-            onChange={(e) => data.setDomainHost(e.target.value)}
-            placeholder="www.clientdomain.com"
-            className="rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5 py-2 text-xs text-[var(--dash-text)] outline-none focus:border-[var(--dash-border2)]"
-          />
-          <DashSelect value={data.domainSiteId} onChange={data.setDomainSiteId}>
-            <option value="">First published site</option>
-            {data.publishedSites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.slug}
-              </option>
-            ))}
-          </DashSelect>
-          <DashSelect
-            value={data.domainVerificationType}
-            onChange={(v) => data.setDomainVerificationType(v as "txt" | "cname")}
-          >
-            <option value="txt">TXT</option>
-            <option value="cname">CNAME</option>
-          </DashSelect>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={data.domainSubmitting || data.publishedSites.length === 0}
-          >
-            {data.domainSubmitting ? "Connecting…" : "Connect"}
-          </Button>
-        </form>
-        {data.domainError ? (
-          <p className="px-4 pb-4 text-[11px] text-[var(--dash-red)]">{data.domainError}</p>
-        ) : null}
-      </Panel>
-
-      <Panel className="mb-0 mt-3.5">
-        <PanelHead title="How to connect a domain" />
-        <div className="space-y-2 p-4">
-          {[
-            "Enter your domain above and select which published site to point it to.",
-            "Copy the CNAME or TXT record shown and add it in your DNS provider's control panel.",
-            "StoneAI automatically provisions an SSL certificate. DNS propagation takes up to 48 hours.",
-          ].map((text, index) => (
-            <div key={text} className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[10px] font-semibold text-[var(--dash-hint)]">
-                {index + 1}
-              </span>
-              <p className="text-xs leading-relaxed text-[var(--dash-muted)]">{text}</p>
-            </div>
-          ))}
+      <div className="section-card" id="da-add-domain">
+        <div className="card-header">
+          <h2>Add domain</h2>
         </div>
-      </Panel>
+        <div className="add-domain-section">
+          <form onSubmit={data.handleConnectDomain}>
+            <div className="domain-input-row">
+              <input
+                id="domain-host"
+                value={data.domainHost}
+                onChange={(e) => data.setDomainHost(e.target.value)}
+                placeholder="www.clientdomain.com"
+                disabled={data.domainSubmitting}
+              />
+              <select
+                className="select-styled"
+                value={data.domainSiteId}
+                onChange={(e) => data.setDomainSiteId(e.target.value)}
+                disabled={data.domainSubmitting}
+              >
+                <option value="">First published site</option>
+                {data.publishedSites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.seo_title ?? site.slug}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="select-styled select-styled--sm"
+                value={data.domainVerificationType}
+                onChange={(e) =>
+                  data.setDomainVerificationType(e.target.value as "txt" | "cname")
+                }
+                disabled={data.domainSubmitting}
+              >
+                <option value="txt">TXT</option>
+                <option value="cname">CNAME</option>
+              </select>
+              <button
+                type="submit"
+                className="connect-btn"
+                disabled={data.domainSubmitting || data.publishedSites.length === 0}
+              >
+                {data.domainSubmitting ? "Connecting…" : "Connect"}
+              </button>
+            </div>
+          </form>
+
+          {data.domainError ? <p className="domain-error">{data.domainError}</p> : null}
+
+          <div className="how-to-list">
+            <h4>How to connect a domain</h4>
+            <div className="step-item">
+              <div className="step-num">1</div>
+              <div className="step-text">
+                Enter your domain above and select which published site to point it to.
+              </div>
+            </div>
+            <div className="step-item">
+              <div className="step-num">2</div>
+              <div className="step-text">
+                Copy the CNAME or TXT record shown and add it in your DNS provider&apos;s control
+                panel.
+              </div>
+            </div>
+            <div className="step-item">
+              <div className="step-num">3</div>
+              <div className="step-text">
+                StoneAI automatically provisions an SSL certificate. DNS propagation takes up to 48
+                hours.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

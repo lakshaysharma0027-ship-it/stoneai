@@ -1,138 +1,265 @@
 "use client";
 
-import { BarChart3, FileBarChart } from "lucide-react";
+import { BarChart3, Clock, FileBarChart, LineChart } from "lucide-react";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { Button } from "../ui/Button";
-import { EmptyState } from "../ui/EmptyState";
-import { PageHeader } from "../ui/PageHeader";
-import { Panel, PanelHead } from "../ui/Panel";
-import { StatCard, StatGrid } from "../ui/StatCard";
+import { buildActivityFeed } from "../analytics/buildActivityFeed";
+import "../domains-analytics.css";
+import { formatShortDate } from "../utils";
 
 export function AnalyticsPage({ data }: { data: DashboardDataContext }) {
-  const hasData = data.totalViews > 0 || data.totalVisitors > 0;
+  const hasVisitorData = data.totalViews > 0 || data.totalVisitors > 0;
+  const creditsConsumed = data.creditsUsed;
+  const publishedCount = data.publishedSites.filter((s) => s.status === "published").length;
+  const domainCount = data.connectedDomains.length;
 
   const topPages = data.publishedSites
     .map((site) => ({
+      id: site.id,
       title: site.seo_title ?? site.slug,
       views: site.site_analytics?.[0]?.page_views ?? 0,
       url: site.public_url,
+      lastVisit: site.site_analytics?.[0]?.last_visit,
+      status: site.status,
     }))
-    .filter((page) => page.views > 0)
     .sort((a, b) => b.views - a.views);
 
+  const topPagesWithViews = topPages.filter((page) => page.views > 0);
+  const maxViews = Math.max(...topPages.map((p) => p.views), 1);
+
+  const activity = buildActivityFeed({
+    publishedSites: data.publishedSites,
+    connectedDomains: data.connectedDomains,
+    aiHistory: data.aiHistory,
+    creditTransactions: data.creditTransactions,
+  });
+
+  const getDomainForSite = (siteId: string) =>
+    data.connectedDomains.find((domain) => domain.siteId === siteId)?.domain ?? "—";
+
   return (
-    <div className="dashboard-content-inner">
-      <PageHeader
-        title="Analytics"
-        subtitle="Performance across all published sites"
-      />
+    <div className="da-page">
+      <header className="pg-header">
+        <h1>Analytics</h1>
+        <p>Performance across all published sites</p>
+      </header>
 
-      <StatGrid>
-        <StatCard
-          label="Total visitors"
-          value={data.totalVisitors > 0 ? data.totalVisitors.toLocaleString() : "—"}
-          delta={hasData ? "Unique visitors" : "No data yet"}
-        />
-        <StatCard
-          label="Page views"
-          value={data.totalViews > 0 ? data.totalViews.toLocaleString() : "—"}
-          delta={hasData ? "Across all sites" : "No data yet"}
-        />
-        <StatCard label="Bounce rate" value="—" delta="Not tracked yet" />
-        <StatCard label="Avg. session" value="—" delta="Not tracked yet" />
-      </StatGrid>
-
-      <Panel>
-        <PanelHead title="Visitors over time" />
-        {hasData ? (
-          <div className="flex h-12 items-end gap-0.5 px-4 pb-2 pt-2.5">
-            {data.publishedSites.map((site) => {
-              const views = site.site_analytics?.[0]?.page_views ?? 0;
-              const max = Math.max(...data.publishedSites.map((s) => s.site_analytics?.[0]?.page_views ?? 0), 1);
-              const height = Math.max((views / max) * 100, 8);
-              return (
-                <div
-                  key={site.id}
-                  className="flex-1 rounded-t-sm bg-[var(--dash-border2)]"
-                  style={{ height: `${height}%` }}
-                  title={`${site.slug}: ${views} views`}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <EmptyState
-            icon={<BarChart3 size={22} />}
-            title="No visitor data"
-            description="Connect a custom domain and publish your site to start tracking visitors."
-          />
-        )}
-      </Panel>
-
-      <div className="grid gap-3.5 md:grid-cols-2">
-        <Panel className="mb-0">
-          <PanelHead title="Traffic sources" />
-          <EmptyState compact description="Traffic source breakdown is not available yet." />
-        </Panel>
-
-        <Panel className="mb-0">
-          <PanelHead title="Top pages" />
-          {topPages.length === 0 ? (
-            <EmptyState compact icon={<FileBarChart size={20} />} description="No page data yet" />
+      <div className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-label">Total visitors</div>
+          {hasVisitorData ? (
+            <div className="metric-value">{data.totalVisitors.toLocaleString()}</div>
           ) : (
-            <div>
-              {topPages.map((page) => (
-                <div
-                  key={page.url}
-                  className="flex items-center justify-between border-b border-[var(--dash-border)] px-4 py-2.5 last:border-b-0"
-                >
-                  <span className="truncate text-xs text-[var(--dash-text)]">{page.title}</span>
-                  <span className="text-[11px] text-[var(--dash-hint)]">
-                    {page.views.toLocaleString()} views
-                  </span>
-                </div>
-              ))}
-            </div>
+            <div className="metric-dash" />
           )}
-        </Panel>
+          <div className="metric-sub">{hasVisitorData ? "Unique visitors" : "No data yet"}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Page views</div>
+          {hasVisitorData ? (
+            <div className="metric-value">{data.totalViews.toLocaleString()}</div>
+          ) : (
+            <div className="metric-dash" />
+          )}
+          <div className="metric-sub">{hasVisitorData ? "Across all sites" : "No data yet"}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Published sites</div>
+          <div className="metric-value">{publishedCount}</div>
+          <div className="metric-sub">{domainCount} connected domain{domainCount === 1 ? "" : "s"}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Credits consumed</div>
+          <div className="metric-value">{creditsConsumed.toLocaleString()}</div>
+          <div className="metric-sub">This billing period</div>
+        </div>
       </div>
 
-      <Panel className="mt-3.5 mb-0">
-        <PanelHead title="Published sites" />
-        {data.publishedSites.length === 0 ? (
-          <EmptyState title="No published sites" description="Publish a project to see site analytics here." />
-        ) : (
-          <div>
-            {data.publishedSites.map((site) => (
-              <div
-                key={site.id}
-                className="flex flex-wrap items-center gap-2 border-b border-[var(--dash-border)] px-4 py-2.5 last:border-b-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-[var(--dash-text)]">
-                    {site.seo_title ?? site.slug}
-                  </p>
-                  <p className="truncate text-[11px] text-[var(--dash-hint)]">
-                    {site.public_url} · {site.site_analytics?.[0]?.page_views ?? 0} views
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => window.open(site.public_url, "_blank", "noopener,noreferrer")}>
-                  View
-                </Button>
-                <Button size="sm" onClick={() => data.router.push(`/editor/${site.project_id}`)}>
-                  Edit
-                </Button>
-                <Button size="sm" onClick={() => void data.handleUnpublishSite(site.id)}>
-                  Unpublish
-                </Button>
-                <Button size="sm" onClick={() => void data.handleDeleteSite(site.id)}>
-                  Delete
-                </Button>
-              </div>
-            ))}
+      <div className="analytics-row">
+        <div className="section-card">
+          <div className="card-header">
+            <h2>Visitors over time</h2>
           </div>
+          {hasVisitorData ? (
+            <div className="chart-bars-wrap">
+              <div className="chart-bars">
+                {topPages
+                  .filter((page) => page.views > 0)
+                  .map((page) => (
+                    <div key={page.id} className="chart-bar-col">
+                      <div className="chart-bar-track">
+                        <div
+                          className="chart-bar"
+                          data-h={Math.max(8, Math.round((page.views / maxViews) * 100))}
+                          title={`${page.title}: ${page.views} views`}
+                        />
+                      </div>
+                      <div className="chart-bar-label">{page.title}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <div className="chart-placeholder">
+              <div className="chart-icon">
+                <LineChart size={18} />
+              </div>
+              <div className="chart-placeholder-title">No visitor data</div>
+              <div className="chart-placeholder-sub">
+                Data will appear after your first visitors arrive. Publish your site and share the
+                URL to start tracking.
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="section-card">
+          <div className="card-header">
+            <h2>Traffic sources</h2>
+          </div>
+          <div className="chart-placeholder">
+            <div className="chart-icon">
+              <Clock size={18} />
+            </div>
+            <div className="chart-placeholder-sub">
+              Traffic source breakdown is not available yet.
+            </div>
+          </div>
+
+          <div className="top-pages-inner">
+            <div className="card-header top-pages-header">
+              <h2>Top pages</h2>
+            </div>
+            {topPagesWithViews.length === 0 ? (
+              <div className="chart-placeholder chart-placeholder-compact">
+                <div className="chart-icon">
+                  <FileBarChart size={18} />
+                </div>
+                <span className="chart-placeholder-sub">No page data yet</span>
+              </div>
+            ) : (
+              topPagesWithViews.map((page) => (
+                <div key={page.id} className="top-page-row">
+                  <span className="top-page-name">{page.title}</span>
+                  <span className="top-page-views">{page.views.toLocaleString()} views</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="section-card">
+        <div className="card-header">
+          <h2>Published sites</h2>
+          <small>
+            {data.publishedSites.length} site{data.publishedSites.length === 1 ? "" : "s"} ·{" "}
+            {data.totalViews.toLocaleString()} total views
+          </small>
+        </div>
+        {data.publishedSites.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <BarChart3 size={18} />
+            </div>
+            <h3>No published sites</h3>
+            <p>Publish a project to see site analytics here.</p>
+          </div>
+        ) : (
+          <table className="sites-table">
+            <thead>
+              <tr>
+                <th>Site</th>
+                <th>URL</th>
+                <th>Views</th>
+                <th>Last visit</th>
+                <th>Domain</th>
+                <th>Status</th>
+                <th className="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topPages.map((site) => (
+                <tr key={site.id}>
+                  <td>
+                    <div className="site-name">{site.title}</div>
+                  </td>
+                  <td>
+                    <div className="site-url">{site.url}</div>
+                  </td>
+                  <td className="site-views">{site.views.toLocaleString()}</td>
+                  <td className="site-views">
+                    {site.lastVisit ? formatShortDate(site.lastVisit) : "—"}
+                  </td>
+                  <td className="site-views">{getDomainForSite(site.id)}</td>
+                  <td>
+                    <span className={`tag ${site.status === "published" ? "tag-live" : "tag-disconnected"}`}>
+                      {site.status === "published" ? "Live" : site.status}
+                    </span>
+                  </td>
+                  <td className="actions-col">
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        onClick={() => window.open(site.url, "_blank", "noopener,noreferrer")}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const published = data.publishedSites.find((s) => s.id === site.id);
+                          if (published) data.router.push(`/editor/${published.project_id}`);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void data.handleUnpublishSite(site.id)}
+                      >
+                        Unpublish
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => void data.handleDeleteSite(site.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-      </Panel>
+      </div>
+
+      <div className="section-card">
+        <div className="card-header">
+          <h2>Recent activity</h2>
+          <small>{activity.length} events</small>
+        </div>
+        {activity.length === 0 ? (
+          <div className="empty-state empty-state-compact">
+            <div className="chart-icon">
+              <BarChart3 size={18} />
+            </div>
+            <h3>No activity yet</h3>
+            <p>Publish a site, connect a domain, or run a generation to see activity here.</p>
+          </div>
+        ) : (
+          activity.map((item) => (
+            <div key={item.id} className="activity-row">
+              <span className="activity-dot" aria-hidden />
+              <div>
+                <div className="activity-title">{item.title}</div>
+                <div className="activity-meta">{item.meta}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
