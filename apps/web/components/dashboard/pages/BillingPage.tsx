@@ -16,7 +16,7 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
   const paymentHistory = data.creditTransactions.filter((txn) => txn.amount > 0);
 
   return (
-    <>
+    <div className="dashboard-content-inner">
       <PageHeader title="Billing" subtitle="Plan, credits, and payment history" />
 
       <div className="mb-3.5 flex items-center gap-4 rounded-[var(--dash-radius-lg)] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
@@ -185,6 +185,6 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
           </Panel>
         </div>
       </div>
-    </>
+    </div>
   );
 }

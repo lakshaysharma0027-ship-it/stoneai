@@ -1,20 +1,31 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, Globe, Plus, Sparkles } from "lucide-react";
-import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { Button } from "../ui/Button";
-import { Chip } from "../ui/Chip";
-import { EmptyState } from "../ui/EmptyState";
-import { PageHeader } from "../ui/PageHeader";
-import { Panel, PanelHead, PanelLink } from "../ui/Panel";
-import { StatCard, StatGrid } from "../ui/StatCard";
 import {
+  Eye,
+  Folder,
+  Globe,
+  Plus,
+  Rocket,
+  Sparkles,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { CREDIT_COSTS } from "@/lib/billing/credits";
+import type { DashboardDataContext } from "../hooks/useDashboardData";
+import { ActivityFeed, type ActivityItem } from "../ui/ActivityFeed";
+import { MetricCard, MetricsGrid } from "../ui/MetricCard";
+import type { DashboardView } from "../types";
+import {
+  buildCreditUsageSparkline,
+  buildProjectActivitySparkline,
+  chipClassForStatus,
   formatShortDate,
+  getProjectDomain,
   getProjectStatus,
+  getProjectTraffic,
   getTemplateName,
   projectInitials,
 } from "../utils";
-import type { DashboardView } from "../types";
 
 export function OverviewPage({
   data,
@@ -30,287 +41,310 @@ export function OverviewPage({
     year: "numeric",
   }).format(new Date());
 
-  const recentProjects = data.projects.slice(0, 4);
-  const recentGenerations = [
-    ...data.aiHistory.slice(0, 3).map((item) => ({
-      id: item.id,
-      title: item.prompt.slice(0, 80),
-      meta: `${formatShortDate(item.created_at)} · Website generation`,
+  const recentProjects = data.projects.slice(0, 6);
+  const projectSpark = buildProjectActivitySparkline(data.projects);
+  const usageSpark = buildCreditUsageSparkline(data.creditTransactions);
+  const usagePercent = data.monthlyCredits
+    ? Math.round((data.creditsUsed / data.monthlyCredits) * 100)
+    : 0;
+
+  const activity: ActivityItem[] = [
+    ...data.aiHistory.slice(0, 5).map((item) => ({
+      id: `ai-${item.id}`,
       type: "website" as const,
+      prompt: item.prompt.slice(0, 100),
+      time: formatShortDate(item.created_at),
+      credits: CREDIT_COSTS.generate_website,
       status: "completed",
     })),
-    ...data.mediaHistory.slice(0, 3).map((item) => ({
-      id: item.id,
-      title: item.prompt.slice(0, 80),
-      meta: `${formatShortDate(item.created_at)} · ${item.credits_used} credits · ${item.media_type === "image" ? "Image" : "Video"}`,
+    ...data.mediaHistory.slice(0, 5).map((item) => ({
+      id: `media-${item.id}`,
       type: item.media_type,
+      prompt: item.prompt.slice(0, 100),
+      time: formatShortDate(item.created_at),
+      credits: item.credits_used,
       status: item.status,
     })),
   ]
-    .slice(0, 3);
-
-  const creditsRemainingPercent =
-    data.monthlyCredits > 0
-      ? Math.round((data.creditsRemaining / data.monthlyCredits) * 100)
-      : 0;
+    .slice(0, 6);
 
   return (
-    <>
-      <PageHeader
-        title="Overview"
-        subtitle={`${today} — ${data.billingSummary?.plan.name ?? "Free Trial"}`}
-        action={
-          <Button variant="primary" onClick={() => onNavigate("generate")}>
-            <Sparkles size={13} />
-            Generate with AI
-          </Button>
-        }
-      />
+    <div className="dashboard-content-inner">
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[18px] font-semibold tracking-[-0.03em] text-white">Overview</h1>
+          <p className="mt-0.5 text-[12px] text-[var(--dash-muted)]">
+            {today} · {data.billingSummary?.plan.name ?? "Free Trial"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate("generate-website")}
+          className="dash-btn dash-btn-primary"
+        >
+          <Sparkles size={13} />
+          Generate with AI
+        </button>
+      </header>
 
       {data.localProjectCount > 0 ? (
-        <Panel className="mb-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div>
-              <p className="text-xs font-medium text-[var(--dash-text)]">Import local projects</p>
-              <p className="mt-0.5 text-[11px] text-[var(--dash-hint)]">
-                Move {data.localProjectCount} local project
-                {data.localProjectCount === 1 ? "" : "s"} into your account.
-              </p>
-            </div>
-            <Button
-              variant="primary"
-              onClick={() => void data.handleImportLocalProjects()}
-              disabled={data.importing}
-            >
-              {data.importing ? "Importing…" : "Import"}
-            </Button>
-          </div>
-        </Panel>
+        <div className="dash-card mb-3 flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5">
+          <p className="text-[12px] text-[var(--dash-text-secondary)]">
+            Import {data.localProjectCount} local project
+            {data.localProjectCount === 1 ? "" : "s"} into your account
+          </p>
+          <button
+            type="button"
+            onClick={() => void data.handleImportLocalProjects()}
+            disabled={data.importing}
+            className="dash-btn dash-btn-primary text-[11px]"
+          >
+            {data.importing ? "Importing…" : "Import"}
+          </button>
+        </div>
       ) : null}
 
-      <StatGrid>
-        <StatCard
+      <MetricsGrid>
+        <MetricCard
+          icon={<Folder size={14} />}
           label="Projects"
           value={data.projects.length}
-          delta={`${data.projects.length} total`}
+          trend={`${data.draftProjectCount} drafts`}
+          sparkline={projectSpark}
         />
-        <StatCard
+        <MetricCard
+          icon={<Rocket size={14} />}
           label="Published sites"
           value={data.liveSiteCount}
-          delta={data.liveSiteCount ? `${data.liveSiteCount} live right now` : "None published yet"}
-          deltaTone={data.liveSiteCount ? "up" : "neutral"}
+          trend={data.liveSiteCount ? `${data.liveSiteCount} live` : "None yet"}
+          trendTone={data.liveSiteCount ? "up" : "neutral"}
         />
-        <StatCard
+        <MetricCard
+          icon={<Zap size={14} />}
           label="Credits remaining"
           value={data.creditsRemaining.toLocaleString()}
-          delta={`${data.creditsUsed} of ${data.monthlyCredits} used`}
-          barPercent={creditsRemainingPercent}
-          barTone={
-            creditsRemainingPercent <= 20
-              ? "danger"
-              : creditsRemainingPercent <= 50
-                ? "warn"
-                : "default"
-          }
+          trend={`${data.creditsUsed} of ${data.monthlyCredits} used`}
+          sparkline={usageSpark}
         />
-        <StatCard
-          label="Total visitors"
-          value={data.totalVisitors > 0 ? data.totalVisitors.toLocaleString() : "—"}
-          delta={
+        <MetricCard
+          icon={<TrendingUp size={14} />}
+          label="Monthly usage"
+          value={`${usagePercent}%`}
+          trend={
             data.totalVisitors > 0
-              ? "Across published sites"
-              : "Connect a domain to track"
+              ? `${data.totalVisitors.toLocaleString()} visitors`
+              : "Usage from credits"
           }
         />
-      </StatGrid>
+      </MetricsGrid>
 
-      <div className="grid gap-3.5 xl:grid-cols-[1fr_300px]">
-        <div>
-          <Panel>
-            <PanelHead
-              title="Recent projects"
-              action={<PanelLink onClick={() => onNavigate("projects")}>View all →</PanelLink>}
-            />
+      <div className="dash-split-main">
+        <div className="space-y-3">
+          <div className="dash-card overflow-hidden">
+            <div className="dash-card-header">
+              <span className="dash-card-title">Recent projects</span>
+              <button
+                type="button"
+                onClick={() => onNavigate("projects")}
+                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
+              >
+                View all →
+              </button>
+            </div>
             {recentProjects.length === 0 ? (
-              <EmptyState
-                title="No projects yet"
-                description="Start from blank or a template."
-                action={
-                  <Button onClick={() => data.router.push("/templates")}>
-                    <Plus size={13} />
-                    New project
-                  </Button>
-                }
-              />
-            ) : (
-              <>
-                {recentProjects.map((project) => {
-                  const status = getProjectStatus(project, data.publishedSites);
-                  return (
-                    <button
-                      key={project.id}
-                      type="button"
-                      onClick={() => data.router.push(`/editor/${project.id}`)}
-                      className="flex w-full cursor-pointer items-center gap-3 border-b border-[var(--dash-border)] px-4 py-2.5 text-left transition-colors last:border-b-0 hover:bg-[var(--dash-surface2)]"
-                    >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[11px] font-semibold text-[var(--dash-muted)]">
-                        {projectInitials(project.name)}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-medium text-[var(--dash-text)]">
-                          {project.name}
-                        </span>
-                        <span className="block text-[11px] text-[var(--dash-hint)]">
-                          {getTemplateName(project)} · Updated {formatShortDate(project.updatedAt)}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <Chip variant={status === "live" ? "live" : "draft"}>
-                          {status === "live" ? "Live" : "Draft"}
-                        </Chip>
-                        <ArrowRight size={12} className="text-[var(--dash-hint)]" />
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="px-4 py-8 text-center">
+                <p className="text-[13px] text-[var(--dash-text-secondary)]">No projects yet</p>
                 <button
                   type="button"
                   onClick={() => data.router.push("/templates")}
-                  className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left opacity-45 hover:opacity-70"
+                  className="dash-btn mt-3"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--dash-radius)] border border-dashed border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-hint)]">
-                    +
-                  </span>
-                  <span>
-                    <span className="block text-xs text-[var(--dash-hint)]">New project</span>
-                    <span className="block text-[11px] text-[var(--dash-hint)]">
-                      Start from blank or a template
-                    </span>
-                  </span>
+                  <Plus size={12} />
+                  New project
                 </button>
-              </>
-            )}
-          </Panel>
-
-          <Panel>
-            <PanelHead
-              title="Recent AI generations"
-              action={<PanelLink onClick={() => onNavigate("generate")}>View all →</PanelLink>}
-            />
-            {recentGenerations.length === 0 ? (
-              <EmptyState
-                title="No generations yet"
-                description="Generate a website, image, or video to see history here."
-              />
+              </div>
             ) : (
-              recentGenerations.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 border-b border-[var(--dash-border)] px-4 py-2.5 last:border-b-0"
-                >
-                  <span className="flex h-7 w-10 shrink-0 items-center justify-center rounded border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-hint)]">
-                    {item.type === "website" ? <Globe size={13} /> : <Sparkles size={13} />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-[var(--dash-text)]">
-                      {item.title}
-                    </span>
-                    <span className="block text-[11px] text-[var(--dash-hint)]">{item.meta}</span>
-                  </span>
-                  <Chip variant={item.status === "completed" ? "live" : "build"}>
-                    {item.status === "completed" ? "Done" : item.status}
-                  </Chip>
-                </div>
-              ))
+              <table className="dash-table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Domain</th>
+                    <th>Views</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentProjects.map((project) => {
+                    const status = getProjectStatus(project, data.publishedSites);
+                    const domain = getProjectDomain(
+                      project.id,
+                      data.publishedSites,
+                      data.connectedDomains,
+                    );
+                    const views = getProjectTraffic(project.id, data.publishedSites);
+                    return (
+                      <tr
+                        key={project.id}
+                        className="cursor-pointer"
+                        onClick={() => data.router.push(`/editor/${project.id}`)}
+                      >
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-[6px] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[10px] font-semibold">
+                              {projectInitials(project.name)}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-[13px] font-medium text-[var(--dash-text)]">
+                                {project.name}
+                              </p>
+                              <p className="truncate text-[11px] text-[var(--dash-muted)]">
+                                {getTemplateName(project)}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`dash-chip ${chipClassForStatus(status)}`}>
+                            {status === "live" ? "Live" : "Draft"}
+                          </span>
+                        </td>
+                        <td className="text-[12px]">{formatShortDate(project.updatedAt)}</td>
+                        <td className="font-mono text-[11px]">{domain?.domain ?? "—"}</td>
+                        <td className="tabular-nums">
+                          {views !== null && views > 0 ? views.toLocaleString() : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
-          </Panel>
+          </div>
+
+          <div className="dash-card overflow-hidden">
+            <div className="dash-card-header">
+              <span className="dash-card-title">Recent AI activity</span>
+              <button
+                type="button"
+                onClick={() => onNavigate("generate-website")}
+                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
+              >
+                View all →
+              </button>
+            </div>
+            <ActivityFeed items={activity} />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3.5">
-          <Panel className="mb-0">
-            <PanelHead title="Credits" />
-            <div className="px-4 py-3.5">
-              <p className="text-[30px] font-semibold tracking-[-1.5px] text-[var(--dash-white)]">
+        <aside className="space-y-3">
+          <div className="dash-card">
+            <div className="dash-card-header">
+              <span className="dash-card-title">Credits</span>
+            </div>
+            <div className="dash-card-body">
+              <p className="text-[26px] font-semibold tracking-[-0.04em] tabular-nums text-white">
                 {data.creditsRemaining.toLocaleString()}
               </p>
-              <p className="text-xs text-[var(--dash-hint)]">
+              <p className="text-[11px] text-[var(--dash-muted)]">
                 of {data.monthlyCredits.toLocaleString()} remaining
               </p>
-              <div className="my-3 h-[3px] overflow-hidden rounded-sm bg-[var(--dash-border)]">
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--dash-border)]">
                 <div
-                  className="h-full rounded-sm bg-[var(--dash-white)] transition-all duration-1000"
-                  style={{ width: `${creditsRemainingPercent}%` }}
+                  className="h-full rounded-full bg-white transition-all duration-500"
+                  style={{
+                    width: `${data.monthlyCredits ? (data.creditsRemaining / data.monthlyCredits) * 100 : 0}%`,
+                  }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] text-[var(--dash-hint)]">
-                <span>{data.creditsUsed} used</span>
-                <span>{data.creditsRemaining} free</span>
-              </div>
-              <Button
-                variant="primary"
-                fullWidth
-                className="mt-3.5"
+              <button
+                type="button"
                 onClick={() => onNavigate("billing")}
+                className="dash-btn dash-btn-primary mt-3 w-full"
               >
                 Upgrade for more credits
-              </Button>
+              </button>
             </div>
-          </Panel>
+          </div>
 
-          <Panel className="mb-0">
-            <PanelHead title="Current plan" />
-            <div className="px-4 py-3.5">
-              <p className="mb-1.5 text-[15px] font-semibold text-[var(--dash-white)]">
+          <div className="dash-card">
+            <div className="dash-card-header">
+              <span className="dash-card-title">Current plan</span>
+            </div>
+            <div className="dash-card-body">
+              <p className="text-[14px] font-semibold text-white">
                 {data.billingSummary?.plan.name ?? "Free Trial"}
               </p>
-              <p className="text-xs leading-relaxed text-[var(--dash-hint)]">
-                {data.monthlyCredits} credits · {data.billingSummary?.plan.siteLimit ?? 1} published
-                site{(data.billingSummary?.plan.siteLimit ?? 1) === 1 ? "" : "s"} ·{" "}
-                {data.connectedDomains.length ? "Custom domains" : "No custom domains"} · Community
-                support
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--dash-muted)]">
+                {data.monthlyCredits} credits · {data.billingSummary?.plan.siteLimit ?? 1} site
+                {(data.billingSummary?.plan.siteLimit ?? 1) === 1 ? "" : "s"} · Community support
               </p>
-              <Button
-                variant="primary"
-                fullWidth
-                className="mt-3.5"
+              <button
+                type="button"
                 onClick={() => void data.handleCheckout("basic_plus")}
+                className="dash-btn dash-btn-primary mt-3 w-full"
               >
-                <ArrowUpRight size={13} />
                 Upgrade plan
-              </Button>
+              </button>
             </div>
-          </Panel>
+          </div>
 
-          <Panel className="mb-0">
-            <PanelHead
-              title="Domains"
-              action={<PanelLink onClick={() => onNavigate("domains")}>Manage →</PanelLink>}
-            />
+          <div className="dash-card">
+            <div className="dash-card-header">
+              <span className="dash-card-title">Domains</span>
+              <button
+                type="button"
+                onClick={() => onNavigate("domains")}
+                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
+              >
+                Manage →
+              </button>
+            </div>
             {data.connectedDomains.length === 0 ? (
-              <EmptyState
-                compact
-                icon={<Globe size={22} />}
-                title="No domains connected"
-                description="Add a custom domain to go live on your own URL."
-                action={
-                  <Button size="sm" onClick={() => onNavigate("domains")}>
-                    <Plus size={12} />
-                    Connect domain
-                  </Button>
-                }
-              />
+              <div className="px-4 py-6 text-center">
+                <Globe size={20} className="mx-auto mb-2 text-[var(--dash-muted)]" />
+                <p className="text-[12px] text-[var(--dash-text-secondary)]">No domains connected</p>
+                <button
+                  type="button"
+                  onClick={() => onNavigate("domains")}
+                  className="dash-btn mt-2.5 text-[11px]"
+                >
+                  <Plus size={12} />
+                  Connect domain
+                </button>
+              </div>
             ) : (
               <div className="divide-y divide-[var(--dash-border)]">
-                {data.connectedDomains.slice(0, 3).map((domain) => (
-                  <div key={domain.id} className="px-4 py-2.5 text-xs text-[var(--dash-text)]">
-                    {domain.domain}
+                {data.connectedDomains.slice(0, 3).map((d) => (
+                  <div key={d.id} className="flex items-center justify-between px-3.5 py-2.5">
+                    <span className="truncate font-mono text-[12px] text-[var(--dash-text-secondary)]">
+                      {d.domain}
+                    </span>
+                    <span className={`dash-chip ${chipClassForStatus(d.status)}`}>{d.status}</span>
                   </div>
                 ))}
               </div>
             )}
-          </Panel>
-        </div>
+          </div>
+
+          {data.totalVisitors > 0 ? (
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <span className="dash-card-title">Visitors</span>
+                <Eye size={14} className="text-[var(--dash-muted)]" />
+              </div>
+              <div className="dash-card-body">
+                <p className="text-[22px] font-semibold tabular-nums">
+                  {data.totalVisitors.toLocaleString()}
+                </p>
+                <p className="text-[11px] text-[var(--dash-muted)]">
+                  {data.totalViews.toLocaleString()} page views
+                </p>
+              </div>
+            </div>
+          ) : null}
+        </aside>
       </div>
-    </>
+    </div>
   );
 }

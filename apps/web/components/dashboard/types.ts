@@ -1,17 +1,20 @@
-import type { StoredProject } from "@/lib/projects";
 import type { WebsiteIndustry, WebsiteStyle } from "@/lib/ai";
 
 export type DashboardView =
   | "overview"
   | "projects"
-  | "generate"
+  | "generate-website"
+  | "generate-image"
+  | "generate-video"
   | "templates"
-  | "media"
   | "domains"
   | "analytics"
   | "billing"
-  | "team"
-  | "settings";
+  | "settings"
+  /** @deprecated aliases */
+  | "generate"
+  | "media"
+  | "team";
 
 export type BillingPlanId = "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
 
@@ -88,7 +91,7 @@ export type CreditTransactionRow = {
   created_at: string;
 };
 
-export type ProjectStatus = "live" | "draft" | "building";
+export type ProjectStatus = "live" | "draft" | "building" | "failed";
 
 export type GenerateFormState = {
   businessName: string;
@@ -100,46 +103,6 @@ export type GenerateFormState = {
   websiteType: string;
 };
 
-export type DashboardData = {
-  mounted: boolean;
-  userInitial: string;
-  userName: string;
-  userEmail: string;
-  projects: StoredProject[];
-  publishedSites: PublishedSiteRow[];
-  billingSummary: BillingSummary | null;
-  connectedDomains: CustomDomainRow[];
-  mediaHistory: MediaGenerationRow[];
-  aiHistory: AiHistoryRow[];
-  creditTransactions: CreditTransactionRow[];
-  localProjectCount: number;
-  importing: boolean;
-  billingAction: string | null;
-  billingError: string | null;
-  mediaPrompt: string;
-  mediaMode: "image" | "video";
-  mediaGenerating: boolean;
-  mediaError: string | null;
-  domainHost: string;
-  domainSiteId: string;
-  domainVerificationType: "txt" | "cname";
-  domainActionId: string | null;
-  domainSubmitting: boolean;
-  domainError: string | null;
-  generateForm: GenerateFormState;
-  generating: boolean;
-  generateError: string | null;
-  showGenerateDetails: boolean;
-  creditsRemaining: number;
-  monthlyCredits: number;
-  creditsUsed: number;
-  creditPercent: number;
-  totalViews: number;
-  totalVisitors: number;
-  liveSiteCount: number;
-  draftProjectCount: number;
-};
-
 export const PLAN_CARDS = [
   { id: "free_trial" as const, name: "Free Trial", credits: 100, sites: 1 },
   { id: "basic" as const, name: "Basic", credits: 1500, sites: 2 },
@@ -147,3 +110,22 @@ export const PLAN_CARDS = [
   { id: "pro" as const, name: "Pro", credits: 6000, sites: 7 },
   { id: "premium" as const, name: "Premium", credits: 25000, sites: 30 },
 ];
+
+export const normalizeView = (view: DashboardView): DashboardView => {
+  if (view === "generate" || view === "media") return "generate-website";
+  if (view === "team") return "settings";
+  return view;
+};
+
+export const VIEW_TITLES: Record<string, string> = {
+  overview: "Overview",
+  projects: "Projects",
+  "generate-website": "Website Generation",
+  "generate-image": "Image Generation",
+  "generate-video": "Video Generation",
+  templates: "Templates",
+  domains: "Domains",
+  analytics: "Analytics",
+  billing: "Billing",
+  settings: "Settings",
+};

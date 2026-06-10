@@ -9,7 +9,7 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
   const displayName = data.userName.includes("@") ? data.userName.split("@")[0] : data.userName;
 
   return (
-    <>
+    <div className="dashboard-content-inner">
       <PageHeader title="Settings" subtitle="Profile, workspace, and account" />
 
       <div className="grid gap-3.5 lg:grid-cols-2">
@@ -56,6 +56,6 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
           </div>
         </Panel>
       </div>
-    </>
+    </div>
   );
 }

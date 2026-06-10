@@ -2,21 +2,8 @@
 
 import { Bell, HelpCircle, Search, Sparkles, Zap } from "lucide-react";
 import type { DashboardView } from "./types";
+import { VIEW_TITLES, normalizeView } from "./types";
 import type { DashboardDataContext } from "./hooks/useDashboardData";
-import { Button } from "./ui/Button";
-
-const viewTitles: Record<DashboardView, string> = {
-  overview: "Overview",
-  projects: "Projects",
-  generate: "AI Generation",
-  templates: "Templates",
-  media: "Media library",
-  domains: "Domains",
-  analytics: "Analytics",
-  billing: "Billing",
-  team: "Team",
-  settings: "Settings",
-};
 
 export function DashboardTopbar({
   view,
@@ -31,16 +18,22 @@ export function DashboardTopbar({
   onNavigate: (view: DashboardView) => void;
   data: DashboardDataContext;
 }) {
+  const title = VIEW_TITLES[normalizeView(view)] ?? "Dashboard";
+
   return (
     <header className="dashboard-topbar">
-      <div className="flex h-[30px] max-w-[260px] flex-1 items-center gap-1.5 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5">
-        <Search size={13} className="shrink-0 text-[var(--dash-hint)]" />
+      <p className="hidden min-w-[120px] text-[13px] font-medium text-[var(--dash-text)] md:block">
+        {title}
+      </p>
+
+      <div className="flex h-8 max-w-md flex-1 items-center gap-2 rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5">
+        <Search size={14} className="shrink-0 text-[var(--dash-muted)]" />
         <input
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search projects, media, generations…"
-          className="w-full border-0 bg-transparent text-xs text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-hint)]"
+          className="w-full border-0 bg-transparent text-[13px] text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)]"
         />
       </div>
 
@@ -48,32 +41,34 @@ export function DashboardTopbar({
         <button
           type="button"
           onClick={() => onNavigate("billing")}
-          className="flex cursor-pointer items-center gap-1 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5 py-1 text-[11px] text-[var(--dash-muted)] transition-colors hover:border-[var(--dash-border2)] hover:text-[var(--dash-text)]"
+          className="hidden items-center gap-1.5 rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5 py-1.5 text-[11px] text-[var(--dash-text-secondary)] transition-colors hover:border-[var(--dash-border-hover)] sm:flex"
         >
           <Zap size={12} />
-          {data.creditsRemaining.toLocaleString()} credits
+          <span className="tabular-nums">{data.creditsRemaining.toLocaleString()}</span>
         </button>
         <button
           type="button"
-          className="relative flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-hint)]"
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-muted)]"
           aria-label="Notifications"
         >
           <Bell size={14} />
         </button>
         <button
           type="button"
-          className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-hint)] hover:border-[var(--dash-border2)] hover:text-[var(--dash-text)]"
+          className="hidden h-8 w-8 items-center justify-center rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)] sm:flex"
           aria-label="Help"
         >
           <HelpCircle size={14} />
         </button>
-        <Button variant="primary" onClick={() => onNavigate("generate")}>
+        <button
+          type="button"
+          onClick={() => onNavigate("generate-website")}
+          className="dash-btn dash-btn-primary"
+        >
           <Sparkles size={13} />
-          Generate
-        </Button>
+          <span className="hidden sm:inline">Generate</span>
+        </button>
       </div>
-
-      <span className="sr-only">Current view: {viewTitles[view]}</span>
     </header>
   );
 }

@@ -3,19 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { DashboardView } from "../types";
+import { normalizeView } from "../types";
 import { hashToView } from "../utils";
 
 const VALID_VIEWS: DashboardView[] = [
   "overview",
   "projects",
-  "generate",
+  "generate-website",
+  "generate-image",
+  "generate-video",
   "templates",
-  "media",
   "domains",
   "analytics",
   "billing",
-  "team",
   "settings",
+  "generate",
+  "media",
+  "team",
 ];
 
 const isDashboardView = (value: string | null): value is DashboardView =>
@@ -25,21 +29,22 @@ export function useDashboardNavigation(onTemplates?: () => void) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramView = searchParams.get("view");
-  const [view, setViewState] = useState<DashboardView>(
-    isDashboardView(paramView) ? paramView : "overview",
+  const [view, setViewState] = useState<DashboardView>(() =>
+    isDashboardView(paramView) ? normalizeView(paramView) : "overview",
   );
 
   useEffect(() => {
     if (isDashboardView(paramView)) {
-      setViewState(paramView);
+      setViewState(normalizeView(paramView));
       return;
     }
 
     if (typeof window !== "undefined" && window.location.hash) {
       const fromHash = hashToView(window.location.hash);
       if (fromHash && isDashboardView(fromHash)) {
-        setViewState(fromHash);
-        router.replace(`/dashboard?view=${fromHash}`, { scroll: false });
+        const normalized = normalizeView(fromHash);
+        setViewState(normalized);
+        router.replace(`/dashboard?view=${normalized}`, { scroll: false });
       }
     }
   }, [paramView, router]);
@@ -51,8 +56,9 @@ export function useDashboardNavigation(onTemplates?: () => void) {
         router.push("/templates");
         return;
       }
-      setViewState(next);
-      router.replace(`/dashboard?view=${next}`, { scroll: false });
+      const normalized = normalizeView(next);
+      setViewState(normalized);
+      router.replace(`/dashboard?view=${normalized}`, { scroll: false });
     },
     [router, onTemplates],
   );

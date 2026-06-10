@@ -13,7 +13,7 @@ export function DomainsPage({ data }: { data: DashboardDataContext }) {
   const canConnectDomains = (data.billingSummary?.plan.siteLimit ?? 1) > 1 || data.billingSummary?.plan.id !== "free_trial";
 
   return (
-    <>
+    <div className="dashboard-content-inner">
       <PageHeader
         title="Domains"
         subtitle={`${data.connectedDomains.length} connected${!canConnectDomains && data.connectedDomains.length === 0 ? " · Upgrade to connect custom domains" : ""}`}
@@ -132,6 +132,6 @@ export function DomainsPage({ data }: { data: DashboardDataContext }) {
           ))}
         </div>
       </Panel>
-    </>
+    </div>
   );
 }

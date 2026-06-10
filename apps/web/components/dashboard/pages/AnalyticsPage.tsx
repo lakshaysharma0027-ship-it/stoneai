@@ -21,7 +21,7 @@ export function AnalyticsPage({ data }: { data: DashboardDataContext }) {
     .sort((a, b) => b.views - a.views);
 
   return (
-    <>
+    <div className="dashboard-content-inner">
       <PageHeader
         title="Analytics"
         subtitle="Performance across all published sites"
@@ -133,6 +133,6 @@ export function AnalyticsPage({ data }: { data: DashboardDataContext }) {
           </div>
         )}
       </Panel>
-    </>
+    </div>
   );
 }
