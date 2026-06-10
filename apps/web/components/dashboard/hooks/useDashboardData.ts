@@ -205,8 +205,11 @@ export function useDashboardData() {
     }
   };
 
-  const handleGenerateMedia = async (mode?: "image" | "video") => {
-    const prompt = mediaPrompt.trim();
+  const handleGenerateMedia = async (
+    mode?: "image" | "video",
+    options?: { aspectRatio?: string; durationSeconds?: number; prompt?: string },
+  ) => {
+    const prompt = (options?.prompt ?? mediaPrompt).trim();
     if (!prompt) {
       setMediaError("Enter a prompt first.");
       return;
@@ -222,7 +225,8 @@ export function useDashboardData() {
         body: JSON.stringify({
           prompt,
           capability: selectedMode === "image" ? "hero_image" : "hero_video",
-          aspectRatio: "16:9",
+          aspectRatio: options?.aspectRatio ?? "16:9",
+          durationSeconds: options?.durationSeconds,
         }),
       });
       const payload = (await response.json()) as { error?: string };

@@ -1,134 +1,265 @@
 "use client";
 
-import { Download, Image } from "lucide-react";
+import { useState } from "react";
+import {
+  Ratio,
+  Copy,
+  ImageOff,
+  Sparkles,
+} from "lucide-react";
 import { CREDIT_COSTS } from "@/lib/billing/credits";
+import { GenerationPageHeader } from "../generation/GenerationPageHeader";
+import { GenerationProgressOverlay } from "../generation/GenerationProgressOverlay";
+import {
+  ASPECT_RATIO_OPTIONS,
+  IMAGE_PROMPT_IDEAS,
+  IMAGE_STYLE_TILES,
+} from "../generation/constants";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { chipClassForStatus, formatShortDate } from "../utils";
+import "../generation-pages.css";
+import { formatShortDate } from "../utils";
+
+const STYLE_SUFFIX: Record<string, string> = {
+  dark: "dark cinematic style",
+  minimal: "clean minimal style",
+  neon: "neon glow style",
+  warm: "warm natural lighting",
+};
 
 export function ImageGenerationPage({ data }: { data: DashboardDataContext }) {
   const cost = CREDIT_COSTS.media_image_generate;
   const images = data.mediaHistory.filter((m) => m.media_type === "image");
+  const [aspectRatio, setAspectRatio] = useState("16:9");
+  const [imageStyle, setImageStyle] = useState("dark");
+  const [quality, setQuality] = useState("Standard");
+  const [negativePrompt, setNegativePrompt] = useState("");
+
+  const possibleCount = cost > 0 ? Math.floor(data.creditsRemaining / cost) : 0;
+
+  const buildPrompt = (base: string) => {
+    let prompt = base;
+    const styleSuffix = STYLE_SUFFIX[imageStyle];
+    if (styleSuffix && !prompt.toLowerCase().includes(styleSuffix)) {
+      prompt = `${prompt}, ${styleSuffix}`;
+    }
+    if (quality === "HD") prompt = `${prompt}, high detail`;
+    if (quality === "Ultra (4K)") prompt = `${prompt}, ultra sharp 4K`;
+    if (negativePrompt.trim()) {
+      prompt = `${prompt}. Avoid: ${negativePrompt.trim()}`;
+    }
+    return prompt;
+  };
+
+  const handleGenerate = async () => {
+    data.setMediaMode("image");
+    const base = data.mediaPrompt.trim();
+    await data.handleGenerateMedia("image", {
+      aspectRatio,
+      prompt: base ? buildPrompt(base) : undefined,
+    });
+  };
+
+  const statusClass = (status: string) => {
+    if (status === "completed") return "hist-done";
+    if (status === "failed") return "hist-failed";
+    return "hist-pending";
+  };
 
   return (
-    <div className="dashboard-content-inner">
-      <header className="mb-4">
-        <h1 className="text-[18px] font-semibold tracking-[-0.03em] text-white">
-          Image Generation
-        </h1>
-        <p className="mt-0.5 text-[12px] text-[var(--dash-muted)]">
-          {data.creditsRemaining.toLocaleString()} credits · {cost} per image
-        </p>
-      </header>
+    <div className="gen-spec-page">
+      <GenerationProgressOverlay
+        active={data.mediaGenerating && data.mediaMode === "image"}
+        mode="media"
+        title="Generating your image"
+        subtitle="Rendering with StoneAI media pipeline"
+      />
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <span className="dash-card-title">Prompt</span>
-            <span className="text-[11px] text-[var(--dash-muted)]">16:9 · Hero image</span>
-          </div>
-          <div className="dash-card-body space-y-3">
-            <textarea
-              value={data.mediaPrompt}
-              onChange={(e) => data.setMediaPrompt(e.target.value)}
-              rows={5}
-              placeholder="Describe the image you want to generate…"
-              className="dash-input resize-y leading-relaxed"
-            />
-            {data.mediaError ? (
-              <p className="text-[11px] text-[var(--dash-red)]">{data.mediaError}</p>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                data.setMediaMode("image");
-                void data.handleGenerateMedia("image");
-              }}
-              disabled={data.mediaGenerating || data.creditsRemaining < cost}
-              className="dash-btn dash-btn-primary w-full py-2.5"
-            >
-              {data.mediaGenerating ? "Generating…" : `Generate image · ${cost} credits`}
-            </button>
+      <GenerationPageHeader
+        title="Image Generation"
+        cost={cost}
+        costLabel="per image"
+        remaining={data.creditsRemaining}
+        extra={`${possibleCount} image${possibleCount === 1 ? "" : "s"} possible`}
+      />
+
+      <div className="gen-layout">
+        <div>
+          <div className="gen-card">
+            <div className="gen-card-head">
+              <span className="gen-card-title">Image prompt</span>
+              <span className="gen-card-meta">
+                <Ratio size={12} />
+                {aspectRatio} · Hero image
+              </span>
+            </div>
+            <div className="gen-card-body">
+              <textarea
+                className="prompt-area"
+                value={data.mediaPrompt}
+                onChange={(e) => data.setMediaPrompt(e.target.value)}
+                placeholder="Describe the image you want to generate. Example: A minimal dark UI dashboard with glowing charts, floating panels, soft purple ambient light, cinematic depth of field, 8K ultra-sharp."
+                disabled={data.mediaGenerating}
+              />
+
+              <div className="field-block mt-16">
+                <span className="field-label">Aspect ratio</span>
+                <div className="ratio-pills">
+                  {ASPECT_RATIO_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`ratio-pill ${aspectRatio === option.id ? "active" : ""}`}
+                      onClick={() => setAspectRatio(option.id)}
+                      disabled={data.mediaGenerating}
+                    >
+                      <span className={`ratio-pill-preview ${option.preview}`} />
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field-block mt-16">
+                <span className="field-label">Visual style</span>
+                <div className="style-tiles">
+                  {IMAGE_STYLE_TILES.map((tile) => (
+                    <button
+                      key={tile.id}
+                      type="button"
+                      className={`style-tile ${imageStyle === tile.id ? "active" : ""}`}
+                      onClick={() => setImageStyle(tile.id)}
+                      disabled={data.mediaGenerating}
+                    >
+                      <div className={`style-tile-thumb ${tile.className}`}>{tile.emoji}</div>
+                      <div className="style-tile-label">{tile.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-grid-2">
+                <div>
+                  <label className="field-label" htmlFor="image-quality">
+                    Quality
+                  </label>
+                  <select
+                    id="image-quality"
+                    className="select"
+                    value={quality}
+                    onChange={(e) => setQuality(e.target.value)}
+                    disabled={data.mediaGenerating}
+                  >
+                    <option>Standard</option>
+                    <option>HD</option>
+                    <option>Ultra (4K)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label" htmlFor="negative-prompt">
+                    Negative prompt <span className="field-label-optional">(optional)</span>
+                  </label>
+                  <input
+                    id="negative-prompt"
+                    className="input"
+                    value={negativePrompt}
+                    onChange={(e) => setNegativePrompt(e.target.value)}
+                    placeholder="blurry, watermark, text…"
+                    disabled={data.mediaGenerating}
+                  />
+                </div>
+              </div>
+
+              {data.mediaError ? <p className="gen-error">{data.mediaError}</p> : null}
+
+              <button
+                type="button"
+                className={`gen-btn-main ${data.mediaGenerating || data.creditsRemaining < cost ? "disabled" : ""}`}
+                disabled={data.mediaGenerating || data.creditsRemaining < cost}
+                onClick={() => void handleGenerate()}
+              >
+                <Sparkles size={15} />
+                {data.mediaGenerating ? "Generating image…" : "Generate image"}
+                <span className="cost">· {cost} credits</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="dash-card overflow-hidden">
-          <div className="dash-card-header">
-            <span className="dash-card-title">Recent images</span>
-            <span className="text-[11px] text-[var(--dash-muted)]">{images.length} total</span>
-          </div>
-          {images.length === 0 ? (
-            <div className="px-4 py-10 text-center text-[12px] text-[var(--dash-muted)]">
-              No images generated yet
+        <div>
+          <div className="aside-panel">
+            <div className="aside-head">
+              <span className="aside-head-title">Recent images</span>
+              <span className="aside-head-count">{images.length} total</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 p-3">
-              {images.slice(0, 8).map((item) => (
-                <div
-                  key={item.id}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-[8px] border border-[var(--dash-border)] bg-[var(--dash-surface2)]"
-                >
-                  {item.asset_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.asset_url} alt={item.prompt} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-[var(--dash-muted)]">
-                      <Image size={20} />
-                    </div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <p className="truncate text-[10px] text-white/90">{item.prompt}</p>
-                    <div className="mt-1 flex items-center justify-between">
-                      <span className={`dash-chip text-[9px] ${chipClassForStatus(item.status)}`}>
-                        {item.status}
-                      </span>
-                      {item.asset_url ? (
-                        <button
-                          type="button"
-                          onClick={() => window.open(item.asset_url!, "_blank")}
-                          className="text-white/80 hover:text-white"
-                        >
-                          <Download size={12} />
-                        </button>
-                      ) : null}
+            {images.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <ImageOff size={18} />
+                </div>
+                <div className="empty-title">No images generated yet</div>
+                <div className="empty-sub">
+                  Your generated images appear here. Download or insert them into any project.
+                </div>
+              </div>
+            ) : (
+              images.slice(0, 8).map((item) => (
+                <div key={item.id} className="hist-row">
+                  <div className="hist-thumb">
+                    {item.asset_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.asset_url} alt="" />
+                    ) : (
+                      <Sparkles size={13} />
+                    )}
+                  </div>
+                  <div className="hist-info">
+                    <div className="hist-name">{item.prompt}</div>
+                    <div className="hist-time">
+                      {formatShortDate(item.created_at)} · {item.credits_used} credits
                     </div>
                   </div>
+                  <span className={`hist-status ${statusClass(item.status)}`}>
+                    {item.status === "completed" ? "Done" : item.status}
+                  </span>
+                  {item.asset_url ? (
+                    <div className="hist-actions">
+                      <button
+                        type="button"
+                        className="hist-action-btn"
+                        onClick={() => window.open(item.asset_url!, "_blank", "noopener,noreferrer")}
+                      >
+                        Open
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="aside-panel">
+            <div className="aside-head">
+              <span className="aside-head-title">Prompt ideas</span>
+            </div>
+            <div className="prompt-idea-list">
+              {IMAGE_PROMPT_IDEAS.map((idea) => (
+                <div
+                  key={idea}
+                  className="prompt-idea-row"
+                  onClick={() => data.setMediaPrompt(idea)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") data.setMediaPrompt(idea);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="prompt-idea-text">{idea}</div>
+                  <Copy size={12} className="prompt-idea-copy" />
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-
-      <div className="dash-card mt-3 overflow-hidden">
-        <div className="dash-card-header">
-          <span className="dash-card-title">History</span>
-        </div>
-        {images.length === 0 ? null : (
-          <table className="dash-table">
-            <thead>
-              <tr>
-                <th>Prompt</th>
-                <th>Date</th>
-                <th>Credits</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {images.map((item) => (
-                <tr key={item.id}>
-                  <td className="max-w-[280px] truncate text-[var(--dash-text)]">{item.prompt}</td>
-                  <td>{formatShortDate(item.created_at)}</td>
-                  <td className="tabular-nums">{item.credits_used}</td>
-                  <td>
-                    <span className={`dash-chip ${chipClassForStatus(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
     </div>
   );
