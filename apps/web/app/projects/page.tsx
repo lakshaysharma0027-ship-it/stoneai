@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function ProjectsPage() {
-  return null;
+  redirect("/dashboard?view=projects");
 }
