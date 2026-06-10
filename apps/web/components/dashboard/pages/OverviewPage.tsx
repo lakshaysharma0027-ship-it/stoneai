@@ -1,26 +1,28 @@
 "use client";
 
 import {
-  Eye,
+  ArrowRight,
+  ArrowUpCircle,
+  Bolt,
   Folder,
   Globe,
   Plus,
   Rocket,
   Sparkles,
   TrendingUp,
-  Zap,
+  Upload,
 } from "lucide-react";
 import { CREDIT_COSTS } from "@/lib/billing/credits";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { ActivityFeed, type ActivityItem } from "../ui/ActivityFeed";
-import { MetricCard, MetricsGrid } from "../ui/MetricCard";
+import { SpecSparkline } from "../ui/SpecSparkline";
 import type { DashboardView } from "../types";
+import "../overview-projects.css";
 import {
   buildCreditUsageSparkline,
   buildProjectActivitySparkline,
-  chipClassForStatus,
   formatShortDate,
   getProjectDomain,
+  getProjectGradientIndex,
   getProjectStatus,
   getProjectTraffic,
   getTemplateName,
@@ -36,8 +38,8 @@ export function OverviewPage({
 }) {
   const today = new Intl.DateTimeFormat(undefined, {
     weekday: "long",
-    month: "long",
     day: "numeric",
+    month: "long",
     year: "numeric",
   }).format(new Date());
 
@@ -48,302 +50,316 @@ export function OverviewPage({
     ? Math.round((data.creditsUsed / data.monthlyCredits) * 100)
     : 0;
 
-  const activity: ActivityItem[] = [
-    ...data.aiHistory.slice(0, 5).map((item) => ({
+  const generations = [
+    ...data.aiHistory.slice(0, 4).map((item) => ({
       id: `ai-${item.id}`,
-      type: "website" as const,
-      prompt: item.prompt.slice(0, 100),
-      time: formatShortDate(item.created_at),
-      credits: CREDIT_COSTS.generate_website,
-      status: "completed",
+      title: item.prompt.slice(0, 80),
+      meta: `${formatShortDate(item.created_at)} · Website · ${CREDIT_COSTS.generate_website} credits`,
     })),
-    ...data.mediaHistory.slice(0, 5).map((item) => ({
+    ...data.mediaHistory.slice(0, 4).map((item) => ({
       id: `media-${item.id}`,
-      type: item.media_type,
-      prompt: item.prompt.slice(0, 100),
-      time: formatShortDate(item.created_at),
-      credits: item.credits_used,
-      status: item.status,
+      title: item.prompt.slice(0, 80),
+      meta: `${formatShortDate(item.created_at)} · ${item.media_type} · ${item.credits_used} credits`,
     })),
-  ]
-    .slice(0, 6);
+  ].slice(0, 5);
+
+  const creditsUsedPercent = data.monthlyCredits
+    ? Math.min((data.creditsUsed / data.monthlyCredits) * 100, 100)
+    : 0;
+
+  const siteLimit = data.billingSummary?.plan.siteLimit ?? 1;
+  const hasCustomDomains = data.connectedDomains.length > 0;
 
   return (
-    <div className="dashboard-content-inner">
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="spec-page">
+      <div className="page-header">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-[-0.03em] text-white">Overview</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--dash-muted)]">
+          <div className="page-h1">Overview</div>
+          <div className="page-sub">
             {today} · {data.billingSummary?.plan.name ?? "Free Trial"}
-          </p>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onNavigate("generate-website")}
-          className="dash-btn dash-btn-primary"
-        >
-          <Sparkles size={13} />
-          Generate with AI
-        </button>
-      </header>
-
-      {data.localProjectCount > 0 ? (
-        <div className="dash-card mb-3 flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5">
-          <p className="text-[12px] text-[var(--dash-text-secondary)]">
-            Import {data.localProjectCount} local project
-            {data.localProjectCount === 1 ? "" : "s"} into your account
-          </p>
+        <div className="page-header-actions">
           <button
             type="button"
+            className="btn"
+            onClick={() => onNavigate("generate-website")}
+          >
+            <Sparkles size={13} />
+            Generate with AI
+          </button>
+          {data.localProjectCount > 0 ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void data.handleImportLocalProjects()}
+              disabled={data.importing}
+            >
+              <Upload size={13} />
+              {data.importing ? "Importing…" : "Import"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {data.localProjectCount > 0 ? (
+        <div className="import-banner">
+          <span className="import-banner-text">
+            <strong>Import local projects</strong> — Move {data.localProjectCount} local project
+            {data.localProjectCount === 1 ? "" : "s"} into your account.
+          </span>
+          <button
+            type="button"
+            className="btn btn-sm"
             onClick={() => void data.handleImportLocalProjects()}
             disabled={data.importing}
-            className="dash-btn dash-btn-primary text-[11px]"
           >
             {data.importing ? "Importing…" : "Import"}
           </button>
         </div>
       ) : null}
 
-      <MetricsGrid>
-        <MetricCard
-          icon={<Folder size={14} />}
-          label="Projects"
-          value={data.projects.length}
-          trend={`${data.draftProjectCount} drafts`}
-          sparkline={projectSpark}
-        />
-        <MetricCard
-          icon={<Rocket size={14} />}
-          label="Published sites"
-          value={data.liveSiteCount}
-          trend={data.liveSiteCount ? `${data.liveSiteCount} live` : "None yet"}
-          trendTone={data.liveSiteCount ? "up" : "neutral"}
-        />
-        <MetricCard
-          icon={<Zap size={14} />}
-          label="Credits remaining"
-          value={data.creditsRemaining.toLocaleString()}
-          trend={`${data.creditsUsed} of ${data.monthlyCredits} used`}
-          sparkline={usageSpark}
-        />
-        <MetricCard
-          icon={<TrendingUp size={14} />}
-          label="Monthly usage"
-          value={`${usagePercent}%`}
-          trend={
-            data.totalVisitors > 0
-              ? `${data.totalVisitors.toLocaleString()} visitors`
-              : "Usage from credits"
-          }
-        />
-      </MetricsGrid>
+      <div className="stat-grid">
+        <div className="stat-card">
+          <span className="stat-card-icon">
+            <Folder size={15} />
+          </span>
+          <div className="stat-label">Projects</div>
+          <div className="stat-value">{data.projects.length}</div>
+          <div className="stat-sub">
+            {data.draftProjectCount} draft{data.draftProjectCount === 1 ? "" : "s"}
+          </div>
+          <div className="stat-sparkline">
+            <SpecSparkline values={projectSpark} />
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-icon">
+            <Rocket size={15} />
+          </span>
+          <div className="stat-label">Published sites</div>
+          <div className="stat-value">{data.liveSiteCount}</div>
+          <div className="stat-sub">
+            {data.liveSiteCount > 0 ? (
+              <>
+                <span className="live-dot" />
+                <span className="live-label">{data.liveSiteCount} live</span>
+              </>
+            ) : (
+              "None published"
+            )}
+          </div>
+          <div className="stat-sparkline">
+            <SpecSparkline
+              values={data.publishedSites.map((s) => (s.status === "published" ? 1 : 0))}
+              variant="green"
+            />
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-icon">
+            <Bolt size={15} />
+          </span>
+          <div className="stat-label">Credits remaining</div>
+          <div className="stat-value">{data.creditsRemaining.toLocaleString()}</div>
+          <div className="stat-sub">
+            {data.creditsUsed} of {data.monthlyCredits} used
+          </div>
+          <div className="stat-sparkline">
+            <SpecSparkline values={usageSpark.length ? usageSpark : [0, 0, 0, 0, 0, 0, 0]} />
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-icon">
+            <TrendingUp size={15} />
+          </span>
+          <div className="stat-label">Monthly usage</div>
+          <div className="stat-value">{usagePercent}%</div>
+          <div className="stat-sub">Usage from credits</div>
+          <div className="stat-sparkline">
+            <SpecSparkline
+              values={usageSpark.length ? usageSpark : Array.from({ length: 7 }, () => 0)}
+            />
+          </div>
+        </div>
+      </div>
 
-      <div className="dash-split-main">
-        <div className="space-y-3">
-          <div className="dash-card overflow-hidden">
-            <div className="dash-card-header">
-              <span className="dash-card-title">Recent projects</span>
-              <button
-                type="button"
-                onClick={() => onNavigate("projects")}
-                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
-              >
-                View all →
+      <div className="overview-body">
+        <div>
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-head-title">Recent projects</span>
+              <button type="button" className="panel-link" onClick={() => onNavigate("projects")}>
+                View all <ArrowRight size={10} />
               </button>
             </div>
             {recentProjects.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <p className="text-[13px] text-[var(--dash-text-secondary)]">No projects yet</p>
-                <button
-                  type="button"
-                  onClick={() => data.router.push("/templates")}
-                  className="dash-btn mt-3"
-                >
-                  <Plus size={12} />
-                  New project
-                </button>
+              <div className="gen-empty">
+                <Sparkles size={20} className="gen-empty-icon" />
+                <div className="gen-empty-title">No projects yet</div>
+                <div className="gen-empty-sub">Create a project from a template to get started.</div>
               </div>
             ) : (
-              <table className="dash-table">
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Status</th>
-                    <th>Updated</th>
-                    <th>Domain</th>
-                    <th>Views</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentProjects.map((project) => {
-                    const status = getProjectStatus(project, data.publishedSites);
-                    const domain = getProjectDomain(
-                      project.id,
-                      data.publishedSites,
-                      data.connectedDomains,
-                    );
-                    const views = getProjectTraffic(project.id, data.publishedSites);
-                    return (
-                      <tr
-                        key={project.id}
-                        className="cursor-pointer"
-                        onClick={() => data.router.push(`/editor/${project.id}`)}
-                      >
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-[6px] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[10px] font-semibold">
-                              {projectInitials(project.name)}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-[13px] font-medium text-[var(--dash-text)]">
-                                {project.name}
-                              </p>
-                              <p className="truncate text-[11px] text-[var(--dash-muted)]">
-                                {getTemplateName(project)}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`dash-chip ${chipClassForStatus(status)}`}>
-                            {status === "live" ? "Live" : "Draft"}
-                          </span>
-                        </td>
-                        <td className="text-[12px]">{formatShortDate(project.updatedAt)}</td>
-                        <td className="font-mono text-[11px]">{domain?.domain ?? "—"}</td>
-                        <td className="tabular-nums">
-                          {views !== null && views > 0 ? views.toLocaleString() : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <>
+                <div className="proj-table-head">
+                  <span>Project</span>
+                  <span>Status</span>
+                  <span>Updated</span>
+                  <span>Domain</span>
+                  <span>Views</span>
+                </div>
+                {recentProjects.map((project) => {
+                  const status = getProjectStatus(project, data.publishedSites);
+                  const domain = getProjectDomain(
+                    project.id,
+                    data.publishedSites,
+                    data.connectedDomains,
+                  );
+                  const views = getProjectTraffic(project.id, data.publishedSites);
+                  return (
+                    <div
+                      key={project.id}
+                      className="proj-table-row"
+                      onClick={() => data.router.push(`/editor/${project.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") data.router.push(`/editor/${project.id}`);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`proj-icon grad-${getProjectGradientIndex(project.id)}`}>
+                          {projectInitials(project.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="proj-cell-name">{project.name}</div>
+                          <div className="proj-cell-meta">{getTemplateName(project)}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <span className={status === "live" ? "chip chip-live" : "chip chip-draft"}>
+                          {status === "live" ? "Live" : "Draft"}
+                        </span>
+                      </div>
+                      <div className="proj-cell-sec">{formatShortDate(project.updatedAt)}</div>
+                      <div className="proj-cell-sec">{domain?.domain ?? "—"}</div>
+                      <div className="proj-cell-sec">
+                        {views !== null && views > 0 ? views.toLocaleString() : "—"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             )}
           </div>
 
-          <div className="dash-card overflow-hidden">
-            <div className="dash-card-header">
-              <span className="dash-card-title">Recent AI activity</span>
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-head-title">Recent AI generations</span>
               <button
                 type="button"
+                className="panel-link"
                 onClick={() => onNavigate("generate-website")}
-                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
               >
-                View all →
+                View all <ArrowRight size={10} />
               </button>
             </div>
-            <ActivityFeed items={activity} />
+            {generations.length === 0 ? (
+              <div className="gen-empty">
+                <Sparkles size={20} className="gen-empty-icon" />
+                <div className="gen-empty-title">No generations yet</div>
+                <div className="gen-empty-sub">
+                  Generate a website, image, or video to see history here.
+                </div>
+              </div>
+            ) : (
+              generations.map((item) => (
+                <div key={item.id} className="gen-row">
+                  <div className="min-w-0 flex-1">
+                    <div className="gen-row-title">{item.title}</div>
+                    <div className="gen-row-meta">{item.meta}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <aside className="space-y-3">
-          <div className="dash-card">
-            <div className="dash-card-header">
-              <span className="dash-card-title">Credits</span>
+        <div>
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-head-title">Credits</span>
             </div>
-            <div className="dash-card-body">
-              <p className="text-[26px] font-semibold tracking-[-0.04em] tabular-nums text-white">
-                {data.creditsRemaining.toLocaleString()}
-              </p>
-              <p className="text-[11px] text-[var(--dash-muted)]">
-                of {data.monthlyCredits.toLocaleString()} remaining
-              </p>
-              <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--dash-border)]">
+            <div className="credits-panel-body">
+              <div className="credits-num">{data.creditsRemaining.toLocaleString()}</div>
+              <div className="credits-of">of {data.monthlyCredits.toLocaleString()} remaining</div>
+              <div className="track">
                 <div
-                  className="h-full rounded-full bg-white transition-all duration-500"
-                  style={{
-                    width: `${data.monthlyCredits ? (data.creditsRemaining / data.monthlyCredits) * 100 : 0}%`,
-                  }}
+                  className="track-fill"
+                  data-pct={Math.min(100, Math.max(0, Math.round(creditsUsedPercent)))}
                 />
+              </div>
+              <div className="track-legend">
+                <span>{data.creditsUsed} used</span>
+                <span>{data.creditsRemaining} free</span>
               </div>
               <button
                 type="button"
+                className="btn btn-full credits-upgrade-btn"
                 onClick={() => onNavigate("billing")}
-                className="dash-btn dash-btn-primary mt-3 w-full"
               >
                 Upgrade for more credits
               </button>
-            </div>
-          </div>
-
-          <div className="dash-card">
-            <div className="dash-card-header">
-              <span className="dash-card-title">Current plan</span>
-            </div>
-            <div className="dash-card-body">
-              <p className="text-[14px] font-semibold text-white">
-                {data.billingSummary?.plan.name ?? "Free Trial"}
-              </p>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--dash-muted)]">
-                {data.monthlyCredits} credits · {data.billingSummary?.plan.siteLimit ?? 1} site
-                {(data.billingSummary?.plan.siteLimit ?? 1) === 1 ? "" : "s"} · Community support
-              </p>
+              <div className="plan-label">Current plan</div>
+              <div className="plan-name">{data.billingSummary?.plan.name ?? "Free Trial"}</div>
+              <div className="plan-detail">
+                {data.monthlyCredits} credits · {siteLimit} published site
+                {siteLimit === 1 ? "" : "s"} · {hasCustomDomains ? "Custom domains" : "No custom domains"} ·
+                Community support
+              </div>
               <button
                 type="button"
+                className="btn btn-primary btn-full"
                 onClick={() => void data.handleCheckout("basic_plus")}
-                className="dash-btn dash-btn-primary mt-3 w-full"
               >
+                <ArrowUpCircle size={13} />
                 Upgrade plan
               </button>
             </div>
           </div>
 
-          <div className="dash-card">
-            <div className="dash-card-header">
-              <span className="dash-card-title">Domains</span>
-              <button
-                type="button"
-                onClick={() => onNavigate("domains")}
-                className="text-[11px] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
-              >
-                Manage →
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-head-title">Domains</span>
+              <button type="button" className="panel-link" onClick={() => onNavigate("domains")}>
+                Manage <ArrowRight size={10} />
               </button>
             </div>
             {data.connectedDomains.length === 0 ? (
-              <div className="px-4 py-6 text-center">
-                <Globe size={20} className="mx-auto mb-2 text-[var(--dash-muted)]" />
-                <p className="text-[12px] text-[var(--dash-text-secondary)]">No domains connected</p>
-                <button
-                  type="button"
-                  onClick={() => onNavigate("domains")}
-                  className="dash-btn mt-2.5 text-[11px]"
-                >
+              <div className="domain-empty">
+                <Globe size={18} className="domain-empty-icon" />
+                <div className="domain-empty-text">
+                  No domains connected.
+                  <br />
+                  Add a custom domain to go live on your own URL.
+                </div>
+                <button type="button" className="btn btn-sm btn-full" onClick={() => onNavigate("domains")}>
                   <Plus size={12} />
                   Connect domain
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-[var(--dash-border)]">
-                {data.connectedDomains.slice(0, 3).map((d) => (
-                  <div key={d.id} className="flex items-center justify-between px-3.5 py-2.5">
-                    <span className="truncate font-mono text-[12px] text-[var(--dash-text-secondary)]">
-                      {d.domain}
-                    </span>
-                    <span className={`dash-chip ${chipClassForStatus(d.status)}`}>{d.status}</span>
+              data.connectedDomains.slice(0, 4).map((domain) => (
+                <div key={domain.id} className="gen-row">
+                  <div className="min-w-0 flex-1">
+                    <div className="gen-row-title">{domain.domain}</div>
+                    <div className="gen-row-meta">{domain.status}</div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
           </div>
-
-          {data.totalVisitors > 0 ? (
-            <div className="dash-card">
-              <div className="dash-card-header">
-                <span className="dash-card-title">Visitors</span>
-                <Eye size={14} className="text-[var(--dash-muted)]" />
-              </div>
-              <div className="dash-card-body">
-                <p className="text-[22px] font-semibold tabular-nums">
-                  {data.totalVisitors.toLocaleString()}
-                </p>
-                <p className="text-[11px] text-[var(--dash-muted)]">
-                  {data.totalViews.toLocaleString()} page views
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </aside>
+        </div>
       </div>
     </div>
   );

@@ -103,6 +103,31 @@ export const buildCreditUsageSparkline = (
   return buckets;
 };
 
+const PROJECT_GRADIENTS = [
+  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+  "linear-gradient(135deg, #312e81 0%, #4c1d95 100%)",
+  "linear-gradient(135deg, #06b6d4, #0891b2)",
+  "linear-gradient(135deg, #f59e0b, #d97706)",
+  "linear-gradient(135deg, #164e63 0%, #0e7490 100%)",
+  "linear-gradient(135deg, #78350f 0%, #b45309 100%)",
+];
+
+const PROJECT_CARD_THUMB_COUNT = 3;
+
+const hashProjectId = (projectId: string, modulo: number) => {
+  let hash = 0;
+  for (let i = 0; i < projectId.length; i += 1) {
+    hash = (hash + projectId.charCodeAt(i)) % modulo;
+  }
+  return hash;
+};
+
+export const getProjectGradientIndex = (projectId: string) =>
+  hashProjectId(projectId, PROJECT_GRADIENTS.length);
+
+export const getProjectCardThumbIndex = (projectId: string) =>
+  hashProjectId(projectId, PROJECT_CARD_THUMB_COUNT);
+
 export const chipClassForStatus = (status: ProjectStatus | string) => {
   const s = status.toLowerCase();
   if (s === "live" || s === "published" || s === "completed" || s === "active") return "dash-chip-live";

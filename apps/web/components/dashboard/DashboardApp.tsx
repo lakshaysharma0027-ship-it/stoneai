@@ -27,7 +27,7 @@ export function DashboardApp() {
   const renderPage = () => {
     switch (activeView) {
       case "projects":
-        return <ProjectsPage data={data} search={search} />;
+        return <ProjectsPage data={data} search={search} onSearchChange={setSearch} />;
       case "generate-website":
         return <WebsiteGenerationPage data={data} />;
       case "generate-image":

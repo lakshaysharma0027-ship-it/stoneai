@@ -1,22 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Upload } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Search, Upload } from "lucide-react";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { ProjectCard } from "../ui/ProjectCard";
+import "../overview-projects.css";
+import {
+  formatShortDate,
+  getProjectCardThumbIndex,
+  getProjectDomain,
+  getProjectStatus,
+  getTemplateName,
+  projectInitials,
+} from "../utils";
 
 export function ProjectsPage({
   data,
   search,
+  onSearchChange,
 }: {
   data: DashboardDataContext;
   search: string;
+  onSearchChange: (value: string) => void;
 }) {
   const [filter, setFilter] = useState<"All" | "Live" | "Draft">("All");
-  const [localSearch, setLocalSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const query = (search || localSearch).trim().toLowerCase();
+  const query = search.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return data.projects.filter((project) => {
@@ -30,87 +39,171 @@ export function ProjectsPage({
   }, [data.projects, data.publishedSites, filter, query]);
 
   return (
-    <div className="dashboard-content-inner">
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="spec-page">
+      <div className="proj-page-header">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-[-0.03em] text-white">Projects</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--dash-muted)]">
+          <div className="proj-page-title">Projects</div>
+          <div className="proj-page-sub">
             {data.projects.length} total · {data.liveSiteCount} published · {data.draftProjectCount}{" "}
             drafts
-          </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="proj-page-actions">
           {data.localProjectCount > 0 ? (
             <button
               type="button"
+              className="btn"
               onClick={() => void data.handleImportLocalProjects()}
               disabled={data.importing}
-              className="dash-btn"
             >
               <Upload size={13} />
-              Import
+              {data.importing ? "Importing…" : "Import"}
             </button>
           ) : null}
           <button
             type="button"
+            className="btn btn-primary"
             onClick={() => data.router.push("/templates")}
-            className="dash-btn dash-btn-primary"
           >
             <Plus size={13} />
             New project
           </button>
         </div>
-      </header>
+      </div>
 
-      <div className="dash-card mb-3 flex flex-wrap items-center gap-2 px-3 py-2">
-        <input
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          placeholder="Search projects…"
-          className="dash-input h-8 max-w-[220px] text-[12px]"
-        />
-        <div className="ml-auto flex gap-1">
-          {(["All", "Live", "Draft"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setFilter(tab)}
-              className={`rounded-[6px] px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                filter === tab
-                  ? "bg-[var(--dash-surface3)] text-white"
-                  : "text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className="filter-bar">
+        <div className="filter-search">
+          <Search size={13} className="filter-search-icon" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search projects…"
+          />
         </div>
+        <div className="filter-divider" />
+        {(["All", "Live", "Draft"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={`filter-tab ${filter === tab ? "active" : ""}`}
+            onClick={() => setFilter(tab)}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="dash-card px-6 py-14 text-center">
-          <p className="text-[13px] text-[var(--dash-text-secondary)]">No projects found</p>
+        <div className="proj-empty">
+          <p>No projects found</p>
           <button
             type="button"
+            className="btn btn-primary"
             onClick={() => data.router.push("/templates")}
-            className="dash-btn dash-btn-primary mt-3"
           >
+            <Plus size={13} />
             Create your first project
           </button>
         </div>
       ) : (
-        <div className="dash-projects-grid">
-          {filtered.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              data={data}
-              menuOpen={openMenuId === project.id}
-              onMenuToggle={() =>
-                setOpenMenuId(openMenuId === project.id ? null : project.id)
-              }
-            />
-          ))}
+        <div className="proj-card-grid">
+          {filtered.map((project) => {
+            const status = getProjectStatus(project, data.publishedSites);
+            const domain = getProjectDomain(
+              project.id,
+              data.publishedSites,
+              data.connectedDomains,
+            );
+            const site = data.publishedSites.find((s) => s.project_id === project.id);
+            const templateName = getTemplateName(project);
+
+            return (
+              <article key={project.id} className="proj-card">
+                <div
+                  className={`proj-card-thumb thumb-${getProjectCardThumbIndex(project.id)}`}
+                  onClick={() => data.router.push(`/editor/${project.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") data.router.push(`/editor/${project.id}`);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {projectInitials(project.name)}
+                  <div className="proj-card-status">
+                    <span className={status === "live" ? "chip chip-live" : "chip chip-draft"}>
+                      {status === "live" ? "Live" : "Draft"}
+                    </span>
+                  </div>
+                </div>
+                <div className="proj-card-body">
+                  <div className="proj-card-name">{project.name}</div>
+                  <div className="proj-card-meta">
+                    {templateName} · {domain?.domain ?? "No domain"} · Edited{" "}
+                    {formatShortDate(project.updatedAt)}
+                  </div>
+                  <div className="proj-card-footer">
+                    <button
+                      type="button"
+                      className="proj-card-open"
+                      onClick={() => data.router.push(`/editor/${project.id}`)}
+                    >
+                      <Pencil size={12} />
+                      Open editor
+                    </button>
+                    <div className="proj-card-more-wrap">
+                      <button
+                        type="button"
+                        className="proj-card-more"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === project.id ? null : project.id);
+                        }}
+                        aria-label="More actions"
+                      >
+                        <MoreHorizontal size={13} />
+                      </button>
+                      {openMenuId === project.id ? (
+                        <div className="proj-card-menu">
+                          {site?.status === "published" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                window.open(site.public_url, "_blank", "noopener,noreferrer");
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              View live
+                            </button>
+                          ) : null}
+                          {site?.status === "published" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void data.handleUnpublishSite(site.id);
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              Unpublish
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="danger"
+                            onClick={() => {
+                              void data.handleDeleteProject(project.id);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            Delete project
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
