@@ -1,58 +1,103 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   BarChart3,
   Camera,
   CreditCard,
   Folder,
   Globe,
-  Home,
+  LayoutDashboard,
   LayoutGrid,
+  Link2,
+  MoreVertical,
+  PanelLeftClose,
+  PanelRightClose,
   Play,
   Settings,
-  Sparkles,
-  Zap,
 } from "lucide-react";
 import type { DashboardView } from "./types";
 import { normalizeView } from "./types";
 import type { DashboardDataContext } from "./hooks/useDashboardData";
+import "./dashboard-sidebar.css";
 
 type NavItem = {
   id: DashboardView;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   count?: number;
 };
 
-const groups: Array<{ label: string; items: NavItem[] }> = [
+const groups: Array<{ label: string; items: NavItem[]; dividerBefore?: boolean }> = [
   {
     label: "Workspace",
     items: [
-      { id: "overview", label: "Overview", icon: <Home size={15} strokeWidth={1.75} /> },
-      { id: "projects", label: "Projects", icon: <Folder size={15} strokeWidth={1.75} /> },
-      { id: "templates", label: "Templates", icon: <LayoutGrid size={15} strokeWidth={1.75} /> },
+      {
+        id: "overview",
+        label: "Overview",
+        icon: <LayoutDashboard className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "projects",
+        label: "Projects",
+        icon: <Folder className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "templates",
+        label: "Templates",
+        icon: <LayoutGrid className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
     ],
   },
   {
-    label: "AI",
+    label: "AI Tools",
     items: [
-      { id: "generate-website", label: "Website Generation", icon: <Sparkles size={15} strokeWidth={1.75} /> },
-      { id: "generate-image", label: "Image Generation", icon: <Camera size={15} strokeWidth={1.75} /> },
-      { id: "generate-video", label: "Video Generation", icon: <Play size={15} strokeWidth={1.75} /> },
+      {
+        id: "generate-website",
+        label: "Website Generation",
+        icon: <Globe className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "generate-image",
+        label: "Image Generation",
+        icon: <Camera className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "generate-video",
+        label: "Video Generation",
+        icon: <Play className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
     ],
   },
   {
     label: "Publish",
     items: [
-      { id: "domains", label: "Domains", icon: <Globe size={15} strokeWidth={1.75} /> },
-      { id: "analytics", label: "Analytics", icon: <BarChart3 size={15} strokeWidth={1.75} /> },
+      {
+        id: "domains",
+        label: "Domains",
+        icon: <Link2 className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "analytics",
+        label: "Analytics",
+        icon: <BarChart3 className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
     ],
   },
   {
     label: "Account",
+    dividerBefore: true,
     items: [
-      { id: "billing", label: "Billing", icon: <CreditCard size={15} strokeWidth={1.75} /> },
-      { id: "settings", label: "Settings", icon: <Settings size={15} strokeWidth={1.75} /> },
+      {
+        id: "billing",
+        label: "Billing",
+        icon: <CreditCard className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
+      {
+        id: "settings",
+        label: "Settings",
+        icon: <Settings className="sb-icon" size={16} strokeWidth={1.75} />,
+      },
     ],
   },
 ];
@@ -64,34 +109,72 @@ export function DashboardSidebar({
   view,
   onNavigate,
   data,
+  collapsed,
+  onToggleCollapsed,
+  mobileOpen,
+  onCloseMobile,
 }: {
   view: DashboardView;
   onNavigate: (view: DashboardView) => void;
   data: DashboardDataContext;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
 }) {
   const workspaceLabel = data.userName.includes("@")
     ? `${data.userName.split("@")[0]}'s workspace`
     : `${data.userName}'s workspace`;
 
+  const displayName = data.userEmail
+    ? data.userEmail.split("@")[0]
+    : data.userName;
+
+  const creditsRemainingPct = data.monthlyCredits
+    ? Math.min(
+        100,
+        Math.round((data.creditsRemaining / data.monthlyCredits) * 100 / 5) * 5,
+      )
+    : 100;
+
+  const handleNav = (itemId: DashboardView) => {
+    onNavigate(itemId);
+    onCloseMobile();
+  };
+
   return (
-    <aside className="dashboard-sidebar">
-      <div className="flex h-[var(--dash-topbar-h)] shrink-0 items-center gap-2.5 border-b border-[var(--dash-border)] px-4">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-white">
-          <LayoutGrid size={14} className="text-black" strokeWidth={2} />
+    <aside
+      className={`sb-sidebar ${collapsed ? "sb-collapsed" : ""} ${mobileOpen ? "sb-mobile-open" : ""}`}
+      aria-label="Dashboard navigation"
+    >
+      <div className="sb-logo-row">
+        <div className="sb-logo-inner">
+          <div className="sb-logo-icon">S</div>
+          <span className="sb-logo-text">StoneAI</span>
         </div>
-        <span className="text-[13px] font-semibold tracking-[-0.02em] text-white">StoneAI</span>
+        <button
+          type="button"
+          className="sb-toggle-btn"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? <PanelRightClose size={14} /> : <PanelLeftClose size={14} />}
+        </button>
       </div>
 
-      <div className="border-b border-[var(--dash-border)] px-4 py-2.5">
-        <p className="truncate text-[12px] font-medium text-[var(--dash-text-secondary)]">
-          {workspaceLabel}
-        </p>
+      <div className="sb-ws-pill">
+        <div className="sb-ws-dot" aria-hidden />
+        <span className="sb-ws-label">{workspaceLabel}</span>
       </div>
 
-      <nav className="flex-1 py-1">
+      <div className="sb-nav-scroll">
         {groups.map((group) => (
-          <div key={group.label} className="dash-nav-group">
-            <p className="dash-nav-label">{group.label}</p>
+          <div key={group.label}>
+            {group.dividerBefore ? <div className="sb-nav-divider" /> : null}
+            <div className="sb-nav-section">
+              <div className="sb-nav-section-label">{group.label}</div>
+            </div>
             {group.items.map((item) => {
               const count =
                 item.id === "projects"
@@ -101,55 +184,45 @@ export function DashboardSidebar({
                     : undefined;
 
               return (
-                <div key={item.id} className="dash-nav-item-wrap">
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(item.id)}
-                    className={`dash-nav-item ${isActive(view, item.id) ? "active" : ""}`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                    {count !== undefined ? (
-                      <span className="dash-nav-count">{count}</span>
-                    ) : null}
-                  </button>
-                </div>
+                <button
+                  key={item.id}
+                  type="button"
+                  data-tip={item.label}
+                  className={`sb-nav-item ${isActive(view, item.id) ? "active" : ""}`}
+                  onClick={() => handleNav(item.id)}
+                  aria-current={isActive(view, item.id) ? "page" : undefined}
+                >
+                  {item.icon}
+                  <span className="sb-label">{item.label}</span>
+                  {count !== undefined ? <span className="sb-badge">{count}</span> : null}
+                </button>
               );
             })}
           </div>
         ))}
-      </nav>
+      </div>
 
-      <div className="shrink-0 border-t border-[var(--dash-border)] p-3">
-        <div className="mb-2.5 flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[11px] font-semibold text-[var(--dash-text-secondary)]">
-            {data.userInitial}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-medium text-[var(--dash-text)]">
-              {data.userEmail || data.userName}
-            </p>
-            <p className="truncate text-[11px] text-[var(--dash-muted)]">
-              {data.billingSummary?.plan.name ?? "Free Trial"}
-            </p>
-          </div>
+      <div className="sb-credits-bar">
+        <div className="sb-credits-top">
+          <span className="sb-credits-label">Credits</span>
+          <span className="sb-credits-count">{data.creditsRemaining.toLocaleString()}</span>
         </div>
-        <div className="mb-2.5 flex items-center justify-between rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] px-2.5 py-1.5">
-          <span className="flex items-center gap-1 text-[11px] text-[var(--dash-muted)]">
-            <Zap size={11} />
-            Credits
-          </span>
-          <span className="text-[12px] font-medium tabular-nums text-[var(--dash-text)]">
-            {data.creditsRemaining.toLocaleString()}
-          </span>
+        <div className="sb-credits-track">
+          <div className="sb-credits-fill" data-pct={creditsRemainingPct} />
         </div>
-        <button
-          type="button"
-          onClick={() => onNavigate("billing")}
-          className="dash-btn dash-btn-primary w-full text-[12px]"
-        >
-          Upgrade
-        </button>
+      </div>
+
+      <button type="button" className="sb-upgrade-btn" onClick={() => handleNav("billing")}>
+        Upgrade plan
+      </button>
+
+      <div className="sb-user-row">
+        <div className="sb-avatar">{data.userInitial}</div>
+        <div className="sb-user-info">
+          <div className="sb-user-name">{displayName}</div>
+          <div className="sb-user-plan">{data.billingSummary?.plan.name ?? "Free Trial"}</div>
+        </div>
+        <MoreVertical size={14} className="sb-user-more" aria-hidden />
       </div>
     </aside>
   );

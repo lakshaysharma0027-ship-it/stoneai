@@ -22,7 +22,7 @@
   --dash-red-dim: rgba(239, 68, 68, 0.12);
   --dash-radius: 10px;
   --dash-radius-sm: 6px;
-  --dash-sidebar-w: 232px;
+  --dash-sidebar-w: 220px;
   --dash-topbar-h: 52px;
   --dash-content-max: 1280px;
 
@@ -43,16 +43,7 @@
   grid-template-rows: var(--dash-topbar-h) 1fr;
   height: 100vh;
   overflow: hidden;
-}
-
-.dashboard-sidebar {
-  grid-row: 1 / 3;
-  background: var(--dash-surface);
-  border-right: 1px solid var(--dash-border);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  transition: grid-template-columns 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-topbar {
@@ -78,72 +69,6 @@
   max-width: var(--dash-content-max);
   margin: 0 auto;
   width: 100%;
-}
-
-/* Nav */
-.dash-nav-group {
-  padding: 12px 10px 4px;
-}
-
-.dash-nav-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--dash-muted);
-  padding: 0 10px 6px;
-}
-
-.dash-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 7px 10px;
-  margin-bottom: 1px;
-  border-radius: var(--dash-radius-sm);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--dash-text-secondary);
-  font-size: 13px;
-  font-weight: 450;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  text-align: left;
-}
-
-.dash-nav-item:hover {
-  background: var(--dash-surface2);
-  color: var(--dash-text);
-}
-
-.dash-nav-item.active {
-  background: var(--dash-surface2);
-  border-color: var(--dash-border);
-  color: var(--dash-text);
-  font-weight: 500;
-}
-
-.dash-nav-item.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 2px;
-  height: 18px;
-  background: var(--dash-text);
-  border-radius: 1px;
-}
-
-.dash-nav-item-wrap {
-  position: relative;
-  padding-left: 4px;
-}
-
-.dash-nav-count {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--dash-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Cards & panels */
@@ -423,12 +348,12 @@
 
 /* Scrollbar */
 .dashboard-content::-webkit-scrollbar,
-.dashboard-sidebar::-webkit-scrollbar {
+.sb-sidebar::-webkit-scrollbar {
   width: 5px;
 }
 
 .dashboard-content::-webkit-scrollbar-thumb,
-.dashboard-sidebar::-webkit-scrollbar-thumb {
+.sb-sidebar::-webkit-scrollbar-thumb {
   background: var(--dash-border-hover);
   border-radius: 4px;
 }
@@ -440,21 +365,6 @@
 
   .dash-split-main {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .dashboard-root {
-    --dash-sidebar-w: 0px;
-  }
-
-  .dashboard-sidebar {
-    display: none;
-  }
-
-  .dashboard-topbar,
-  .dashboard-content {
-    grid-column: 1 / -1;
   }
 }
 

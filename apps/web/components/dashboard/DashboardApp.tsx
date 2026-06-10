@@ -5,6 +5,7 @@ import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { useDashboardNavigation } from "./hooks/useDashboardNavigation";
+import { useSidebarState } from "./hooks/useSidebarState";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { BillingPage } from "./pages/BillingPage";
 import { DomainsPage } from "./pages/DomainsPage";
@@ -21,6 +22,7 @@ import "./dashboard.css";
 export function DashboardApp() {
   const data = useDashboardData();
   const { view, navigate } = useDashboardNavigation();
+  const sidebar = useSidebarState();
   const [search, setSearch] = useState("");
   const activeView = normalizeView(view);
 
@@ -48,16 +50,44 @@ export function DashboardApp() {
     }
   };
 
+  const appClassName = [
+    "dashboard-app",
+    "transition-opacity duration-300",
+    data.mounted ? "opacity-100" : "opacity-0",
+    sidebar.collapsedPreference && !sidebar.isMobile ? "sb-collapsed" : "",
+    sidebar.mobileOpen ? "sb-mobile-open" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <main className="dashboard-root">
-      <div className={`dashboard-app transition-opacity duration-300 ${data.mounted ? "opacity-100" : "opacity-0"}`}>
-        <DashboardSidebar view={activeView} onNavigate={navigate} data={data} />
+      {sidebar.mobileOpen ? (
+        <button
+          type="button"
+          className="sb-backdrop"
+          onClick={sidebar.closeMobile}
+          aria-label="Close navigation menu"
+        />
+      ) : null}
+      <div className={appClassName}>
+        <DashboardSidebar
+          view={activeView}
+          onNavigate={navigate}
+          data={data}
+          collapsed={sidebar.collapsed}
+          onToggleCollapsed={sidebar.toggleCollapsed}
+          mobileOpen={sidebar.mobileOpen}
+          onCloseMobile={sidebar.closeMobile}
+        />
         <DashboardTopbar
           view={activeView}
           search={search}
           onSearchChange={setSearch}
           onNavigate={navigate}
           data={data}
+          onOpenMobile={sidebar.openMobile}
+          showMobileMenu={sidebar.isMobile}
         />
         <div className="dashboard-content">
           {!data.mounted ? <DashboardSkeleton /> : renderPage()}

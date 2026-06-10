@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, HelpCircle, Search, Sparkles, Zap } from "lucide-react";
+import { Bell, HelpCircle, Menu, Search, Sparkles, Zap } from "lucide-react";
 import type { DashboardView } from "./types";
 import { VIEW_TITLES, normalizeView } from "./types";
 import type { DashboardDataContext } from "./hooks/useDashboardData";
@@ -11,17 +11,31 @@ export function DashboardTopbar({
   onSearchChange,
   onNavigate,
   data,
+  onOpenMobile,
+  showMobileMenu,
 }: {
   view: DashboardView;
   search: string;
   onSearchChange: (value: string) => void;
   onNavigate: (view: DashboardView) => void;
   data: DashboardDataContext;
+  onOpenMobile: () => void;
+  showMobileMenu: boolean;
 }) {
   const title = VIEW_TITLES[normalizeView(view)] ?? "Dashboard";
 
   return (
     <header className="dashboard-topbar">
+      {showMobileMenu ? (
+        <button
+          type="button"
+          onClick={onOpenMobile}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--dash-radius-sm)] border border-[var(--dash-border)] bg-[var(--dash-surface2)] text-[var(--dash-muted)] hover:text-[var(--dash-text-secondary)]"
+          aria-label="Open navigation menu"
+        >
+          <Menu size={16} />
+        </button>
+      ) : null}
       <p className="hidden min-w-[120px] text-[13px] font-medium text-[var(--dash-text)] md:block">
         {title}
       </p>
