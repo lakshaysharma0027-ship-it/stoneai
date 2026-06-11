@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { StoneLogo } from "@/components/brand/StoneLogo";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 const promptExamples = [
   "A SaaS landing page for a project management tool...",
@@ -280,14 +281,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="footer">
-        <div className="container footer-grid">
-          <div><StoneLogo size={30} /><p>AI website generation, image creation, video workflows, publishing, domains, and templates for premium teams.</p></div>
-          {["Product", "Company", "Resources", "Legal"].map((group) => (
-            <div key={group}><h4>{group}</h4><a>Documentation</a><a>Pricing</a><a>Templates</a><a>Contact</a></div>
-          ))}
-        </div>
-      </footer>
+      <SiteFooter />
 
       <style>{`
         .stone-home{--bg:#050506;--surface:#0b0b0d;--card:#101014;--card2:#16161a;--line:rgba(255,255,255,.08);--muted:#85858f;--soft:#b8b8c0;--glow:rgba(125,160,255,.15);min-height:100vh;background:var(--bg);color:#f7f7f8;font-family:Inter,ui-sans-serif,system-ui,sans-serif;overflow:hidden}
