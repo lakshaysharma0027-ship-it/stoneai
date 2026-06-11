@@ -63,14 +63,17 @@
   height: 28px;
   border-radius: 7px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #7c6af0 0%, #a78bfa 100%);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.5px;
+}
+
+.sb-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
 }
 
 .sb-logo-text {

@@ -63,23 +63,23 @@ export function AuthShell({
       <section style={{ maxWidth: 420, width: "100%" }}>
         <Link
           href="/"
-          aria-label="StoneAI dashboard"
+          aria-label="StoneAI home"
           style={{
-            alignItems: "center",
-            background: "#fafafa",
-            borderRadius: 10,
-            color: "#050505",
-            display: "flex",
-            fontSize: 16,
-            fontWeight: 800,
+            display: "block",
             height: 40,
-            justifyContent: "center",
             margin: "0 auto 22px",
             textDecoration: "none",
             width: 40,
           }}
         >
-          S
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/stoneai-logo.jpg"
+            alt="StoneAI"
+            width={40}
+            height={40}
+            style={{ borderRadius: 10, display: "block", height: 40, objectFit: "cover", width: 40 }}
+          />
         </Link>
         <div
           style={{

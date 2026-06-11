@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Image from "next/image";
 import {
   BarChart3,
   Camera,
@@ -19,6 +20,7 @@ import {
 import type { DashboardView } from "./types";
 import { normalizeView } from "./types";
 import type { DashboardDataContext } from "./hooks/useDashboardData";
+import { STONEAI_LOGO_ALT, STONEAI_LOGO_SRC } from "@/lib/brand";
 import "./dashboard-sidebar.css";
 
 type NavItem = {
@@ -149,7 +151,15 @@ export function DashboardSidebar({
     >
       <div className="sb-logo-row">
         <div className="sb-logo-inner">
-          <div className="sb-logo-icon">S</div>
+          <div className="sb-logo-icon">
+            <Image
+              src={STONEAI_LOGO_SRC}
+              alt={STONEAI_LOGO_ALT}
+              width={28}
+              height={28}
+              className="sb-logo-image"
+            />
+          </div>
           <span className="sb-logo-text">StoneAI</span>
         </div>
         <button

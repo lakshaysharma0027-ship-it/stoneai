@@ -146,22 +146,14 @@ export function ColorSwatch({
 
 export function LogoMark({ size = 18 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
-      <polygon
-        points="12,2 22,7 22,17 12,22 2,17 2,7"
-        stroke="white"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <polygon
-        points="12,7 17,9.5 17,14.5 12,17 7,14.5 7,9.5"
-        fill="white"
-        fillOpacity="0.15"
-        stroke="white"
-        strokeWidth="0.8"
-      />
-      <circle cx="12" cy="12" r="2" fill="white" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/stoneai-logo.jpg"
+      alt="StoneAI"
+      width={size}
+      height={size}
+      style={{ borderRadius: Math.max(4, size * 0.25), height: size, objectFit: "cover", width: size }}
+    />
   );
 }
 

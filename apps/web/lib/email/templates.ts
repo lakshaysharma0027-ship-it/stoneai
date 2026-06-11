@@ -16,7 +16,7 @@ const shell = ({
 }) => `
   <div style="margin:0;background:#050505;color:#fafafa;font-family:Inter,Arial,sans-serif;padding:40px 0;">
     <div style="margin:0 auto;max-width:520px;padding:0 24px;">
-      <div style="height:32px;width:32px;border-radius:8px;background:#fafafa;color:#050505;display:inline-flex;align-items:center;justify-content:center;font-weight:800;">S</div>
+      <img src="https://stoneai.in/brand/stoneai-logo.jpg" alt="StoneAI" width="32" height="32" style="display:block;border-radius:8px;object-fit:cover;" />
       <div style="margin-top:28px;border:1px solid #1a1a1a;border-radius:14px;background:#0a0a0a;padding:32px;">
         <p style="margin:0 0 12px;color:#71717a;font-size:11px;letter-spacing:.12em;text-transform:uppercase;">StoneAI</p>
         <h1 style="margin:0 0 16px;color:#fafafa;font-size:28px;line-height:1.1;letter-spacing:-.04em;">${title}</h1>
