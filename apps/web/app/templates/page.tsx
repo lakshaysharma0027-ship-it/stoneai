@@ -9,6 +9,7 @@ import {
   type TemplateMetadata,
 } from "@/lib/templates";
 import { templates, type Template } from "./lib/templates";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 const filters = [
   "All",
@@ -553,6 +554,8 @@ export default function TemplatesPage() {
           isCreating={creatingTemplateId === previewTemplate.id}
         />
       ) : null}
+
+      <SiteFooter />
     </main>
   );
 }

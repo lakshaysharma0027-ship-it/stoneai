@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { StoneLogo } from "@/components/brand/StoneLogo";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 type Plan = {
   id: "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
@@ -168,8 +169,10 @@ export default function PricingPage() {
           <h2>Need 50+ sites or custom credit volume?</h2>
           <span>Dedicated support, SSO, SLA guarantees, team workflows, agency controls, and custom generation limits.</span>
         </div>
-        <Link href="mailto:sales@stone.ai">Contact sales</Link>
+        <Link href="mailto:contact@stoneai.in">Contact sales</Link>
       </section>
+
+      <SiteFooter />
 
       <style>{`
         .pricing-page{--bg:#050506;--surface:#0b0b0d;--card:#111116;--line:rgba(255,255,255,.09);--muted:#85858f;--soft:#c5c5cc;min-height:100vh;background:#050506;color:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:64px 64px}
