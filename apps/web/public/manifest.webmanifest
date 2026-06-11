@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "StoneAI",
   "short_name": "StoneAI",
-  "description": "AI website builder for templates, publishing, credits, and custom domains.",
+  "description": "From idea to live website in minutes. AI website generation, editing, publishing, domains, and templates.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#050506",
   "theme_color": "#050506",

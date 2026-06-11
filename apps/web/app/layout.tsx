@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { StructuredData } from "@/components/marketing/StructuredData";
+import { STONEAI_DEFAULT_DESCRIPTION, STONEAI_SITE_URL, STONEAI_X_URL } from "@/lib/site";
 import "./globals.css";
 
-const siteUrl = `https://${process.env.NEXT_PUBLIC_STONEAI_ROOT_DOMAIN ?? "stoneai.in"}`;
+const siteUrl = STONEAI_SITE_URL;
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,9 +17,19 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "StoneAI",
-  description: "AI website builder for templates, publishing, credits, and custom domains.",
+  title: {
+    default: "StoneAI",
+    template: "%s · StoneAI",
+  },
+  description: STONEAI_DEFAULT_DESCRIPTION,
+  applicationName: "StoneAI",
+  authors: [{ name: "StoneAI", url: siteUrl }],
+  creator: "StoneAI",
+  publisher: "StoneAI",
   manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [
       { url: "/brand/favicon-16.png", sizes: "16x16", type: "image/png" },
@@ -26,15 +38,28 @@ export const metadata: Metadata = {
     apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "StoneAI",
     title: "StoneAI",
-    description: "AI website builder for templates, publishing, credits, and custom domains.",
+    description: STONEAI_DEFAULT_DESCRIPTION,
     images: [{ url: "/brand/og-image.png", width: 1200, height: 630, alt: "StoneAI" }],
   },
   twitter: {
     card: "summary_large_image",
+    site: "@StoneAIusa",
+    creator: "@StoneAIusa",
     title: "StoneAI",
-    description: "AI website builder for templates, publishing, credits, and custom domains.",
+    description: STONEAI_DEFAULT_DESCRIPTION,
     images: ["/brand/og-image.png"],
+  },
+  other: {
+    "twitter:url": STONEAI_X_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -46,6 +71,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <StructuredData />
         {children}
       </body>
     </html>

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MarketingFooter } from "@/components/marketing/MarketingFooter";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 import TemplatePreviewModal from "@/components/templates/TemplatePreviewModal";
 import { projectStorage, type StoredProject } from "@/lib/projects";
 import {
@@ -194,8 +196,10 @@ export default function TemplatesPage() {
         fontFamily: "system-ui, Inter, sans-serif",
         letterSpacing: "-0.01em",
         minHeight: "100vh",
+        overflowX: "hidden",
       }}
     >
+      <MarketingNav />
       <style>
         {`@keyframes pulse { from { opacity: 0.4 } to { opacity: 0.8 } }`}
       </style>
@@ -204,7 +208,7 @@ export default function TemplatesPage() {
           style={{
             margin: "0 auto",
             maxWidth: 560,
-            padding: "72px 24px 48px",
+            padding: "100px 24px 48px",
             textAlign: "center",
           }}
         >
@@ -553,6 +557,7 @@ export default function TemplatesPage() {
           isCreating={creatingTemplateId === previewTemplate.id}
         />
       ) : null}
+      <MarketingFooter />
     </main>
   );
 }
