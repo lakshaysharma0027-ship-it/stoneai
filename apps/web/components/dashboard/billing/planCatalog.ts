@@ -10,9 +10,9 @@ export type PlanCatalogEntry = {
 
 export const PLAN_CATALOG: PlanCatalogEntry[] = [
   { id: "free_trial", name: "Free Trial", monthlyPrice: null, credits: 100, sites: 1 },
-  { id: "basic", name: "Basic", monthlyPrice: 20, credits: 1500, sites: 2 },
-  { id: "basic_plus", name: "Basic Plus", monthlyPrice: 32, credits: 2500, sites: 4 },
-  { id: "pro", name: "Pro", monthlyPrice: 48, credits: 6000, sites: 7 },
+  { id: "basic", name: "Basic", monthlyPrice: 15, credits: 1500, sites: 1 },
+  { id: "basic_plus", name: "Basic Plus", monthlyPrice: 25, credits: 2500, sites: 2 },
+  { id: "pro", name: "Pro", monthlyPrice: 40, credits: 6000, sites: 5 },
   { id: "premium", name: "Premium", monthlyPrice: 160, credits: 25000, sites: 30 },
 ];
 
@@ -34,9 +34,9 @@ export const PLAN_FEATURE_ROWS: Array<{
     name: "Published sites",
     values: {
       free_trial: "1",
-      basic: "2",
-      basic_plus: "4",
-      pro: "7",
+      basic: "1",
+      basic_plus: "2",
+      pro: "5",
       premium: "30",
     },
   },
@@ -51,23 +51,23 @@ export const PLAN_FEATURE_ROWS: Array<{
     },
   },
   {
-    name: "Nano Banana",
+    name: "Nano Banana Image Generation",
     values: {
       free_trial: false,
-      basic: "Basic",
-      basic_plus: "Enhanced",
-      pro: "Full",
-      premium: "Full",
+      basic: true,
+      basic_plus: true,
+      pro: true,
+      premium: true,
     },
   },
   {
-    name: "Veo access",
+    name: "Veo 3.1 Video Generation",
     values: {
       free_trial: false,
       basic: false,
-      basic_plus: "5 videos/mo",
-      pro: "20 videos/mo",
-      premium: "Unlimited",
+      basic_plus: true,
+      pro: true,
+      premium: true,
     },
   },
   {
@@ -81,11 +81,11 @@ export const PLAN_FEATURE_ROWS: Array<{
     },
   },
   {
-    name: "Publishing",
+    name: "Priority generation queue",
     values: {
-      free_trial: true,
-      basic: true,
-      basic_plus: true,
+      free_trial: false,
+      basic: false,
+      basic_plus: false,
       pro: true,
       premium: true,
     },
@@ -96,7 +96,7 @@ export const PLAN_FEATURE_ROWS: Array<{
       free_trial: false,
       basic: false,
       basic_plus: false,
-      pro: true,
+      pro: false,
       premium: true,
     },
   },

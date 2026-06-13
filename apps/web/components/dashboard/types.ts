@@ -105,9 +105,9 @@ export type GenerateFormState = {
 
 export const PLAN_CARDS = [
   { id: "free_trial" as const, name: "Free Trial", credits: 100, sites: 1 },
-  { id: "basic" as const, name: "Basic", credits: 1500, sites: 2 },
-  { id: "basic_plus" as const, name: "Basic Plus", credits: 2500, sites: 4 },
-  { id: "pro" as const, name: "Pro", credits: 6000, sites: 7 },
+  { id: "basic" as const, name: "Basic", credits: 1500, sites: 1 },
+  { id: "basic_plus" as const, name: "Basic Plus", credits: 2500, sites: 2 },
+  { id: "pro" as const, name: "Pro", credits: 6000, sites: 5 },
   { id: "premium" as const, name: "Premium", credits: 25000, sites: 30 },
 ];
 

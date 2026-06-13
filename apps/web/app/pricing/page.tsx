@@ -16,6 +16,8 @@ type Plan = {
   badge?: string;
   highlight?: boolean;
   cta: string;
+  cardFeatures: string[];
+  note?: string;
 };
 
 type Feature = {
@@ -25,31 +27,137 @@ type Feature = {
 };
 
 const plans: Plan[] = [
-  { id: "free_trial", name: "Free Trial", monthlyPrice: null, annualPrice: null, credits: 100, websites: 1, cta: "Start Free Trial" },
-  { id: "basic", name: "Basic", monthlyPrice: 20, annualPrice: 16, credits: 1500, websites: 2, cta: "Get Basic" },
-  { id: "basic_plus", name: "Basic Plus", monthlyPrice: 32, annualPrice: 26, credits: 2500, websites: 4, badge: "Most Popular", highlight: true, cta: "Get Basic Plus" },
-  { id: "pro", name: "Pro", monthlyPrice: 48, annualPrice: 38, credits: 6000, websites: 7, cta: "Get Pro" },
-  { id: "premium", name: "Premium", monthlyPrice: 160, annualPrice: 128, credits: 25000, websites: 30, badge: "Best Value", cta: "Get Premium" },
+  {
+    id: "free_trial",
+    name: "Free Trial",
+    monthlyPrice: null,
+    annualPrice: null,
+    credits: 100,
+    websites: 1,
+    cta: "Start Free Trial",
+    note: "3 days only · Credit card, debit card, or UPI autopay required",
+    cardFeatures: [
+      "AI Website Generation",
+      "AI Editing",
+      "Trial Hosting",
+      "100 Credits",
+      "1 Website",
+    ],
+  },
+  {
+    id: "basic",
+    name: "Basic",
+    monthlyPrice: 15,
+    annualPrice: 12,
+    credits: 1500,
+    websites: 1,
+    cta: "Get Basic",
+    cardFeatures: [
+      "AI Website Generation",
+      "AI Editing",
+      "Nano Banana Image Generation",
+      "Custom Domains",
+    ],
+  },
+  {
+    id: "basic_plus",
+    name: "Basic Plus",
+    monthlyPrice: 25,
+    annualPrice: 20,
+    credits: 2500,
+    websites: 2,
+    badge: "Most Popular",
+    highlight: true,
+    cta: "Get Basic Plus",
+    cardFeatures: [
+      "AI Website Generation",
+      "AI Editing",
+      "Nano Banana Image Generation",
+      "Veo 3.1 Video Generation",
+      "Custom Domains",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    monthlyPrice: 40,
+    annualPrice: 32,
+    credits: 6000,
+    websites: 5,
+    cta: "Get Pro",
+    cardFeatures: [
+      "AI Website Generation",
+      "AI Editing",
+      "Nano Banana Image Generation",
+      "Veo 3.1 Video Generation",
+      "Custom Domains",
+      "Priority Generation Queue",
+    ],
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    monthlyPrice: 160,
+    annualPrice: 128,
+    credits: 25000,
+    websites: 30,
+    badge: "Best Value",
+    cta: "Get Premium",
+    cardFeatures: [
+      "AI Website Generation",
+      "AI Editing",
+      "Nano Banana Image Generation",
+      "Veo 3.1 Video Generation",
+      "Custom Domains",
+      "Priority Support",
+    ],
+  },
 ];
 
 const features: Feature[] = [
-  { name: "AI Website Generation", tooltip: "Generate full websites from text prompts.", plans: { free_trial: true, basic: true, basic_plus: true, pro: true, premium: true } },
-  { name: "AI Editing", tooltip: "Edit any element with natural language.", plans: { free_trial: true, basic: true, basic_plus: true, pro: true, premium: true } },
-  { name: "Templates", plans: { free_trial: "5 templates", basic: "50+", basic_plus: "50+", pro: "All", premium: "All" } },
-  { name: "Publishing", plans: { free_trial: true, basic: true, basic_plus: true, pro: true, premium: true } },
-  { name: "Hosting", plans: { free_trial: "7 days", basic: true, basic_plus: true, pro: true, premium: true } },
-  { name: "Custom Domains", plans: { free_trial: false, basic: true, basic_plus: true, pro: true, premium: true } },
-  { name: "Nano Banana", tooltip: "AI micro-content and image workflow.", plans: { free_trial: false, basic: "Basic", basic_plus: "Enhanced", pro: "Full", premium: "Full" } },
-  { name: "Veo 3.1", tooltip: "AI video generation embedded in website sections.", plans: { free_trial: false, basic: false, basic_plus: "5 videos/mo", pro: "20 videos/mo", premium: "Unlimited" } },
-  { name: "Priority Support", plans: { free_trial: false, basic: false, basic_plus: false, pro: true, premium: true } },
-  { name: "Team Members", plans: { free_trial: "1", basic: "1", basic_plus: "3", pro: "10", premium: "Unlimited" } },
+  {
+    name: "AI Website Generation",
+    tooltip: "Generate full websites from text prompts.",
+    plans: { free_trial: true, basic: true, basic_plus: true, pro: true, premium: true },
+  },
+  {
+    name: "AI Editing",
+    tooltip: "Edit any element with natural language.",
+    plans: { free_trial: true, basic: true, basic_plus: true, pro: true, premium: true },
+  },
+  {
+    name: "Trial Hosting",
+    plans: { free_trial: "3 days", basic: false, basic_plus: false, pro: false, premium: false },
+  },
+  {
+    name: "Nano Banana Image Generation",
+    tooltip: "AI image generation for on-brand website visuals.",
+    plans: { free_trial: false, basic: true, basic_plus: true, pro: true, premium: true },
+  },
+  {
+    name: "Veo 3.1 Video Generation",
+    tooltip: "AI video generation embedded in website sections.",
+    plans: { free_trial: false, basic: false, basic_plus: true, pro: true, premium: true },
+  },
+  {
+    name: "Custom Domains",
+    plans: { free_trial: false, basic: true, basic_plus: true, pro: true, premium: true },
+  },
+  {
+    name: "Priority Generation Queue",
+    plans: { free_trial: false, basic: false, basic_plus: false, pro: true, premium: true },
+  },
+  {
+    name: "Priority Support",
+    plans: { free_trial: false, basic: false, basic_plus: false, pro: false, premium: true },
+  },
 ];
 
 const faqs = [
   ["What is a credit?", "Credits are the currency of StoneAI. Each AI action - generating a page section, editing a component, running Nano Banana, or rendering a Veo 3.1 clip - consumes credits."],
   ["Can I upgrade or downgrade my plan?", "Yes. You can change plans from your dashboard. Upgrades take effect immediately; downgrades apply at the next billing period."],
   ["What happens when I run out of credits?", "AI-powered actions pause until your credits reset. Your published sites remain live."],
-  ["Does the free trial require a credit card?", "No card required. You get 100 credits to explore the platform."],
+  ["Does the free trial require a payment method?", "Yes. A credit card, debit card, or UPI autopay is required to start the 3-day free trial."],
   ["What is Nano Banana?", "Nano Banana is StoneAI's inline image and copy workflow for rewriting content and generating brand-fit visuals."],
   ["What is Veo 3.1?", "Veo 3.1 generates website-ready video scenes, hero loops, product showcases, and explainers."],
   ["Do you offer annual billing?", "Yes. Annual billing saves 20% compared to monthly."],
@@ -81,18 +189,14 @@ function PricingCard({ plan, annual }: { plan: Plan; annual: boolean }) {
       <div className="price-line">
         {price === null ? <strong>Free</strong> : <><strong>${price}</strong><span>/mo</span></>}
       </div>
-      {annual && price ? <p className="annual-note">Billed ${price * 12}/year</p> : <p className="annual-note">{plan.id === "free_trial" ? "7 days free" : "Cancel anytime"}</p>}
+      {annual && price ? <p className="annual-note">Billed ${price * 12}/year</p> : <p className="annual-note">{plan.note ?? (plan.id === "free_trial" ? "3 days only" : "Cancel anytime")}</p>}
       <div className="plan-divider" />
       <div className="plan-stats">
         <div><span>Credits</span><b>{plan.credits.toLocaleString()}</b></div>
         <div><span>Websites</span><b>{plan.websites}</b></div>
       </div>
       <ul>
-        <li>AI Website Generation</li>
-        <li>AI Editing</li>
-        <li>{plan.id === "free_trial" ? "Trial hosting" : "Custom Domains"}</li>
-        {["basic_plus", "pro", "premium"].includes(plan.id) ? <li>Veo 3.1 Video</li> : null}
-        {plan.id === "premium" ? <li>Priority Support</li> : null}
+        {plan.cardFeatures.map((feature) => <li key={feature}>{feature}</li>)}
       </ul>
       <Link className={plan.highlight ? "card-cta primary" : "card-cta"} href={plan.id === "free_trial" ? "/signup" : `/signup?plan=${plan.id}&billing=${annual ? "annual" : "monthly"}`}>{plan.cta}</Link>
     </article>
@@ -110,7 +214,7 @@ export default function PricingPage() {
       <section className="pricing-hero">
         <p>StoneAI Pricing</p>
         <h1>Build websites.<br /><span>Pay for what you use.</span></h1>
-        <h2>One AI platform for generation, editing, image creation, and video. Start free - no card required.</h2>
+        <h2>One AI platform for generation, editing, image creation, and video. Start with a 3-day free trial.</h2>
         <BillingToggle annual={annual} setAnnual={setAnnual} />
       </section>
 
