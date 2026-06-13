@@ -3,11 +3,22 @@ import { StoneLogo } from "@/components/brand/StoneLogo";
 import { STONEAI_COMPANY, STONEAI_CONTACT_EMAIL, STONEAI_X_URL } from "@/lib/site";
 import "./marketing.css";
 
-const footerColumns = [
+type FooterLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+};
+
+type FooterColumn = {
+  title: string;
+  links: FooterLink[];
+};
+
+const footerColumns: FooterColumn[] = [
   {
     title: "Product",
     links: [
-      { href: "/#features", label: "Features" },
+      { href: "/features", label: "Features" },
       { href: "/templates", label: "Templates" },
       { href: "/pricing", label: "Pricing" },
     ],
@@ -22,8 +33,8 @@ const footerColumns = [
   {
     title: "Resources",
     links: [
+      { href: "/faq", label: "FAQ" },
       { href: "/docs", label: "Documentation" },
-      { href: "/#faq", label: "FAQ" },
     ],
   },
   {
@@ -31,6 +42,12 @@ const footerColumns = [
     links: [
       { href: "/privacy", label: "Privacy Policy" },
       { href: "/terms", label: "Terms of Service" },
+    ],
+  },
+  {
+    title: "Social",
+    links: [
+      { href: STONEAI_X_URL, label: "X (Twitter)", external: true },
     ],
   },
 ];
@@ -44,20 +61,21 @@ export function MarketingFooter() {
           <p style={{ marginTop: 14 }}>
             AI website generation, image creation, video workflows, publishing, domains, and templates for premium teams.
           </p>
-          <p style={{ marginTop: 10 }}>
-            <a href={STONEAI_X_URL} rel="noopener noreferrer" target="_blank">
-              Follow on X
-            </a>
-          </p>
         </div>
         {footerColumns.map((column) => (
           <div key={column.title}>
             <h4>{column.title}</h4>
-            {column.links.map((link) => (
-              <Link key={link.href} href={link.href}>
-                {link.label}
-              </Link>
-            ))}
+            {column.links.map((link) =>
+              link.external ? (
+                <a key={link.href} href={link.href} rel="noopener noreferrer" target="_blank">
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href}>
+                  {link.label}
+                </Link>
+              ),
+            )}
           </div>
         ))}
       </div>

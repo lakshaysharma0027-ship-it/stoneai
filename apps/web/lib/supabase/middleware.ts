@@ -6,7 +6,7 @@ import {
   resolveHostnameToSlug,
 } from "@/lib/domains/hostname";
 
-const protectedRoutes = ["/", "/dashboard", "/templates", "/projects", "/editor"];
+const protectedRoutes = ["/dashboard", "/templates", "/projects", "/editor"];
 const authRoutes = [
   "/login",
   "/signup",
