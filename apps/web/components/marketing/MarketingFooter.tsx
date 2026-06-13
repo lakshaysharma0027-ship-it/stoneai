@@ -56,14 +56,14 @@ export function MarketingFooter() {
   return (
     <footer className="marketing-footer">
       <div className="marketing-footer-grid">
-        <div>
+        <div className="marketing-footer-brand">
           <StoneLogo size={30} />
-          <p style={{ marginTop: 14 }}>
+          <p>
             AI website generation, image creation, video workflows, publishing, domains, and templates for premium teams.
           </p>
         </div>
         {footerColumns.map((column) => (
-          <div key={column.title}>
+          <div key={column.title} className="marketing-footer-col">
             <h4>{column.title}</h4>
             {column.links.map((link) =>
               link.external ? (
