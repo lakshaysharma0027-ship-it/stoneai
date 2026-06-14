@@ -82,8 +82,8 @@
 
 .marketing-menu-btn {
   display: none;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -274,5 +274,21 @@
 
   .marketing-page {
     padding-top: 110px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .marketing-nav-wrap {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 375px) {
+  .marketing-page h1 {
+    font-size: 1.75rem;
+  }
+
+  .marketing-page .lead {
+    font-size: 15px;
   }
 }

@@ -299,7 +299,7 @@ export default function LayersPanel() {
 
   return (
     <aside
-      className="flex w-[200px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-panel)]"
+      className="editor-layers-panel hidden w-[200px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-panel)] md:flex"
       onDragEnd={() => setDragging({ draggingId: null, overIndex: null })}
     >
       <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-[11px] pb-[7px] pt-[9px]">

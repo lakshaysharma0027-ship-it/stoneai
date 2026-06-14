@@ -85,7 +85,7 @@ export default function EditorShell({ projectId }: EditorShellProps) {
     >
       <Toolbar />
 
-      <div className="relative flex flex-1 overflow-hidden">
+      <div className="relative flex min-w-0 flex-1 overflow-hidden">
         {editorMode !== "preview" && (
           <aside className="flex w-11 flex-shrink-0 flex-col items-center gap-px border-r border-[var(--border-subtle)] bg-[var(--bg-base)] py-2">
             <RailButton
@@ -168,7 +168,7 @@ function RailButton({
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-7 w-7 items-center justify-center rounded-[5px] border transition-colors duration-75 disabled:cursor-not-allowed disabled:opacity-25 ${
+      className={`editor-rail-btn flex h-7 w-7 items-center justify-center rounded-[5px] border transition-colors duration-75 disabled:cursor-not-allowed disabled:opacity-25 ${
         active
           ? "border-[var(--border-strong)] bg-[var(--bg-active)] text-[var(--text-secondary)]"
           : "border-transparent text-[var(--text-ghost)] hover:bg-[#080808] hover:text-[var(--text-muted)]"

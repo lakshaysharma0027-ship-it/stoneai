@@ -811,3 +811,38 @@
     position: static;
   }
 }
+
+@media (max-width: 768px) {
+  .bs-page .plan-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .bs-page .tx-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bs-page .tx-amount {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 600px) {
+  .bs-page .plan-option {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .bs-page .plan-option-price {
+    text-align: left;
+  }
+
+  .bs-page .compare-wrap {
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+}

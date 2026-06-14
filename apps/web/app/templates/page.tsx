@@ -201,10 +201,47 @@ export default function TemplatesPage() {
     >
       <MarketingNav />
       <style>
-        {`@keyframes pulse { from { opacity: 0.4 } to { opacity: 0.8 } }`}
+        {`
+        @keyframes pulse { from { opacity: 0.4 } to { opacity: 0.8 } }
+        .templates-page { overflow-x: hidden; }
+        .templates-hero h1 {
+          font-size: clamp(2rem, 8vw, 3rem);
+        }
+        .templates-toolbar {
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+        .templates-toolbar-meta {
+          flex-shrink: 0;
+        }
+        .templates-grid {
+          display: grid;
+          gap: 1px;
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .templates-filter-btn {
+          min-height: 36px;
+        }
+        @media (max-width: 900px) {
+          .templates-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 560px) {
+          .templates-grid { grid-template-columns: 1fr; }
+          .templates-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .templates-toolbar-meta {
+            justify-content: space-between;
+            width: 100%;
+          }
+          .templates-hero { padding-top: 96px !important; }
+        }
+        `}
       </style>
-      <div style={{ margin: "0 auto", maxWidth: 1280 }}>
+      <div className="templates-page" style={{ margin: "0 auto", maxWidth: 1280 }}>
         <section
+          className="templates-hero"
           style={{
             margin: "0 auto",
             maxWidth: 560,
@@ -226,7 +263,6 @@ export default function TemplatesPage() {
           <h1
             style={{
               color: "#fff",
-              fontSize: 48,
               fontWeight: 500,
               letterSpacing: "-0.04em",
               lineHeight: 1,
@@ -264,6 +300,7 @@ export default function TemplatesPage() {
         </section>
 
         <section
+          className="templates-toolbar"
           style={{
             alignItems: "center",
             borderBottom: "0.5px solid #1a1a1a",
@@ -282,6 +319,7 @@ export default function TemplatesPage() {
                 <button
                   key={filter}
                   type="button"
+                  className="templates-filter-btn"
                   onClick={() => setActiveFilter(filter)}
                   style={{
                     background: active ? "#fff" : "transparent",
@@ -311,7 +349,7 @@ export default function TemplatesPage() {
               );
             })}
           </div>
-          <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+          <div className="templates-toolbar-meta" style={{ alignItems: "center", display: "flex", gap: 8 }}>
             <span
               style={{
                 color: "#555",
@@ -356,12 +394,10 @@ export default function TemplatesPage() {
           </div>
         ) : (
           <section
+            className="templates-grid"
             style={{
               background: "#1a1a1a",
               borderRadius: 12,
-              display: "grid",
-              gap: 1,
-              gridTemplateColumns: "repeat(3, 1fr)",
               margin: "0 24px 48px",
               overflow: "hidden",
             }}

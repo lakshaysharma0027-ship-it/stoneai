@@ -381,3 +381,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 400px) {
+  .dashboard-content {
+    padding: 12px 12px 20px;
+  }
+
+  .dash-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -879,13 +879,19 @@
 
   .spec-page .proj-table-head,
   .spec-page .proj-table-row {
-    grid-template-columns: 1fr 70px 90px;
+    grid-template-columns: 1fr 64px;
   }
 
+  .spec-page .proj-table-head span:nth-child(3),
   .spec-page .proj-table-head span:nth-child(4),
   .spec-page .proj-table-head span:nth-child(5),
+  .spec-page .proj-table-row > :nth-child(3),
   .spec-page .proj-table-row > :nth-child(4),
   .spec-page .proj-table-row > :nth-child(5) {
     display: none;
+  }
+
+  .spec-page .stat-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -89,3 +89,17 @@ textarea:focus {
 .no-select {
   user-select: none;
 }
+
+@media (max-width: 1023px) {
+  .editor-layers-panel,
+  .editor-inspector-panel {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-rail-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

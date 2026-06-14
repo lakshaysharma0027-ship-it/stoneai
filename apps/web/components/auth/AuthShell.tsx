@@ -16,6 +16,7 @@ export function AuthShell({
 }) {
   return (
     <main
+      className="stone-auth-shell"
       style={{
         alignItems: "center",
         background: "#050505",
@@ -55,10 +56,16 @@ export function AuthShell({
           cursor: pointer;
           font-size: 13px;
           font-weight: 700;
+          min-height: 44px;
           padding: 12px 16px;
           width: 100%;
         }
         .stone-auth-button:disabled { cursor: wait; opacity: .65; }
+        @media (max-width: 480px) {
+          .stone-auth-shell { padding: 16px; }
+          .stone-auth-card { padding: 22px !important; }
+          .stone-auth-shell h1 { font-size: 26px !important; }
+        }
       `}</style>
       <section style={{ maxWidth: 420, width: "100%" }}>
         <Link
@@ -82,6 +89,7 @@ export function AuthShell({
           />
         </Link>
         <div
+          className="stone-auth-card"
           style={{
             background: "#0a0a0a",
             border: "1px solid #1a1a1a",
@@ -172,6 +180,7 @@ export function SocialAuthButtons({
           cursor: onGoogle && !googleLoading ? "pointer" : "wait",
           fontSize: 13,
           fontWeight: 600,
+          minHeight: 44,
           padding: "11px 14px",
         }}
       >

@@ -678,7 +678,7 @@ export default function InspectorPanel() {
 
   return (
     <aside
-      className="flex flex-shrink-0 flex-col overflow-hidden border-l border-[#0D0D0D] bg-[#0A0A0A]"
+      className="editor-inspector-panel hidden flex-shrink-0 flex-col overflow-hidden border-l border-[#0D0D0D] bg-[#0A0A0A] lg:flex"
       style={{ width: rightWidth }}
     >
       <div className="flex h-10 flex-shrink-0 items-center justify-between border-b border-[#0D0D0D] px-3">
