@@ -167,8 +167,9 @@ export const veoShowcaseItems: VeoShowcaseItem[] = [
     id: "hero-loop",
     title: "Hero loop",
     description: "Atmospheric homepage background with slow camera drift and product focus.",
-    placeholder: true,
-    posterSrc: "/gallery/veo/hero-loop-poster.jpg",
+    videoSrc: "/gallery/veo/hero-loop.mp4",
+    posterSrc: "/gallery/nano-banana/holographic-workspace.png",
+    placeholder: false,
   },
   {
     id: "product-demo",

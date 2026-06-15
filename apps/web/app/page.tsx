@@ -229,6 +229,7 @@ export default function HomePage() {
                 muted
                 loop
                 playsInline
+                aria-label="Veo generated hero loop preview"
               />
             ) : (
               <>
