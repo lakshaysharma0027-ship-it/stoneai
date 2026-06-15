@@ -83,6 +83,13 @@ export default function EditorShell({ projectId }: EditorShellProps) {
       className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]"
       style={{ fontFamily: "-apple-system, 'SF Pro Text', sans-serif" }}
     >
+      <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-100">
+        Legacy visual editor — deprecated. Use{" "}
+        <a href="/dashboard?view=generate-website" className="underline">
+          Create Website
+        </a>{" "}
+        pipeline and Website Ready for AI edits.
+      </div>
       <Toolbar />
 
       <div className="relative flex min-w-0 flex-1 overflow-hidden">

@@ -11,6 +11,14 @@ const WEBSITE_STEPS = [
   "Opening project",
 ] as const;
 
+const PIPELINE_STEPS = [
+  "Prompt Input",
+  "Image Generation",
+  "Motion Generation",
+  "Website Build",
+  "Website Ready",
+] as const;
+
 const MEDIA_STEPS = [
   "Understanding prompt",
   "Composing scene",
@@ -19,8 +27,9 @@ const MEDIA_STEPS = [
   "Saving to library",
 ] as const;
 
-export function useGenerationProgress(active: boolean, mode: "website" | "media") {
-  const steps = mode === "website" ? WEBSITE_STEPS : MEDIA_STEPS;
+export function useGenerationProgress(active: boolean, mode: "website" | "media" | "pipeline") {
+  const steps =
+    mode === "pipeline" ? PIPELINE_STEPS : mode === "website" ? WEBSITE_STEPS : MEDIA_STEPS;
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
@@ -35,7 +44,7 @@ export function useGenerationProgress(active: boolean, mode: "website" | "media"
         if (current >= steps.length - 1) return current;
         return current + 1;
       });
-    }, mode === "website" ? 4200 : 3500);
+    }, mode === "pipeline" ? 5000 : mode === "website" ? 4200 : 3500);
 
     return () => window.clearInterval(interval);
   }, [active, mode, steps.length]);

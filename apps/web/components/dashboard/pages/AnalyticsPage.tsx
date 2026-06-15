@@ -208,7 +208,11 @@ export function AnalyticsPage({ data }: { data: DashboardDataContext }) {
                         type="button"
                         onClick={() => {
                           const published = data.publishedSites.find((s) => s.id === site.id);
-                          if (published) data.router.push(`/editor/${published.project_id}`);
+                          if (published) {
+                            data.router.push(
+                              `/dashboard?view=website-ready&projectId=${published.project_id}`,
+                            );
+                          }
                         }}
                       >
                         Edit

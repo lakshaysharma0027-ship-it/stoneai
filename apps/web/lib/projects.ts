@@ -5,11 +5,14 @@ import { createSupabaseBrowserClient } from "./supabase/client";
 
 const PROJECT_STORAGE_KEY = "stoneai.projects.v1";
 
+import type { PipelineMetadata } from "./pipeline/types";
+
 export type StoredProject = {
   id: string;
   name: string;
   templateId: TemplateId;
   websiteSchema: TemplateSchema;
+  pipelineMetadata?: PipelineMetadata;
   createdAt: number;
   updatedAt: number;
 };
@@ -19,6 +22,7 @@ type ProjectRow = {
   name: string;
   template_id: TemplateId;
   website_schema: TemplateSchema;
+  pipeline_metadata?: PipelineMetadata;
   created_at: string;
   updated_at: string;
 };
@@ -111,7 +115,7 @@ export const projectStorage = {
     const supabase = createSupabaseBrowserClient();
     const { data, error } = await supabase
       .from("projects")
-      .select("id,name,template_id,website_schema,created_at,updated_at")
+      .select("id,name,template_id,website_schema,pipeline_metadata,created_at,updated_at")
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
@@ -121,6 +125,7 @@ export const projectStorage = {
       name: project.name,
       templateId: project.template_id,
       websiteSchema: project.website_schema,
+      pipelineMetadata: project.pipeline_metadata,
       createdAt: new Date(project.created_at).getTime(),
       updatedAt: new Date(project.updated_at).getTime(),
     }));
@@ -134,7 +139,7 @@ export const projectStorage = {
     const supabase = createSupabaseBrowserClient();
     const { data, error } = await supabase
       .from("projects")
-      .select("id,name,template_id,website_schema,created_at,updated_at")
+      .select("id,name,template_id,website_schema,pipeline_metadata,created_at,updated_at")
       .eq("id", projectId)
       .maybeSingle();
 
@@ -147,6 +152,7 @@ export const projectStorage = {
       name: project.name,
       templateId: project.template_id,
       websiteSchema: project.website_schema,
+      pipelineMetadata: project.pipeline_metadata,
       createdAt: new Date(project.created_at).getTime(),
       updatedAt: new Date(project.updated_at).getTime(),
     };
@@ -183,7 +189,7 @@ export const projectStorage = {
         template_id: project.templateId,
         website_schema: project.websiteSchema,
       })
-      .select("id,name,template_id,website_schema,created_at,updated_at")
+      .select("id,name,template_id,website_schema,pipeline_metadata,created_at,updated_at")
       .single();
 
     if (error) throw error;

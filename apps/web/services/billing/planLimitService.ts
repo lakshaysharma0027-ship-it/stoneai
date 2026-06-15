@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBillingPlan } from "@/lib/billing/plans";
+import {
+  planHasFeature,
+  type PlanFeature,
+} from "@/lib/billing/planFeatures";
+import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { CustomerSubscription } from "@/lib/billing/types";
 
 export const planLimitService = {
@@ -31,6 +36,22 @@ export const planLimitService = {
   ) {
     if (subscription.creditsRemaining < credits) {
       throw new Error(`You need ${credits} credits to ${action}. Upgrade your plan or wait for renewal.`);
+    }
+  },
+
+  assertPlanFeature(subscription: CustomerSubscription, feature: PlanFeature) {
+    const planId = normalizeBillingPlanId(subscription.plan);
+    if (!planHasFeature(planId, feature)) {
+      const labels: Partial<Record<PlanFeature, string>> = {
+        nano_banana: "Nano Banana image generation",
+        first_image_prompt: "custom hero image prompts",
+        last_image_prompt: "last frame image prompts",
+        veo: "Veo video generation",
+        ai_website_edit: "AI website edits",
+      };
+      throw new Error(
+        `${labels[feature] ?? "This feature"} is not included on your current plan. Upgrade to unlock it.`,
+      );
     }
   },
 };

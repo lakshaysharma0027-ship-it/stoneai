@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { openAIProvider } from "@/lib/ai/providers/openai";
+import { bedrockProvider } from "@/lib/ai/providers/bedrock";
 import type { OpenAIWebsiteGenerationInput } from "@/lib/ai/providers/openai";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import type { StoredProject } from "@/lib/projects";
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const generated = await openAIProvider.generateWebsite({
+    const generated = await bedrockProvider.generateWebsite({
       prompt,
       businessName,
       description,
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       seo: generated.data.seo,
     });
   } catch (error) {
-    console.error("[StoneAI OpenAI generate] failed", error);
+    console.error("[StoneAI Bedrock generate] failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not generate website." },
       { status: 500 },

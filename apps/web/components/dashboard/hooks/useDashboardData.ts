@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { projectStorage, type StoredProject } from "@/lib/projects";
+import type { TemplateId } from "@/lib/templates";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { websiteGenerationService } from "@/services/ai/websiteGenerationService";
 import type {
   AiHistoryRow,
   BillingPlanId,
@@ -13,6 +13,7 @@ import type {
   CustomDomainRow,
   GenerateFormState,
   MediaGenerationRow,
+  PipelineFormState,
   PublishedSiteRow,
 } from "../types";
 
@@ -24,6 +25,16 @@ const defaultGenerateForm = (): GenerateFormState => ({
   style: "Premium",
   colorPreference: "Monochrome premium",
   websiteType: "Landing page",
+});
+
+const defaultPipelineForm = (): PipelineFormState => ({
+  templateId: null,
+  businessName: "",
+  websitePrompt: "",
+  firstImagePrompt: "",
+  lastImagePrompt: "",
+  veoPrompt: "",
+  presetHeroImageId: "product-lifestyle",
 });
 
 export function useDashboardData() {
@@ -54,6 +65,7 @@ export function useDashboardData() {
   const [domainSubmitting, setDomainSubmitting] = useState(false);
   const [domainError, setDomainError] = useState<string | null>(null);
   const [generateForm, setGenerateForm] = useState<GenerateFormState>(defaultGenerateForm);
+  const [pipelineForm, setPipelineForm] = useState<PipelineFormState>(defaultPipelineForm);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [showGenerateDetails, setShowGenerateDetails] = useState(false);
@@ -337,14 +349,16 @@ export function useDashboardData() {
     setGenerateForm((current) => ({ ...current, [key]: value }));
   };
 
-  const handleGenerateProject = async (event?: React.FormEvent) => {
-    event?.preventDefault();
-    const businessName = generateForm.businessName.trim();
-    const prompt = generateForm.prompt.trim();
-    const description = generateForm.description.trim();
+  const updatePipelineForm = <K extends keyof PipelineFormState>(key: K, value: PipelineFormState[K]) => {
+    setPipelineForm((current) => ({ ...current, [key]: value }));
+  };
 
-    if (!businessName || !description || !prompt) {
-      setGenerateError("Enter a business name, description, and prompt first.");
+  const handlePipelineGenerate = async () => {
+    const businessName = pipelineForm.businessName.trim();
+    const websitePrompt = pipelineForm.websitePrompt.trim();
+
+    if (!businessName || !websitePrompt) {
+      setGenerateError("Enter a business name and website prompt first.");
       return;
     }
     if (creditsRemaining <= 0) {
@@ -355,21 +369,52 @@ export function useDashboardData() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const { project } = await websiteGenerationService.generate({
-        prompt,
-        businessName,
-        description,
-        industry: generateForm.industry,
-        style: generateForm.style,
-        colorPreference: generateForm.colorPreference.trim() || undefined,
-        websiteType: generateForm.websiteType.trim() || undefined,
+      const response = await fetch("/api/ai/pipeline/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateId: pipelineForm.templateId,
+          businessName,
+          websitePrompt,
+          firstImagePrompt: pipelineForm.firstImagePrompt.trim() || undefined,
+          lastImagePrompt: pipelineForm.lastImagePrompt.trim() || undefined,
+          veoPrompt: pipelineForm.veoPrompt.trim() || undefined,
+          presetHeroImageId: pipelineForm.presetHeroImageId,
+        }),
       });
+      const payload = (await response.json()) as {
+        error?: string;
+        projectId?: string;
+        projectName?: string;
+        websiteSchema?: StoredProject["websiteSchema"];
+        pipelineMetadata?: StoredProject["pipelineMetadata"];
+      };
+      if (!response.ok || !payload.projectId) {
+        throw new Error(payload.error ?? "Could not complete generation pipeline.");
+      }
+
+      const project: StoredProject = {
+        id: payload.projectId,
+        name: payload.projectName ?? businessName,
+        templateId: (pipelineForm.templateId ?? "generated") as TemplateId,
+        websiteSchema: payload.websiteSchema!,
+        pipelineMetadata: payload.pipelineMetadata,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
       setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
-      router.push(`/editor/${project.id}`);
+      await Promise.all([refreshBilling(), refreshAiHistory(), refreshCreditTransactions()]);
+      router.replace(`/dashboard?view=website-ready&projectId=${payload.projectId}`);
     } catch (error) {
-      setGenerateError(error instanceof Error ? error.message : "Could not create project.");
+      setGenerateError(error instanceof Error ? error.message : "Could not complete generation pipeline.");
+    } finally {
       setGenerating(false);
     }
+  };
+
+  const handleGenerateProject = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    await handlePipelineGenerate();
   };
 
   const creditUsageByType = useMemo(() => {
@@ -430,6 +475,8 @@ export function useDashboardData() {
     domainError,
     generateForm,
     updateGenerateForm,
+    pipelineForm,
+    updatePipelineForm,
     generating,
     generateError,
     showGenerateDetails,
@@ -456,6 +503,8 @@ export function useDashboardData() {
     handleDeleteSite,
     handleDeleteProject,
     handleGenerateProject,
+    handlePipelineGenerate,
+    refreshProjects,
     router,
   };
 }

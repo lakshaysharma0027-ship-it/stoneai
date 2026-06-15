@@ -71,13 +71,23 @@ export const PLAN_FEATURE_ROWS: Array<{
     },
   },
   {
-    name: "Claude access",
+    name: "AI website edits (Premium)",
     values: {
-      free_trial: "Coming soon",
-      basic: "Coming soon",
-      basic_plus: "Coming soon",
-      pro: "Coming soon",
-      premium: "Coming soon",
+      free_trial: false,
+      basic: false,
+      basic_plus: false,
+      pro: false,
+      premium: "2 per website",
+    },
+  },
+  {
+    name: "Claude Opus (Bedrock)",
+    values: {
+      free_trial: true,
+      basic: true,
+      basic_plus: true,
+      pro: true,
+      premium: true,
     },
   },
   {

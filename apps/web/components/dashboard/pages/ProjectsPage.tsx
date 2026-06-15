@@ -121,9 +121,11 @@ export function ProjectsPage({
               <article key={project.id} className="proj-card">
                 <div
                   className={`proj-card-thumb thumb-${getProjectCardThumbIndex(project.id)}`}
-                  onClick={() => data.router.push(`/editor/${project.id}`)}
+                  onClick={() => data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") data.router.push(`/editor/${project.id}`);
+                    if (e.key === "Enter") {
+                      data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`);
+                    }
                   }}
                   role="button"
                   tabIndex={0}
@@ -145,10 +147,12 @@ export function ProjectsPage({
                     <button
                       type="button"
                       className="proj-card-open"
-                      onClick={() => data.router.push(`/editor/${project.id}`)}
+                      onClick={() =>
+                        data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`)
+                      }
                     >
                       <Pencil size={12} />
-                      Open editor
+                      Open website
                     </button>
                     <div className="proj-card-more-wrap">
                       <button

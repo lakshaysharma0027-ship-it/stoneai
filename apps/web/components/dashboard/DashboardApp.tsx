@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -9,12 +10,11 @@ import { useSidebarState } from "./hooks/useSidebarState";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { BillingPage } from "./pages/BillingPage";
 import { DomainsPage } from "./pages/DomainsPage";
-import { ImageGenerationPage } from "./pages/ImageGenerationPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { VideoGenerationPage } from "./pages/VideoGenerationPage";
 import { WebsiteGenerationPage } from "./pages/WebsiteGenerationPage";
+import { WebsiteReadyPage } from "./pages/WebsiteReadyPage";
 import { DashboardSkeleton } from "./ui/Skeleton";
 import { normalizeView } from "./types";
 import "./dashboard.css";
@@ -22,9 +22,19 @@ import "./dashboard.css";
 export function DashboardApp() {
   const data = useDashboardData();
   const { view, navigate } = useDashboardNavigation();
+  const searchParams = useSearchParams();
   const sidebar = useSidebarState();
   const [search, setSearch] = useState("");
   const activeView = normalizeView(view);
+  const readyProjectId = searchParams.get("projectId");
+
+  useEffect(() => {
+    const templateId = searchParams.get("templateId");
+    if (templateId && activeView === "generate-website") {
+      data.updatePipelineForm("templateId", templateId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to URL template param
+  }, [activeView, searchParams]);
 
   const renderPage = () => {
     switch (activeView) {
@@ -32,10 +42,14 @@ export function DashboardApp() {
         return <ProjectsPage data={data} search={search} onSearchChange={setSearch} />;
       case "generate-website":
         return <WebsiteGenerationPage data={data} />;
-      case "generate-image":
-        return <ImageGenerationPage data={data} />;
-      case "generate-video":
-        return <VideoGenerationPage data={data} />;
+      case "website-ready":
+        return (
+          <WebsiteReadyPage
+            data={data}
+            projectId={readyProjectId ?? ""}
+            onNavigate={navigate}
+          />
+        );
       case "domains":
         return <DomainsPage data={data} />;
       case "analytics":

@@ -4,6 +4,7 @@ export type DashboardView =
   | "overview"
   | "projects"
   | "generate-website"
+  | "website-ready"
   | "generate-image"
   | "generate-video"
   | "templates"
@@ -103,6 +104,16 @@ export type GenerateFormState = {
   websiteType: string;
 };
 
+export type PipelineFormState = {
+  templateId: string | null;
+  businessName: string;
+  websitePrompt: string;
+  firstImagePrompt: string;
+  lastImagePrompt: string;
+  veoPrompt: string;
+  presetHeroImageId: string;
+};
+
 export const PLAN_CARDS = [
   { id: "free_trial" as const, name: "Free Trial", credits: 100, sites: 1 },
   { id: "basic" as const, name: "Basic", credits: 1500, sites: 1 },
@@ -120,7 +131,8 @@ export const normalizeView = (view: DashboardView): DashboardView => {
 export const VIEW_TITLES: Record<string, string> = {
   overview: "Overview",
   projects: "Projects",
-  "generate-website": "Website Generation",
+  "generate-website": "Create Website",
+  "website-ready": "Website Ready",
   "generate-image": "Image Generation",
   "generate-video": "Video Generation",
   templates: "Templates",

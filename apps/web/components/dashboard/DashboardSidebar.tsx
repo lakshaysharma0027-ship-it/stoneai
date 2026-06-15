@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import {
   BarChart3,
-  Camera,
   CreditCard,
   Folder,
   Globe,
@@ -14,7 +13,6 @@ import {
   MoreVertical,
   PanelLeftClose,
   PanelRightClose,
-  Play,
   Settings,
 } from "lucide-react";
 import type { DashboardView } from "./types";
@@ -52,22 +50,17 @@ const groups: Array<{ label: string; items: NavItem[]; dividerBefore?: boolean }
     ],
   },
   {
-    label: "AI Tools",
+    label: "Create",
     items: [
       {
         id: "generate-website",
-        label: "Website Generation",
+        label: "Create Website",
         icon: <Globe className="sb-icon" size={16} strokeWidth={1.75} />,
       },
       {
-        id: "generate-image",
-        label: "Image Generation",
-        icon: <Camera className="sb-icon" size={16} strokeWidth={1.75} />,
-      },
-      {
-        id: "generate-video",
-        label: "Video Generation",
-        icon: <Play className="sb-icon" size={16} strokeWidth={1.75} />,
+        id: "templates",
+        label: "Templates",
+        icon: <LayoutGrid className="sb-icon" size={16} strokeWidth={1.75} />,
       },
     ],
   },

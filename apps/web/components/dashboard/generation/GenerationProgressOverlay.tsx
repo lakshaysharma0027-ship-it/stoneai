@@ -7,7 +7,7 @@ import "../generation-pages.css";
 
 type GenerationProgressOverlayProps = {
   active: boolean;
-  mode: "website" | "media";
+  mode: "website" | "media" | "pipeline";
   title: string;
   subtitle: string;
 };

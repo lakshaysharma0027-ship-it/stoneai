@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import TemplatePreviewModal from "@/components/templates/TemplatePreviewModal";
-import { projectStorage, type StoredProject } from "@/lib/projects";
-import {
-  getProjectTemplateById,
-  type TemplateMetadata,
-} from "@/lib/templates";
 import { getTemplateCategories } from "@/lib/template-catalog";
 import { templates, type Template } from "./lib/templates";
 
@@ -19,16 +14,6 @@ const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(
     new Date(value),
   );
-
-const resolveProjectTemplate = (template: Template): TemplateMetadata => {
-  const projectTemplate = getProjectTemplateById(template.id);
-
-  if (!projectTemplate) {
-    throw new Error(`Missing project template for "${template.id}".`);
-  }
-
-  return projectTemplate;
-};
 
 function PreviewImage({
   src,
@@ -151,30 +136,11 @@ export default function TemplatesPage() {
   );
 
   const createProjectFromTemplate = (template: Template) => {
-    const projectTemplate = resolveProjectTemplate(template);
     setCreatingTemplateId(template.id);
-
     window.setTimeout(() => {
-      const project: StoredProject = {
-        id: crypto.randomUUID(),
-        name: projectTemplate.name,
-        templateId: projectTemplate.id,
-        websiteSchema: structuredClone(projectTemplate.schema),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-
-      projectStorage.save(project);
-      void projectStorage
-        .saveRemote(project)
-        .then((savedProject) => {
-          router.push(`/editor/${savedProject.id}`);
-        })
-        .catch((error: unknown) => {
-          console.error("[StoneAI templates] remote project save failed", error);
-          setCreatingTemplateId(null);
-        });
-    }, 500);
+      setCreatingTemplateId(null);
+      router.push(`/dashboard?view=generate-website&templateId=${template.id}`);
+    }, 300);
   };
 
   return (

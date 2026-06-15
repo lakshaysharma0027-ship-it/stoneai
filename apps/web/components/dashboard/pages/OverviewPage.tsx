@@ -220,9 +220,13 @@ export function OverviewPage({
                     <div
                       key={project.id}
                       className="proj-table-row"
-                      onClick={() => data.router.push(`/editor/${project.id}`)}
+                      onClick={() =>
+                        data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`)
+                      }
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") data.router.push(`/editor/${project.id}`);
+                        if (e.key === "Enter") {
+                          data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`);
+                        }
                       }}
                       role="button"
                       tabIndex={0}

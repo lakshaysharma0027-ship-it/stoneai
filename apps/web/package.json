@@ -12,6 +12,7 @@
     "generate:template-previews": "node scripts/generate-template-previews.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1068.0",
     "@google/genai": "^2.8.0",
     "@repo/ui": "*",
     "@supabase/ssr": "^0.10.3",

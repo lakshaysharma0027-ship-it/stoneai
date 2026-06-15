@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { openAIProvider } from "@/lib/ai/providers/openai";
+import { bedrockProvider } from "@/lib/ai/providers/bedrock";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { getCreditCost } from "@/lib/billing/credits";
+import { planHasFeature, PREMIUM_AI_EDITS_PER_WEBSITE } from "@/lib/billing/planFeatures";
+import { normalizeBillingPlanId } from "@/lib/billing/plans";
+import type { PipelineMetadata } from "@/lib/pipeline/types";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 
@@ -27,37 +30,51 @@ export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
-      error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to edit websites." }, { status: 401 });
     }
 
-    const creditCost = getCreditCost("ai_edit");
     const subscription = await creditService.ensureSubscription(supabase, user.id);
-    try {
-      planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
-    } catch (error) {
+    const planId = normalizeBillingPlanId(subscription.plan);
+
+    if (!planHasFeature(planId, "ai_website_edit")) {
       return NextResponse.json(
-        { error: error instanceof Error ? error.message : "You are out of credits." },
-        { status: 402 },
+        { error: "AI website edits are available on Premium only." },
+        { status: 403 },
       );
     }
 
+    const creditCost = getCreditCost("ai_edit");
+    planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
+
     const { data: project, error: projectError } = await supabase
       .from("projects")
-      .select("id,name")
+      .select("id,name,pipeline_metadata")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single();
 
-    if (projectError) throw projectError;
+    if (projectError || !project) {
+      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+    }
 
-    const edited = await openAIProvider.editWebsite({
+    const metadata = ((project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata ??
+      {}) as PipelineMetadata;
+    const remaining = metadata.aiEditsRemaining ?? PREMIUM_AI_EDITS_PER_WEBSITE;
+
+    if (remaining <= 0) {
+      return NextResponse.json(
+        { error: "No AI edits remaining for this website." },
+        { status: 403 },
+      );
+    }
+
+    const edited = await bedrockProvider.editWebsite({
       website: {
         id: projectId,
-        name: (project as { name?: string } | null)?.name ?? "Generated Website",
+        name: (project as { name?: string }).name ?? "Generated Website",
         prompt: instruction,
         industry: "Startup",
         style: "Premium",
@@ -70,12 +87,21 @@ export async function POST(request: Request) {
     await creditService.consumeCredits(supabase, {
       userId: user.id,
       eventType: "ai_edit",
-      description: "AI Edit",
+      description: "Premium AI website edit",
     });
+
+    const nextMetadata: PipelineMetadata = {
+      ...metadata,
+      aiEditsRemaining: remaining - 1,
+      aiEditsUsed: (metadata.aiEditsUsed ?? 0) + 1,
+    };
 
     const { error: updateError } = await supabase
       .from("projects")
-      .update({ website_schema: edited.data.websiteSchema })
+      .update({
+        website_schema: edited.data.websiteSchema,
+        pipeline_metadata: nextMetadata,
+      })
       .eq("id", projectId);
 
     if (updateError) throw updateError;
@@ -94,9 +120,12 @@ export async function POST(request: Request) {
       usage: edited.usage,
     });
 
-    return NextResponse.json(edited.data);
+    return NextResponse.json({
+      ...edited.data,
+      aiEditsRemaining: nextMetadata.aiEditsRemaining,
+    });
   } catch (error) {
-    console.error("[StoneAI OpenAI edit] failed", error);
+    console.error("[StoneAI Bedrock edit] failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not edit website." },
       { status: 500 },
