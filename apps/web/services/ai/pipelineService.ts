@@ -5,6 +5,7 @@ import {
   planHasFeature,
 } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
+import { PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
 import { nanoBananaGallery } from "@/lib/template-catalog";
 import type {
   PipelineEditRequest,
@@ -199,7 +200,7 @@ export const pipelineService = {
       lastFrameImageUrl: lastFrameImageUrl ?? null,
       motionVideoUrl: motionVideoUrl ?? null,
       aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
-        ? PREMIUM_AI_EDITS_PER_WEBSITE
+        ? PLAN_ACTION_LIMITS[planId].aiEdits
         : 0,
       aiEditsUsed: 0,
       completedStages: [...completedStages, "website_ready"],
