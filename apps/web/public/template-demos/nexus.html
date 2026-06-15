@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Intelligence at Cosmic Scale</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --void: #010208;
+    --deep: #03071a;
+    --chrome: #c8d8e8;
+    --silver: #8fa8c0;
+    --white: #f0f6ff;
+    --glow: #4a90e2;
+    --nebula-orange: rgba(200,120,60,0.15);
+    --nebula-blue: rgba(60,100,200,0.2);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: auto; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'Space Grotesk', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: white;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, opacity 0.3s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(200,216,232,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: all 0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+
+  /* Canvas */
+  #canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* Scroll container */
+  #scroller {
+    position: relative;
+    z-index: 1;
+    height: 600vh;
+  }
+
+  /* Fixed UI overlay */
+  #overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 32px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: all;
+  }
+  .nav-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    color: var(--chrome);
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeIn 2s 0.5s forwards;
+  }
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+    opacity: 0;
+    animation: fadeIn 2s 0.8s forwards;
+  }
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    text-decoration: none;
+    transition: color 0.3s;
+    cursor: none;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  /* Sections pinned inside scroll */
+  .section-content {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  /* TEXT BLOCKS */
+  .text-block {
+    text-align: center;
+    max-width: 800px;
+    padding: 0 40px;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.25,0.46,0.45,0.94),
+                transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+  .text-block.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  h1 {
+    font-size: clamp(52px, 8vw, 120px);
+    font-weight: 300;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    color: var(--white);
+    margin-bottom: 32px;
+  }
+  h1 strong {
+    font-weight: 600;
+    background: linear-gradient(135deg, #fff 0%, var(--chrome) 50%, var(--glow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  h2 {
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 300;
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 28px;
+  }
+  h2 em {
+    font-style: normal;
+    color: var(--chrome);
+  }
+
+  .lead {
+    font-size: clamp(15px, 1.5vw, 18px);
+    line-height: 1.7;
+    color: var(--silver);
+    max-width: 560px;
+    margin: 0 auto 48px;
+    font-weight: 300;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 16px 40px;
+    border: 1px solid rgba(200,216,232,0.4);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: none;
+    pointer-events: all;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, color 0.3s;
+    background: transparent;
+  }
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(200,216,232,0.08);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+  .cta-btn:hover { border-color: rgba(200,216,232,0.8); }
+  .cta-btn:hover::before { transform: scaleX(1); }
+
+  .cta-secondary {
+    display: inline-block;
+    margin-left: 24px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    text-decoration: none;
+    cursor: none;
+    pointer-events: all;
+    border-bottom: 1px solid transparent;
+    transition: color 0.3s, border-color 0.3s;
+  }
+  .cta-secondary:hover { color: var(--white); border-color: var(--silver); }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    max-width: 900px;
+    width: 100%;
+    margin: 48px auto 0;
+  }
+  .feat {
+    padding: 32px;
+    border: 1px solid rgba(200,216,232,0.08);
+    background: rgba(3,7,26,0.6);
+    backdrop-filter: blur(20px);
+    text-align: left;
+  }
+  .feat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--glow);
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+  .feat-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--white);
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .feat-desc {
+    font-size: 12px;
+    color: var(--silver);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* Stat row */
+  .stat-row {
+    display: flex;
+    gap: 64px;
+    justify-content: center;
+    margin-top: 56px;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    color: var(--white);
+    display: block;
+    letter-spacing: -0.03em;
+  }
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-top: 8px;
+    display: block;
+  }
+
+  /* Quote */
+  .quote-block {
+    max-width: 700px;
+    text-align: center;
+  }
+  .quote-text {
+    font-size: clamp(20px, 3vw, 36px);
+    font-weight: 300;
+    line-height: 1.4;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+  .quote-author {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  /* Scroll indicator */
+  #scroll-hint {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    opacity: 1;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  #scroll-hint span {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--silver);
+    animation: fadeIn 2s 2s forwards;
+    opacity: 0;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 48px;
+    background: linear-gradient(to bottom, var(--silver), transparent);
+    animation: scrollPulse 2s ease-in-out infinite 2s;
+    opacity: 0;
+  }
+  @keyframes scrollPulse {
+    0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+    50% { opacity: 1; }
+    100% { opacity: 0; transform: scaleY(1); transform-origin: bottom; }
+  }
+
+  /* Progress */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--chrome), var(--glow));
+    z-index: 200;
+    transition: width 0.1s;
+  }
+
+  /* Section indicators */
+  #section-dots {
+    position: fixed;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+  }
+  .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--silver);
+    opacity: 0.3;
+    transition: all 0.4s;
+  }
+  .dot.active {
+    opacity: 1;
+    background: var(--white);
+    transform: scale(1.5);
+  }
+
+  /* Vignette */
+  #vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(1,2,8,0.7) 100%);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* Final CTA */
+  .final-cta {
+    text-align: center;
+    max-width: 700px;
+  }
+  .final-cta h2 {
+    font-size: clamp(40px, 6vw, 88px);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    margin-bottom: 40px;
+  }
+  .btn-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* Scanline overlay for depth */
+  #scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    nav { padding: 24px; }
+    .nav-links { display: none; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .stat-row { flex-direction: column; gap: 32px; }
+    .cta-secondary { display: block; margin-left: 0; margin-top: 16px; }
+    #section-dots { display: none; }
+    h1 { font-size: 48px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="progress-bar"></div>
+<div id="vignette"></div>
+<div id="scanlines"></div>
+
+<canvas id="canvas"></canvas>
+
+<nav>
+  <div class="nav-logo">Nexus</div>
+  <ul class="nav-links">
+    <li><a href="#">Protocol</a></li>
+    <li><a href="#">Network</a></li>
+    <li><a href="#">Research</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- Section dots -->
+<div id="section-dots">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<!-- Scroll hint -->
+<div id="scroll-hint">
+  <span>Scroll</span>
+  <div class="scroll-line"></div>
+</div>
+
+<!-- Scrollable content container -->
+<div id="scroller"></div>
+
+<!-- Fixed overlay with all text content -->
+<div id="overlay">
+
+  <!-- Section 0: Hero -->
+  <div class="section-content" id="sec-0">
+    <div class="text-block" id="tb-0">
+      <span class="eyebrow">Universal Intelligence Network</span>
+      <h1>One mind.<br><strong>Infinite reach.</strong></h1>
+      <p class="lead">The first intelligence infrastructure built at cosmic scale. Distributed cognition. Unified purpose. Operating at the speed of light across every node in the known network.</p>
+      <div class="btn-group">
+        <a class="cta-btn" href="#">Enter the Network</a>
+        <a class="cta-secondary" href="#">Explore Protocol →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 1: Product Overview -->
+  <div class="section-content" id="sec-1">
+    <div class="text-block" id="tb-1">
+      <span class="eyebrow">Architecture</span>
+      <h2>Distributed nodes.<br><em>Singular consciousness.</em></h2>
+      <p class="lead">Every node in the Nexus network shares one unified intelligence model. No latency. No degradation. From the edge to the core — one coherent mind operating across the entire mesh.</p>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat-num">10⁹</span>
+          <span class="stat-label">Active Nodes</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">0.3ms</span>
+          <span class="stat-label">Network Latency</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">Context Window</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Features -->
+  <div class="section-content" id="sec-2">
+    <div class="text-block" id="tb-2" style="max-width:960px">
+      <span class="eyebrow">Capabilities</span>
+      <h2>The full spectrum<br>of <em>machine cognition</em></h2>
+      <div class="feature-grid">
+        <div class="feat">
+          <div class="feat-num">01</div>
+          <div class="feat-title">Quantum Reasoning</div>
+          <div class="feat-desc">Simultaneous evaluation of all possible inference paths. Certainty without sequential thought.</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">02</div>
+          <div class="feat-title">Mesh Propagation</div>
+          <div class="feat-desc">Insights discovered at any node propagate instantly across the entire network. Collective learning at zero cost.</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">03</div>
+          <div class="feat-title">Cosmic Memory</div>
+          <div class="feat-desc">A persistent, distributed knowledge fabric with no expiration and no limits. Total recall across all nodes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Social Proof / Quote -->
+  <div class="section-content" id="sec-3">
+    <div class="text-block" id="tb-3">
+      <div class="quote-block" style="margin:0 auto">
+        <p class="quote-text">"Nexus isn't a product. It's the moment intelligence stopped being local and became universal."</p>
+        <span class="quote-author">Dr. Yara Solano — Director, Institute for Synthetic Cognition</span>
+        <div class="stat-row" style="margin-top:48px">
+          <div class="stat">
+            <span class="stat-num">340+</span>
+            <span class="stat-label">Research Partners</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">17</span>
+            <span class="stat-label">Years to Build</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">1</span>
+            <span class="stat-label">Global Network</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Final CTA -->
+  <div class="section-content" id="sec-4">
+    <div class="text-block final-cta" id="tb-4">
+      <span class="eyebrow">Join the Network</span>
+      <h2>The future<br>remembers<br><em>those who built it.</em></h2>
+      <p class="lead">Access is limited to founding partners. Applications reviewed on a rolling basis by the Nexus Council.</p>
+      <div class="btn-group">
+        <a class="cta-btn" href="#">Request Access</a>
+        <a class="cta-secondary" href="#">View Whitepaper →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Three.js + GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// ─── CURSOR ────────────────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+let mx = 0, my = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+  setTimeout(() => {
+    cursorRing.style.left = mx + 'px';
+    cursorRing.style.top = my + 'px';
+  }, 80);
+});
+
+// ─── THREE.JS SCENE ────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x010208);
+scene.fog = new THREE.FogExp2(0x010208, 0.015);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 0, 12);
+
+// ─── STARFIELD ─────────────────────────────────────────────────────────
+(function createStars() {
+  const geo = new THREE.BufferGeometry();
+  const count = 4000;
+  const pos = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    pos[i*3]   = (Math.random()-0.5)*200;
+    pos[i*3+1] = (Math.random()-0.5)*200;
+    pos[i*3+2] = (Math.random()-0.5)*200;
+    sizes[i] = Math.random() * 2 + 0.5;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  const mat = new THREE.PointsMaterial({
+    color: 0xd0e4f8, size: 0.12, sizeAttenuation: true,
+    transparent: true, opacity: 0.7
+  });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+// ─── NEBULA PARTICLES ──────────────────────────────────────────────────
+(function createNebula() {
+  const geo = new THREE.BufferGeometry();
+  const count = 600;
+  const pos = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const r = 30 + Math.random() * 60;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.3;
+    pos[i*3+2] = r * Math.cos(phi);
+    const isBlue = Math.random() > 0.6;
+    colors[i*3]   = isBlue ? 0.24 : 0.78;
+    colors[i*3+1] = isBlue ? 0.39 : 0.47;
+    colors[i*3+2] = isBlue ? 0.78 : 0.24;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 3, sizeAttenuation: true,
+    vertexColors: true, transparent: true, opacity: 0.15
+  });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+// ─── CORE SPHERE (the main object) ─────────────────────────────────────
+const coreGroup = new THREE.Group();
+scene.add(coreGroup);
+
+// Inner glowing core
+const coreGeo = new THREE.SphereGeometry(1.2, 64, 64);
+const coreMat = new THREE.MeshStandardMaterial({
+  color: 0x1a2a3a,
+  metalness: 0.95,
+  roughness: 0.05,
+  envMapIntensity: 2.0,
+});
+const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+coreGroup.add(coreMesh);
+
+// Segmented outer shell
+const shellGeo = new THREE.SphereGeometry(1.4, 32, 32);
+const shellMat = new THREE.MeshStandardMaterial({
+  color: 0x3a5068,
+  metalness: 1.0,
+  roughness: 0.1,
+  transparent: true,
+  opacity: 0.35,
+  wireframe: false,
+});
+const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+coreGroup.add(shellMesh);
+
+// Wireframe shell
+const wireGeo = new THREE.SphereGeometry(1.41, 24, 24);
+const wireMat = new THREE.MeshBasicMaterial({
+  color: 0x7aaad0,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.12,
+});
+coreGroup.add(new THREE.Mesh(wireGeo, wireMat));
+
+// Central light (the glowing core)
+const coreLight = new THREE.PointLight(0xffffff, 6, 8);
+coreGroup.add(coreLight);
+
+const coreLightBlue = new THREE.PointLight(0x4a90e2, 3, 6);
+coreGroup.add(coreLightBlue);
+
+// ─── ORBITAL RINGS ─────────────────────────────────────────────────────
+function createRing(radius, tube, tilt, color, opacity) {
+  const geo = new THREE.TorusGeometry(radius, tube, 8, 128);
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = tilt;
+  return mesh;
+}
+
+const rings = new THREE.Group();
+rings.add(createRing(2.2, 0.006, Math.PI/2, 0x7aaad0, 0.6));
+rings.add(createRing(2.6, 0.004, Math.PI/2 + 0.4, 0xc8d8e8, 0.3));
+rings.add(createRing(3.0, 0.003, Math.PI/2 + 0.8, 0x4a90e2, 0.25));
+rings.add(createRing(3.5, 0.002, Math.PI/2 + 1.2, 0x7aaad0, 0.15));
+rings.rotation.y = 0.3;
+coreGroup.add(rings);
+
+// ─── NETWORK NODES ─────────────────────────────────────────────────────
+const nodeGroup = new THREE.Group();
+scene.add(nodeGroup);
+
+const nodePositions = [];
+const nodeMeshes = [];
+const numNodes = 16;
+
+for (let i = 0; i < numNodes; i++) {
+  const theta = (i / numNodes) * Math.PI * 2;
+  const phi = (Math.random() - 0.5) * Math.PI * 0.6;
+  const r = 4.5 + Math.random() * 2;
+  const x = r * Math.cos(phi) * Math.cos(theta);
+  const y = r * Math.sin(phi);
+  const z = r * Math.cos(phi) * Math.sin(theta) * 0.6;
+  nodePositions.push(new THREE.Vector3(x, y, z));
+
+  // Node sphere
+  const nGeo = new THREE.SphereGeometry(0.12, 16, 16);
+  const nMat = new THREE.MeshStandardMaterial({
+    color: 0xc8d8e8, metalness: 0.9, roughness: 0.1, emissive: 0x3a7aaa, emissiveIntensity: 0.5
+  });
+  const nMesh = new THREE.Mesh(nGeo, nMat);
+  nMesh.position.copy(new THREE.Vector3(x, y, z));
+  nodeGroup.add(nMesh);
+  nodeMeshes.push(nMesh);
+
+  // Node light
+  const nLight = new THREE.PointLight(0x7aaad0, 0.8, 2);
+  nLight.position.copy(new THREE.Vector3(x, y, z));
+  nodeGroup.add(nLight);
+}
+
+// ─── CONNECTORS (lines from core to nodes) ─────────────────────────────
+const linesMat = new THREE.LineBasicMaterial({ color: 0xc8d8e8, transparent: true, opacity: 0.25 });
+const linesGroup = new THREE.Group();
+scene.add(linesGroup);
+
+nodePositions.forEach(pos => {
+  const points = [new THREE.Vector3(0,0,0), pos];
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  linesGroup.add(new THREE.Line(geo, linesMat));
+});
+
+// Secondary connections between nearby nodes
+for (let i = 0; i < numNodes; i++) {
+  for (let j = i+1; j < numNodes; j++) {
+    if (nodePositions[i].distanceTo(nodePositions[j]) < 5.5) {
+      const lineMat2 = new THREE.LineBasicMaterial({ color: 0x5a8aaa, transparent: true, opacity: 0.12 });
+      const pts = [nodePositions[i], nodePositions[j]];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      linesGroup.add(new THREE.Line(geo, lineMat2));
+    }
+  }
+}
+
+// ─── PARTICLE BURST (light rays from center) ───────────────────────────
+const burstGeo = new THREE.BufferGeometry();
+const burstCount = 800;
+const burstPos = new Float32Array(burstCount * 3);
+const burstVel = [];
+for (let i = 0; i < burstCount; i++) {
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2*Math.random()-1);
+  const r = Math.random() * 0.5;
+  burstPos[i*3]   = r * Math.sin(phi)*Math.cos(theta);
+  burstPos[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
+  burstPos[i*3+2] = r * Math.cos(phi);
+  burstVel.push({
+    x: (Math.random()-0.5)*0.02,
+    y: (Math.random()-0.5)*0.02,
+    z: (Math.random()-0.5)*0.02,
+    life: Math.random()
+  });
+}
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPos, 3));
+const burstMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.04, transparent: true, opacity: 0.8 });
+const burstParticles = new THREE.Points(burstGeo, burstMat);
+coreGroup.add(burstParticles);
+
+// ─── LIGHTING ──────────────────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(0x0a1020, 1.5);
+scene.add(ambientLight);
+
+const rimLight = new THREE.DirectionalLight(0x7aaad0, 1.2);
+rimLight.position.set(5, 3, 2);
+scene.add(rimLight);
+
+const rimLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+rimLight2.position.set(-3, -2, -4);
+scene.add(rimLight2);
+
+// ─── SCROLL STATE ──────────────────────────────────────────────────────
+let scrollProgress = 0;
+const sections = [
+  document.getElementById('tb-0'),
+  document.getElementById('tb-1'),
+  document.getElementById('tb-2'),
+  document.getElementById('tb-3'),
+  document.getElementById('tb-4'),
+];
+const dots = document.querySelectorAll('.dot');
+const progressBar = document.getElementById('progress-bar');
+const scrollHint = document.getElementById('scroll-hint');
+
+// Show first section immediately
+setTimeout(() => sections[0].classList.add('visible'), 1200);
+
+// ─── SCROLL HANDLER ────────────────────────────────────────────────────
+function getScroll() {
+  return window.scrollY / (document.body.scrollHeight - window.innerHeight);
+}
+
+let currentSection = 0;
+function updateSection(newSec) {
+  if (newSec === currentSection) return;
+  sections[currentSection].classList.remove('visible');
+  currentSection = newSec;
+  setTimeout(() => sections[currentSection].classList.add('visible'), 100);
+  dots.forEach((d,i) => d.classList.toggle('active', i === newSec));
+}
+
+window.addEventListener('scroll', () => {
+  scrollProgress = getScroll();
+  progressBar.style.width = (scrollProgress * 100) + '%';
+
+  // Hide scroll hint after first scroll
+  if (scrollProgress > 0.02) scrollHint.style.opacity = '0';
+  else scrollHint.style.opacity = '1';
+
+  // Section transitions (5 sections across 0-1 scroll)
+  const sec = Math.min(4, Math.floor(scrollProgress * 5.2));
+  updateSection(sec);
+}, { passive: true });
+
+// ─── CAMERA & SCENE ANIMATION VIA SCROLL ──────────────────────────────
+// Keyframes for camera and scene state
+const keyframes = [
+  // 0: Hero — wide, explosive network view
+  { camZ: 12, camY: 0, camX: 0, camRotY: 0, camRotX: 0,
+    nodeScale: 1, lineOpacity: 0.25, coreScale: 1, ringOpacity: 0.6, ringsVisible: false },
+  // 1: Product — camera moves in, network fades, core becomes prominent
+  { camZ: 8, camY: 0.5, camX: 0, camRotY: 0.2, camRotX: -0.05,
+    nodeScale: 0.8, lineOpacity: 0.15, coreScale: 1.15, ringOpacity: 0.9, ringsVisible: true },
+  // 2: Features — camera above, looking down slightly
+  { camZ: 9, camY: 2, camX: 0.5, camRotY: -0.1, camRotX: -0.2,
+    nodeScale: 0.5, lineOpacity: 0.08, coreScale: 1.0, ringOpacity: 1.2, ringsVisible: true },
+  // 3: Social proof — side angle, singular sphere view
+  { camZ: 7, camY: -1, camX: -1.5, camRotY: 0.25, camRotX: 0.1,
+    nodeScale: 0.3, lineOpacity: 0.04, coreScale: 1.3, ringOpacity: 0.8, ringsVisible: true },
+  // 4: Final CTA — close, centered, majestic
+  { camZ: 6, camY: 0, camX: 0, camRotY: 0, camRotX: 0,
+    nodeScale: 0.1, lineOpacity: 0.0, coreScale: 1.5, ringOpacity: 0.5, ringsVisible: true },
+];
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+function easeInOut(t) {
+  return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+}
+
+// ─── ANIMATION LOOP ────────────────────────────────────────────────────
+let time = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.008;
+
+  const sp = scrollProgress;
+  const rawSec = sp * 4; // 0 to 4
+  const secIdx = Math.min(3, Math.floor(rawSec));
+  const t = smoothstep(rawSec - secIdx);
+
+  const kfA = keyframes[secIdx];
+  const kfB = keyframes[Math.min(4, secIdx + 1)];
+
+  // Camera
+  camera.position.x = lerp(kfA.camX, kfB.camX, t);
+  camera.position.y = lerp(kfA.camY, kfB.camY, t);
+  camera.position.z = lerp(kfA.camZ, kfB.camZ, t);
+  camera.rotation.y = lerp(kfA.camRotY, kfB.camRotY, t);
+  camera.rotation.x = lerp(kfA.camRotX, kfB.camRotX, t);
+  camera.lookAt(0, 0, 0);
+
+  // Core animation
+  const cs = lerp(kfA.coreScale, kfB.coreScale, t);
+  coreGroup.scale.setScalar(cs);
+  coreGroup.rotation.y = time * 0.3;
+  coreGroup.rotation.x = Math.sin(time * 0.15) * 0.05;
+
+  // Rings
+  rings.rotation.y = time * 0.8;
+  rings.rotation.z = time * 0.15;
+  const ro = lerp(kfA.ringOpacity, kfB.ringOpacity, t);
+  rings.children.forEach((r, i) => {
+    r.material.opacity = ro * [0.6, 0.3, 0.25, 0.15][i] || 0.1;
+  });
+
+  // Nodes
+  const ns = lerp(kfA.nodeScale, kfB.nodeScale, t);
+  nodeGroup.scale.setScalar(ns);
+  linesGroup.scale.setScalar(ns);
+  linesMat.opacity = lerp(kfA.lineOpacity, kfB.lineOpacity, t);
+
+  // Node pulse
+  nodeMeshes.forEach((n, i) => {
+    const pulse = Math.sin(time * 1.5 + i * 0.7) * 0.15 + 0.85;
+    n.scale.setScalar(pulse);
+  });
+
+  // Core light pulse
+  const lightPulse = Math.sin(time * 1.2) * 0.3 + 1;
+  coreLight.intensity = 5 * lightPulse * cs;
+  coreLightBlue.intensity = 2 * lightPulse;
+
+  // Burst particles animation
+  const bPos = burstGeo.attributes.position.array;
+  for (let i = 0; i < burstCount; i++) {
+    burstVel[i].life += 0.012;
+    if (burstVel[i].life > 1) {
+      burstVel[i].life = 0;
+      bPos[i*3] = 0; bPos[i*3+1] = 0; bPos[i*3+2] = 0;
+    } else {
+      bPos[i*3]   += burstVel[i].x;
+      bPos[i*3+1] += burstVel[i].y;
+      bPos[i*3+2] += burstVel[i].z;
+    }
+  }
+  burstGeo.attributes.position.needsUpdate = true;
+  burstMat.opacity = 0.7 * (1 - sp * 0.6);
+
+  // Mouse parallax (only on desktop)
+  if (window.innerWidth > 768) {
+    const mx2 = (mx / window.innerWidth - 0.5) * 0.4;
+    const my2 = (my / window.innerHeight - 0.5) * 0.4;
+    nodeGroup.rotation.y = mx2 * 0.3;
+    nodeGroup.rotation.x = -my2 * 0.15;
+    linesGroup.rotation.y = mx2 * 0.3;
+    linesGroup.rotation.x = -my2 * 0.15;
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ─── RESIZE ────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── GSAP INTRO ────────────────────────────────────────────────────────
+gsap.fromTo(camera.position, { z: 20 }, {
+  z: 12, duration: 3, ease: 'power3.out',
+  onUpdate: () => camera.lookAt(0, 0, 0)
+});
+gsap.fromTo(coreGroup.scale, { x: 0, y: 0, z: 0 }, {
+  x: 1, y: 1, z: 1, duration: 2.5, ease: 'back.out(1.2)', delay: 0.3
+});
+gsap.fromTo(nodeGroup.scale, { x: 0, y: 0, z: 0 }, {
+  x: 1, y: 1, z: 1, duration: 2, ease: 'power2.out', delay: 0.8
+});
+gsap.fromTo(scene.fog, { density: 0.05 }, {
+  density: 0.015, duration: 3, ease: 'power2.out'
+});
+
+// Hover effect on interactive elements
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursorRing.style.transform = 'translate(-50%,-50%) scale(1.6)';
+    cursorRing.style.borderColor = 'rgba(200,216,232,0.9)';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursorRing.style.transform = 'translate(-50%,-50%) scale(1)';
+    cursorRing.style.borderColor = 'rgba(200,216,232,0.5)';
+  });
+});
+</script>
+</body>
+</html>

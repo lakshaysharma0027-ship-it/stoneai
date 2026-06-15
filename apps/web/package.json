@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
-    "check-types": "next typegen && tsc --noEmit"
+    "check-types": "next typegen && tsc --noEmit",
+    "generate:template-previews": "node scripts/generate-template-previews.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
@@ -32,6 +33,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4.3.0",
     "typescript": "5.9.2"
   }

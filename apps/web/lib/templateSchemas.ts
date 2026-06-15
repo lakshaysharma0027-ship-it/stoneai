@@ -427,6 +427,242 @@ export const templateSchemas = [
     id: "generated",
     sections: [],
   },
+  {
+    id: "velox-showroom",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Automotive excellence, rendered in motion",
+          body: "Velox Showroom pairs cinematic scroll choreography with premium product storytelling for luxury automotive brands.",
+          buttonLabel: "Explore collection",
+        },
+      },
+      {
+        id: "gallery-1",
+        type: "gallery",
+        content: {
+          heading: "Featured machines",
+          gallery: [
+            { id: "v1", src: "/gallery/nano-banana/product-lifestyle.png", alt: "Velox featured vehicle" },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "VELOX", footerLegal: "(c) Velox Showroom. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "nexus",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Intelligence at cosmic scale",
+          body: "Nexus presents AI infrastructure with nebula-grade visuals, chrome typography, and enterprise-grade clarity.",
+          buttonLabel: "Launch platform",
+        },
+      },
+      {
+        id: "features-1",
+        type: "features",
+        content: {
+          heading: "Built for frontier teams",
+          features: [
+            { id: "n1", title: "Orbital compute", description: "Scale inference across distributed nodes." },
+            { id: "n2", title: "Signal routing", description: "Route models with precision and observability." },
+            { id: "n3", title: "Mission control", description: "Operate deployments from a single command layer." },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "NEXUS", footerLegal: "(c) Nexus Intelligence. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "stone-archive",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "The Stone Archive",
+          body: "An immersive portfolio archive with scroll-reactive identity panels and cinematic HUD typography.",
+          buttonLabel: "Enter archive",
+        },
+      },
+      {
+        id: "stats-1",
+        type: "stats",
+        content: {
+          heading: "Archive metrics",
+          body: "Projects indexed across design, engineering, and creative technology.",
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "STONE ARCHIVE", footerLegal: "(c) Stone Archive. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "chen-lei",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Creative technologist",
+          body: "Chen Lei blends code, motion, and editorial design into precise digital experiences.",
+          buttonLabel: "View work",
+        },
+      },
+      {
+        id: "gallery-1",
+        type: "gallery",
+        content: {
+          heading: "Selected projects",
+          gallery: [
+            { id: "c1", src: "/gallery/nano-banana/glass-dashboard.png", alt: "Chen Lei project preview" },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "CHEN LEI", footerLegal: "(c) Chen Lei Studio. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "noir-restaurant",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Fine dining reimagined",
+          body: "NOIR pairs editorial serif typography with atmospheric reservation flows for luxury hospitality.",
+          buttonLabel: "Reserve a table",
+        },
+      },
+      {
+        id: "gallery-1",
+        type: "gallery",
+        content: {
+          heading: "The experience",
+          gallery: [
+            { id: "nr1", src: "/gallery/nano-banana/product-lifestyle.png", alt: "NOIR dining atmosphere" },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "NOIR", footerLegal: "(c) NOIR Restaurant. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "chronos-infinitum",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Architects of time",
+          body: "ÆTHER explores cosmic narrative through gold celestial motion and poetic scroll chapters.",
+          buttonLabel: "Begin journey",
+        },
+      },
+      {
+        id: "features-1",
+        type: "features",
+        content: {
+          heading: "Temporal craft",
+          features: [
+            { id: "a1", title: "Celestial motion", description: "Canvas-driven chapters with immersive depth." },
+            { id: "a2", title: "Editorial rhythm", description: "Poetic pacing across every scroll sequence." },
+            { id: "a3", title: "Gold accents", description: "Refined palette for luxury design studios." },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "ÆTHER", footerLegal: "(c) ÆTHER Studio. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "sketchbook-3d",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "Inside my mind",
+          body: "A playful 3D sketchbook world with hand-drawn typography and exploratory navigation.",
+          buttonLabel: "Enter sketchbook",
+        },
+      },
+      {
+        id: "gallery-1",
+        type: "gallery",
+        content: {
+          heading: "Sketch pages",
+          gallery: [
+            { id: "s1", src: "/gallery/nano-banana/holographic-workspace.png", alt: "Sketchbook scene" },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "SKETCHBOOK", footerLegal: "(c) Inside My Mind. All rights reserved." },
+      },
+    ],
+  },
+  {
+    id: "the-last-library",
+    sections: [
+      {
+        id: "hero-1",
+        type: "hero",
+        content: {
+          heading: "The Last Library",
+          body: "A literary universe with starfield canvas, floating book spines, and narrative screen flows.",
+          buttonLabel: "Open the library",
+        },
+      },
+      {
+        id: "features-1",
+        type: "features",
+        content: {
+          heading: "Curated volumes",
+          features: [
+            { id: "l1", title: "Starfield index", description: "Navigate stories across a living catalog." },
+            { id: "l2", title: "Spine archive", description: "Color-coded volumes with tactile presence." },
+            { id: "l3", title: "Reader screens", description: "Screen-based narrative exploration." },
+          ],
+        },
+      },
+      {
+        id: "footer-1",
+        type: "footer",
+        content: { logo: "THE LAST LIBRARY", footerLegal: "(c) The Last Library. All rights reserved." },
+      },
+    ],
+  },
 ] as const satisfies TemplateSchema[];
 
 export const getTemplateSchemaById = (

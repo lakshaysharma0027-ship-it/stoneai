@@ -7,22 +7,13 @@ import { MarketingNav } from "@/components/marketing/MarketingNav";
 import TemplatePreviewModal from "@/components/templates/TemplatePreviewModal";
 import { projectStorage, type StoredProject } from "@/lib/projects";
 import {
-  templates as projectTemplates,
+  getProjectTemplateById,
   type TemplateMetadata,
 } from "@/lib/templates";
+import { getTemplateCategories } from "@/lib/template-catalog";
 import { templates, type Template } from "./lib/templates";
 
-const filters = [
-  "All",
-  "SaaS",
-  "Startup",
-  "Agency",
-  "Portfolio",
-  "Ecommerce",
-  "Creator",
-  "Fintech",
-  "Design",
-];
+const filters = ["All", ...getTemplateCategories()];
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(
@@ -30,12 +21,10 @@ const formatDate = (value: string) =>
   );
 
 const resolveProjectTemplate = (template: Template): TemplateMetadata => {
-  const projectTemplate = projectTemplates.find(
-    (candidate) => candidate.name.toLowerCase() === template.name.toLowerCase(),
-  );
+  const projectTemplate = getProjectTemplateById(template.id);
 
   if (!projectTemplate) {
-    throw new Error(`Missing project template for "${template.name}".`);
+    throw new Error(`Missing project template for "${template.id}".`);
   }
 
   return projectTemplate;
@@ -134,7 +123,7 @@ export default function TemplatesPage() {
   const [sortOrder, setSortOrder] = useState("popular");
   const [isLoading, setIsLoading] = useState(true);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
-  const [creatingTemplateId, setCreatingTemplateId] = useState<number | null>(null);
+  const [creatingTemplateId, setCreatingTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 250);

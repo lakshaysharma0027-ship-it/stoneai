@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
+import {
+  getFeaturedTemplates,
+  nanoBananaGallery,
+  templateCatalog,
+  veoShowcaseItems,
+} from "@/lib/template-catalog";
 import { STONEAI_COMPANY } from "@/lib/site";
 
 const promptExamples = [
@@ -22,14 +28,9 @@ const features = [
   ["▶", "AI Video", "Create hero loops, product demos, and background videos with Veo generation."],
 ];
 
-const templates = [
-  ["Nebula SaaS", "SaaS / Dark"],
-  ["Forge Agency", "Agency / Studio"],
-  ["Crimson E-com", "E-commerce / Bold"],
-  ["Atlas Portfolio", "Portfolio / Clean"],
-  ["Signal Finance", "Fintech / Enterprise"],
-  ["Orbit AI", "Startup / Technical"],
-];
+const featuredTemplates = getFeaturedTemplates();
+const homepageTemplates =
+  featuredTemplates.length > 0 ? featuredTemplates : templateCatalog.slice(0, 6);
 
 const testimonials = [
   ["StoneAI feels like having a product designer, copywriter, and deployment engineer in the same prompt box.", "Maya Chen", "Founder, Northstar"],
@@ -173,24 +174,25 @@ export default function HomePage() {
         <div className="container template-head">
           <div>
             <SectionLabel tag="Templates" />
-            <h2>Start from 400+<br /><span>world-class templates.</span></h2>
-            <p>Every template is a starting point, not a ceiling. Customize anything with AI or the visual editor.</p>
+            <h2>Start from premium<br /><span>StoneAI templates.</span></h2>
+            <p>Production-ready starting points for portfolios, SaaS, dining, and immersive experiences. Customize anything with AI or the visual editor.</p>
           </div>
           <Link href="/templates" className="btn btn-ghost">Browse all</Link>
         </div>
         <div className="templates-marquee">
           <div className="templates-track">
-            {[...templates, ...templates].map(([name, cat], index) => (
-              <article className="template-card" key={`${name}-${index}`}>
-                <div className="template-thumb">
-                  <div className="template-bar" />
-                  <div className="template-title" />
-                  <div className="template-line sm" />
-                  <div className="template-line" />
-                  <div className="template-grid"><span /><span /><span /></div>
+            {[...homepageTemplates, ...homepageTemplates].map((template, index) => (
+              <Link href="/templates" className="template-card" key={`${template.id}-${index}`}>
+                <div className="template-thumb" style={{ background: template.bgColor, padding: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={template.previewImage}
+                    alt={`${template.name} preview`}
+                    className="template-preview-img"
+                  />
                 </div>
-                <div><strong>{name}</strong><span>{cat}</span></div>
-              </article>
+                <div><strong>{template.name}</strong><span>{template.category}</span></div>
+              </Link>
             ))}
           </div>
         </div>
@@ -205,7 +207,13 @@ export default function HomePage() {
             <div className="mini-prompt">Minimal monochrome product render, soft edge light, enterprise SaaS hero image</div>
           </div>
           <div className="image-board">
-            <span /><span /><span /><span />
+            {nanoBananaGallery.map((image) => (
+              <figure className="gallery-item" key={image.id}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image.src} alt={image.alt} loading="lazy" />
+                <figcaption>{image.prompt}</figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -213,13 +221,40 @@ export default function HomePage() {
       <section className="section video-section">
         <div className="container video-grid">
           <div className="video-preview">
-            <div className="play-button">▶</div>
-            <div className="video-lines"><span /><span /><span /></div>
+            {veoShowcaseItems[0]?.videoSrc ? (
+              <video
+                src={veoShowcaseItems[0].videoSrc}
+                poster={veoShowcaseItems[0].posterSrc}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <>
+                <div className="play-button">▶</div>
+                <div className="video-placeholder-label">Veo preview coming soon</div>
+                <div className="video-lines">
+                  {veoShowcaseItems.map((item) => (
+                    <span key={item.id} title={item.title} />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           <div>
             <SectionLabel tag="Veo Video" />
             <h2>Hero loops and product demos from text.</h2>
             <p>Generate launch videos, explainers, atmospheric sections, and product storytelling clips with Veo workflows built into StoneAI.</p>
+            <ul className="veo-ready-list">
+              {veoShowcaseItems.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  <span>{item.description}</span>
+                  {item.placeholder ? <em>Placeholder ready</em> : null}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -278,12 +313,12 @@ export default function HomePage() {
         .section{padding:118px 0}.section-label{display:flex;align-items:center;gap:14px;margin-bottom:28px}.section-label span{font-size:11px;text-transform:uppercase;letter-spacing:.22em;color:#d7d7dc;font-weight:800}.section-label i{height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent)}.split-head,.template-head,.media-grid,.video-grid,.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:58px;align-items:center}.split-head h2,.template-head h2,.media-grid h2,.video-grid h2,.pricing-band h2,.faq-grid h2{font-size:clamp(2.5rem,5vw,4.8rem);line-height:1.02;letter-spacing:-.06em;margin:0}.split-head p,.template-head p,.media-grid p,.video-grid p,.pricing-band p{color:var(--soft);font-size:17px;line-height:1.8}
         .gen-demo{margin-top:54px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));box-shadow:0 40px 120px rgba(0,0,0,.38);overflow:hidden}.gen-demo-top{height:54px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 20px}.gen-demo-dots{display:flex;gap:8px}.gen-demo-dots span{width:10px;height:10px;border-radius:50%;background:#33343a}.gen-demo-url{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:8px 14px;color:#8b8b94;font-size:12px}.gen-demo-status{font-size:12px;color:#fff}.gen-demo-body{display:grid;grid-template-columns:360px 1fr}.gen-panel{border-right:1px solid var(--line);padding:22px}.gen-block{border:1px solid var(--line);border-radius:18px;background:rgba(0,0,0,.18);padding:18px;margin-bottom:16px}.gen-panel-title{text-transform:uppercase;letter-spacing:.18em;font-size:10px;color:#777985;margin-bottom:12px}.gen-input{font-size:13px;line-height:1.7;color:#d8d8de}.gen-progress{display:grid;gap:10px}.gen-step{display:flex;gap:10px;color:#6f7078;font-size:13px}.gen-step.done{color:#fff}.gen-step.active{color:#d9dfe9}.gen-step.active span{animation:pulse 1.2s infinite}.gen-preview{padding:18px}.gen-preview-bar{display:flex;gap:4px;margin-bottom:12px}.gen-preview-bar span{padding:7px 13px;border-radius:999px;color:#777985;font-size:12px}.gen-preview-bar .active{background:#fff;color:#050506}.gen-mockup{position:relative;min-height:390px;border:1px solid var(--line);border-radius:20px;background:#060607;overflow:hidden;padding:28px}.gen-mock-nav{display:flex;gap:12px;align-items:center}.gen-mock-nav span{width:32px;height:32px;border-radius:10px;background:#fff}.gen-mock-nav i{width:70px;height:8px;border-radius:9px;background:#25262b}.gen-mock-nav b{margin-left:auto;width:96px;height:30px;border-radius:999px;background:linear-gradient(90deg,#fff,#9aa4b8)}.gen-mock-hero{margin-top:70px}.gen-mock-hero strong{display:block;width:58%;height:34px;border-radius:10px;background:#f5f5f6;margin-bottom:12px}.gen-mock-hero .sm{width:42%;opacity:.6}.gen-mock-hero em{display:block;width:128px;height:38px;border-radius:999px;background:#fff;margin-top:24px}.gen-mock-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:56px}.gen-mock-cards span{height:94px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.055)}.gen-beam{position:absolute;inset:auto -20% 0;height:180px;background:radial-gradient(ellipse at center,rgba(160,180,255,.18),transparent 62%);animation:beam 3s infinite}
         .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:28px;overflow:hidden}.feature-cell{background:#080809;padding:34px;min-height:245px;transition:.22s}.feature-cell:hover{background:#101114;transform:translateY(-2px)}.feature-icon{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;display:grid;place-items:center;margin-bottom:28px;background:rgba(255,255,255,.04)}.feature-cell h3{font-size:20px;margin:0 0 10px}.feature-cell p{color:var(--muted);font-size:14px;line-height:1.7}
-        .templates-section{overflow:hidden}.template-head{align-items:end}.templates-marquee{margin-top:54px;overflow:hidden}.templates-track{display:flex;gap:18px;width:max-content;animation:scroll 28s linear infinite}.template-card{width:320px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.04);padding:12px;transition:.2s}.template-card:hover{transform:translateY(-6px);background:rgba(255,255,255,.07)}.template-thumb{height:214px;border-radius:16px;background:linear-gradient(135deg,#090a0d,#1b1d24);padding:18px;overflow:hidden}.template-bar{width:42px;height:16px;border-radius:6px;background:#fff}.template-title{width:78%;height:24px;border-radius:8px;background:#cfd2da;margin-top:48px}.template-line{height:9px;border-radius:9px;background:#444751;margin-top:12px}.template-line.sm{width:58%}.template-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:32px}.template-grid span{height:48px;border-radius:10px;background:rgba(255,255,255,.08)}.template-card strong{display:block;margin:15px 4px 2px}.template-card span{color:var(--muted);font-size:13px;margin-left:4px}
-        .media-section,.publishing-section{background:#080809}.mini-prompt{margin-top:28px;border:1px solid var(--line);border-radius:18px;background:#050506;padding:18px;color:#d8d8dd}.image-board{display:grid;grid-template-columns:1fr 1fr;gap:14px}.image-board span{height:210px;border-radius:24px;border:1px solid var(--line);background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.22),transparent 28%),linear-gradient(135deg,#121319,#050506)}.image-board span:nth-child(2),.image-board span:nth-child(3){transform:translateY(34px)}
-        .video-preview{height:420px;border:1px solid var(--line);border-radius:28px;background:radial-gradient(circle at 45% 35%,rgba(160,180,255,.22),transparent 32%),#060607;position:relative;overflow:hidden;box-shadow:0 36px 110px rgba(0,0,0,.35)}.play-button{position:absolute;inset:0;margin:auto;width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#050506;box-shadow:0 0 60px rgba(255,255,255,.18)}.video-lines{position:absolute;left:26px;right:26px;bottom:26px;display:grid;gap:10px}.video-lines span{height:9px;border-radius:9px;background:rgba(255,255,255,.12)}.publish-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.publish-grid article{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.035);padding:24px}.publish-grid span{color:#fff}.publish-grid p{color:var(--muted);font-size:13px;line-height:1.6}
-        .pricing-band{border:1px solid var(--line);border-radius:30px;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.025));padding:48px;display:flex;align-items:center;justify-content:space-between;gap:28px}.testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.testimonial-grid figure{margin:0;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.04);padding:28px;min-height:290px}.testimonial-grid div{color:#fff;font-size:12px;letter-spacing:.18em}.testimonial-grid blockquote{margin:28px 0;color:#e7e7eb;font-size:18px;line-height:1.65}.testimonial-grid figcaption{display:flex;flex-direction:column;gap:4px}.testimonial-grid span{color:var(--muted);font-size:13px}        .faq-grid{align-items:start}.faq-grid details{border-bottom:1px solid var(--line);padding:22px 0}.faq-grid summary{cursor:pointer;font-weight:800}.faq-grid p{color:var(--muted);line-height:1.7}.reveal-card{animation:rise .8s ease both}
+        .templates-section{overflow:hidden}.template-head{align-items:end}.templates-marquee{margin-top:54px;overflow:hidden}.templates-track{display:flex;gap:18px;width:max-content;animation:scroll 28s linear infinite}.template-card{width:320px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.04);padding:12px;transition:.2s;text-decoration:none;color:inherit}.template-card:hover{transform:translateY(-6px);background:rgba(255,255,255,.07)}.template-thumb{height:214px;border-radius:16px;overflow:hidden;position:relative}.template-preview-img{width:100%;height:100%;object-fit:cover;display:block}.template-card strong{display:block;margin:15px 4px 2px}.template-card span{color:var(--muted);font-size:13px;margin-left:4px}
+        .media-section,.publishing-section{background:#080809}.mini-prompt{margin-top:28px;border:1px solid var(--line);border-radius:18px;background:#050506;padding:18px;color:#d8d8dd}.image-board{display:grid;grid-template-columns:1fr 1fr;gap:14px}.gallery-item{margin:0;border:1px solid var(--line);border-radius:24px;overflow:hidden;background:#050506;position:relative}.gallery-item img{width:100%;height:210px;object-fit:cover;display:block}.gallery-item figcaption{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;font-size:11px;line-height:1.5;color:#d8d8dd;background:linear-gradient(180deg,transparent,rgba(5,5,6,.92))}.gallery-item:nth-child(2),.gallery-item:nth-child(3){transform:translateY(34px)}
+        .video-preview{height:420px;border:1px solid var(--line);border-radius:28px;background:radial-gradient(circle at 45% 35%,rgba(160,180,255,.22),transparent 32%),#060607;position:relative;overflow:hidden;box-shadow:0 36px 110px rgba(0,0,0,.35)}.video-preview video{width:100%;height:100%;object-fit:cover}.play-button{position:absolute;inset:0;margin:auto;width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#050506;box-shadow:0 0 60px rgba(255,255,255,.18);z-index:2}.video-placeholder-label{position:absolute;left:26px;top:26px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9da4b5;z-index:2}.video-lines{position:absolute;left:26px;right:26px;bottom:26px;display:grid;gap:10px;z-index:2}.video-lines span{height:9px;border-radius:9px;background:rgba(255,255,255,.12)}.veo-ready-list{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:14px}.veo-ready-list li{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:rgba(255,255,255,.03)}.veo-ready-list strong{display:block;font-size:14px;margin-bottom:4px}.veo-ready-list span{display:block;color:var(--muted);font-size:13px;line-height:1.6}.veo-ready-list em{display:inline-block;margin-top:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7f8798;font-style:normal}
+        .pricing-band{border:1px solid var(--line);border-radius:30px;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.025));padding:48px;display:flex;align-items:center;justify-content:space-between;gap:28px}.publish-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.publish-grid article{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.035);padding:24px}.publish-grid span{color:#fff}.publish-grid p{color:var(--muted);font-size:13px;line-height:1.6}.testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.testimonial-grid figure{margin:0;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.04);padding:28px;min-height:290px}.testimonial-grid div{color:#fff;font-size:12px;letter-spacing:.18em}.testimonial-grid blockquote{margin:28px 0;color:#e7e7eb;font-size:18px;line-height:1.65}.testimonial-grid figcaption{display:flex;flex-direction:column;gap:4px}.testimonial-grid span{color:var(--muted);font-size:13px}        .faq-grid{align-items:start}.faq-grid details{border-bottom:1px solid var(--line);padding:22px 0}.faq-grid summary{cursor:pointer;font-weight:800}.faq-grid p{color:var(--muted);line-height:1.7}.reveal-card{animation:rise .8s ease both}
         @keyframes scroll{to{transform:translateX(-50%)}}@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}@keyframes pulse{50%{opacity:.35}}@keyframes beam{50%{transform:translateX(20%);opacity:.55}}
-        @media(max-width:900px){.hero{min-height:auto;padding-top:140px}.float-stack{display:none}.hero-prompt{flex-direction:column;align-items:stretch}.trust-inner,.split-head,.template-head,.media-grid,.video-grid,.faq-grid{grid-template-columns:1fr}.trust-inner{grid-template-columns:1fr 1fr}.features-grid,.publish-grid,.testimonial-grid{grid-template-columns:1fr}.gen-demo-body{grid-template-columns:1fr}.gen-panel{border-right:0;border-bottom:1px solid var(--line)}.pricing-band{flex-direction:column;align-items:flex-start}.hero h1{font-size:4rem}.typing-line{font-size:14px}}
+        @media(max-width:900px){.hero{min-height:auto;padding-top:140px}.float-stack{display:none}.hero-prompt{flex-direction:column;align-items:stretch}.trust-inner,.split-head,.template-head,.media-grid,.video-grid,.faq-grid{grid-template-columns:1fr}.trust-inner{grid-template-columns:1fr 1fr}.features-grid,.publish-grid,.testimonial-grid{grid-template-columns:1fr}.gen-demo-body{grid-template-columns:1fr}.gen-panel{border-right:0;border-bottom:1px solid var(--line)}.pricing-band{flex-direction:column;align-items:flex-start}.hero h1{font-size:4rem}.typing-line{font-size:14px}.gallery-item,.gallery-item:nth-child(2),.gallery-item:nth-child(3){transform:none}}
         @media(max-width:480px){.trust-inner{grid-template-columns:1fr}.hero h1{font-size:3rem}.hero p{font-size:16px}.publish-grid article,.feature-cell{padding:20px}.container{padding:0 16px}.hero{padding-left:16px;padding-right:16px}}
         @media(max-width:375px){.hero h1{font-size:2.5rem}.hero-prompt{margin-left:0;margin-right:0}}
       `}</style>

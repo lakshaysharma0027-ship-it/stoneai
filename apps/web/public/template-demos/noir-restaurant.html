@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOIR — Fine Dining Reimagined</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Cinzel:wght@400;500;600&family=Raleway:wght@200;300;400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D5A0;
+    --gold-dim: #8B6914;
+    --cream: #F5EDD6;
+    --dark: #0A0804;
+    --dark2: #110E08;
+    --warm: #1A1408;
+    --text-muted: rgba(201,168,76,0.5);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: #000;
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  #custom-cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%,-50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s;
+    mix-blend-mode: screen;
+  }
+  #custom-cursor.large {
+    width: 40px; height: 40px;
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1.5s ease;
+  }
+  #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+  .loading-logo {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: 0.5em;
+    color: transparent;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: goldShimmer 3s ease infinite;
+  }
+  @keyframes goldShimmer {
+    0%,100% { filter: brightness(0.8); }
+    50% { filter: brightness(1.3); }
+  }
+
+  .loading-bar-wrap {
+    width: 200px; height: 1px;
+    background: rgba(201,168,76,0.2);
+    margin-top: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .loading-bar {
+    position: absolute;
+    left: -100%; top: 0;
+    width: 100%; height: 100%;
+    background: var(--gold);
+    animation: loadBar 2.5s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  @keyframes loadBar { to { left: 0; } }
+
+  #webgl-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1;
+  }
+
+  #scroll-container {
+    position: relative;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .scroll-section {
+    height: 100vh;
+    pointer-events: none;
+  }
+
+  /* Overlay UI */
+  #ui-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  #page-label {
+    position: fixed;
+    top: 50%;
+    left: 5vw;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    transition: opacity 0.5s;
+  }
+
+  #scroll-hint {
+    position: fixed;
+    bottom: 8vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    transition: opacity 1s ease;
+  }
+  #scroll-hint.hidden { opacity: 0; }
+  .scroll-hint-text {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .scroll-hint-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollLine 1.5s ease infinite;
+  }
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* Page content overlays */
+  .page-content {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    z-index: 6;
+  }
+  .page-content.visible { opacity: 1; pointer-events: auto; }
+
+  /* Page 0: Cover */
+  #cover-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .cover-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.6em;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+  .cover-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(4rem, 12vw, 11rem);
+    font-weight: 600;
+    letter-spacing: 0.4em;
+    color: transparent;
+    background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold) 40%, var(--gold-light) 60%, var(--gold) 80%, var(--gold-dim) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    line-height: 0.9;
+    margin-bottom: 1.5rem;
+    text-shadow: none;
+    position: relative;
+  }
+  .cover-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    font-weight: 300;
+    color: var(--cream);
+    letter-spacing: 0.3em;
+    opacity: 0.8;
+  }
+  .cover-stars {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+  .star {
+    width: 20px; height: 20px;
+    color: var(--gold);
+    font-size: 1.2rem;
+  }
+
+  /* Page 1: Welcome */
+  #welcome-content {
+    flex-direction: column;
+    max-width: 800px;
+    padding: 0 5vw;
+  }
+  .page-number {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+  .page-heading {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 6vw, 5rem);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--gold-light);
+    margin-bottom: 2rem;
+    line-height: 1.1;
+  }
+  .page-body {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    font-style: italic;
+    font-weight: 300;
+    color: rgba(245,237,214,0.8);
+    line-height: 1.8;
+    max-width: 60ch;
+  }
+  .gold-divider {
+    width: 80px; height: 1px;
+    background: var(--gold);
+    margin: 2rem 0;
+  }
+
+  /* Page 2: Story */
+  #story-content {
+    flex-direction: row;
+    gap: 6vw;
+    max-width: 1100px;
+    padding: 0 5vw;
+    align-items: center;
+  }
+  .story-left { flex: 1; }
+  .story-right { flex: 1; }
+  .polaroid-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .polaroid {
+    background: rgba(245,237,214,0.05);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 0.5rem 0.5rem 2rem;
+    transform: rotate(var(--rot, 0deg));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.75rem;
+    color: var(--gold-dim);
+    text-align: center;
+  }
+  .polaroid-img {
+    width: 100%; aspect-ratio: 1;
+    background: var(--c, rgba(201,168,76,0.1));
+    margin-bottom: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  /* Page 3: Menu */
+  #menu-content {
+    flex-direction: column;
+    max-width: 900px;
+    padding: 0 5vw;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .dish-card {
+    background: rgba(10,8,4,0.9);
+    border: 1px solid rgba(201,168,76,0.25);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.4s, transform 0.4s;
+  }
+  .dish-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+  }
+  .dish-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .dish-number {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    margin-bottom: 0.5rem;
+  }
+  .dish-name {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--gold-light);
+    margin-bottom: 0.8rem;
+    line-height: 1.3;
+  }
+  .dish-desc {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: rgba(245,237,214,0.6);
+    line-height: 1.6;
+  }
+  .dish-price {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    margin-top: 1rem;
+    letter-spacing: 0.2em;
+  }
+
+  /* Page 4: Kitchen */
+  #kitchen-content {
+    flex-direction: column;
+    max-width: 700px;
+    padding: 0 5vw;
+  }
+
+  /* Page 5: Chef */
+  #chef-content {
+    flex-direction: column;
+    max-width: 750px;
+    text-align: center;
+    padding: 0 5vw;
+  }
+  .chef-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.6;
+    position: relative;
+    padding: 2rem;
+  }
+  .chef-quote::before, .chef-quote::after {
+    content: '"';
+    font-family: 'Cinzel', serif;
+    font-size: 4rem;
+    color: var(--gold);
+    position: absolute;
+    line-height: 1;
+    opacity: 0.4;
+  }
+  .chef-quote::before { top: 0; left: 0; }
+  .chef-quote::after { content: '"'; bottom: -1rem; right: 0; }
+  .chef-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    margin-top: 2rem;
+    text-transform: uppercase;
+  }
+
+  /* Page 6: Wine */
+  #wine-content {
+    flex-direction: column;
+    max-width: 800px;
+    padding: 0 5vw;
+  }
+  .wine-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 2rem;
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+  .wine-item {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+  .wine-item:last-child { border-bottom: none; }
+  .wine-item:hover { background: rgba(201,168,76,0.05); }
+  .wine-year {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--gold-dim);
+    min-width: 60px;
+  }
+  .wine-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--cream);
+    flex: 1;
+  }
+  .wine-region {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: rgba(245,237,214,0.5);
+  }
+  .wine-price {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    min-width: 70px;
+    text-align: right;
+  }
+
+  /* Page 7: Reservations */
+  #reservation-content {
+    flex-direction: column;
+    max-width: 650px;
+    padding: 0 5vw;
+    text-align: center;
+  }
+  .reservation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+    pointer-events: auto;
+  }
+  .form-row { display: flex; gap: 1rem; }
+  .form-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .form-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    text-align: left;
+  }
+  .form-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    padding: 0.6rem 0;
+    outline: none;
+    transition: border-color 0.3s;
+    width: 100%;
+  }
+  .form-input:focus { border-color: var(--gold); }
+  .form-input option { background: #0A0804; color: var(--cream); }
+  .form-input::placeholder { color: rgba(245,237,214,0.3); }
+  .cta-btn {
+    margin-top: 1.5rem;
+    padding: 1rem 3rem;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.4s, color 0.4s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .cta-btn:hover::before { transform: translateX(0); }
+  .cta-btn:hover { color: var(--dark); }
+  .cta-btn span { position: relative; z-index: 1; }
+
+  /* Nav dots */
+  #nav-dots {
+    position: fixed;
+    right: 4vw;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+    pointer-events: auto;
+  }
+  .nav-dot {
+    width: 4px; height: 4px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s, border-color 0.3s;
+  }
+  .nav-dot.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    transform: scale(1.8);
+  }
+
+  /* Header */
+  #site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 2rem 5vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 8;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  #site-header.visible { opacity: 1; }
+  .header-logo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .header-nav {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+  .header-nav a {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    color: rgba(201,168,76,0.7);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .header-nav a:hover { color: var(--gold); }
+
+  /* Michelin badge */
+  .michelin-badge {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: rgba(201,168,76,0.5);
+    text-transform: uppercase;
+    margin-top: 1rem;
+  }
+
+  /* Ambient particles overlay */
+  #particle-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-logo">NOIR</div>
+  <p style="font-family:'Raleway',sans-serif;font-size:0.65rem;letter-spacing:0.5em;color:rgba(201,168,76,0.4);margin-top:0.5rem;text-transform:uppercase;">Fine Dining Reimagined</p>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<!-- Custom cursor -->
+<div id="custom-cursor"></div>
+
+<!-- WebGL Canvas -->
+<canvas id="webgl-canvas"></canvas>
+
+<!-- Particle Canvas -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- Site Header -->
+<header id="site-header">
+  <a class="header-logo" href="#">NOIR</a>
+  <nav>
+    <ul class="header-nav">
+      <li><a href="#" onclick="goToPage(1)">The Story</a></li>
+      <li><a href="#" onclick="goToPage(2)">Menu</a></li>
+      <li><a href="#" onclick="goToPage(5)">Wine</a></li>
+      <li><a href="#" onclick="goToPage(6)">Reserve</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- Nav dots -->
+<div id="nav-dots">
+  <div class="nav-dot active" onclick="goToPage(0)" title="Cover"></div>
+  <div class="nav-dot" onclick="goToPage(1)" title="Welcome"></div>
+  <div class="nav-dot" onclick="goToPage(2)" title="Our Story"></div>
+  <div class="nav-dot" onclick="goToPage(3)" title="Menu"></div>
+  <div class="nav-dot" onclick="goToPage(4)" title="The Kitchen"></div>
+  <div class="nav-dot" onclick="goToPage(5)" title="Chef's Table"></div>
+  <div class="nav-dot" onclick="goToPage(6)" title="Wine"></div>
+  <div class="nav-dot" onclick="goToPage(7)" title="Reserve"></div>
+</div>
+
+<!-- Page label -->
+<div id="page-label">NOIR · EST. 2021</div>
+
+<!-- Scroll hint -->
+<div id="scroll-hint">
+  <span class="scroll-hint-text">Turn the page</span>
+  <div class="scroll-hint-line"></div>
+</div>
+
+<!-- Page Contents -->
+
+<!-- Page 0: Cover -->
+<div class="page-content" id="cover-content">
+  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+    <p class="cover-eyebrow">Michelin · Three Stars · Est. 2021</p>
+    <h1 class="cover-title">NOIR</h1>
+    <p class="cover-subtitle">Fine Dining Reimagined</p>
+    <div class="cover-stars">
+      <span class="star">✦</span>
+      <span class="star">✦</span>
+      <span class="star">✦</span>
+    </div>
+    <p class="michelin-badge">Scroll to open the menu</p>
+  </div>
+</div>
+
+<!-- Page 1: Welcome -->
+<div class="page-content" id="welcome-content">
+  <div>
+    <p class="page-number">Page One · Welcome</p>
+    <h2 class="page-heading">An Experience<br>Beyond<br>Expectation</h2>
+    <div class="gold-divider"></div>
+    <p class="page-body">A dining experience beyond expectation. Where every plate is a canvas, every sip a revelation, and every moment an act of deliberate beauty. Enter a world crafted not just for the palate, but for the soul.</p>
+    <p class="page-body" style="margin-top:1rem;font-style:normal;font-size:0.9rem;color:rgba(201,168,76,0.6);letter-spacing:0.2em;font-family:'Cinzel',serif;">47 COVERS · NIGHTLY FROM 7PM</p>
+  </div>
+</div>
+
+<!-- Page 2: Our Story -->
+<div class="page-content" id="story-content">
+  <div class="story-left">
+    <p class="page-number">Page Two · Our Story</p>
+    <h2 class="page-heading">Born From<br>Obsession</h2>
+    <div class="gold-divider"></div>
+    <p class="page-body">Founded in 2021 by Chef Étienne Morel, NOIR was conceived as a reaction against the ordinary. Trained in Lyon, refined in Tokyo, and inspired by the Highlands — the kitchen speaks all languages, but only one dialect: perfection.</p>
+    <p class="page-body" style="margin-top:1.5rem;">Every ingredient is sourced with the precision of a jeweller choosing diamonds. Seasonal. Ethical. Extraordinary.</p>
+  </div>
+  <div class="story-right">
+    <div class="polaroid-grid">
+      <div class="polaroid" style="--rot:-2deg;--c:rgba(201,168,76,0.07)">
+        <div class="polaroid-img" style="font-size:2rem;">🌿</div>
+        Garden, 2021
+      </div>
+      <div class="polaroid" style="--rot:3deg;--c:rgba(201,168,76,0.05)">
+        <div class="polaroid-img" style="font-size:2rem;">🍄</div>
+        First Harvest
+      </div>
+      <div class="polaroid" style="--rot:-1deg;--c:rgba(201,168,76,0.08)">
+        <div class="polaroid-img" style="font-size:2rem;">🔥</div>
+        The Kitchen
+      </div>
+      <div class="polaroid" style="--rot:2deg;--c:rgba(201,168,76,0.04)">
+        <div class="polaroid-img" style="font-size:2rem;">⭐</div>
+        Three Stars, 2023
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Signature Menu -->
+<div class="page-content" id="menu-content">
+  <div style="width:100%">
+    <p class="page-number">Page Three · Signature Menu</p>
+    <h2 class="page-heading">Tonight's<br>Compositions</h2>
+    <div class="gold-divider"></div>
+    <div class="menu-grid">
+      <div class="dish-card">
+        <p class="dish-number">01</p>
+        <h3 class="dish-name">Black Truffle<br>Risotto</h3>
+        <p class="dish-desc">Aged Carnaroli, 24-month Parmesan, summer black truffle, aged sherry reduction</p>
+        <p class="dish-price">£ 68</p>
+      </div>
+      <div class="dish-card">
+        <p class="dish-number">02</p>
+        <h3 class="dish-name">Wagyu<br>Experience</h3>
+        <p class="dish-desc">A5 Kagoshima Wagyu, bone marrow butter, smoked potato, wild garlic jus</p>
+        <p class="dish-price">£ 195</p>
+      </div>
+      <div class="dish-card">
+        <p class="dish-number">03</p>
+        <h3 class="dish-name">Ocean<br>Symphony</h3>
+        <p class="dish-desc">Cornish turbot, oyster emulsion, sea vegetables, caviar, dashi beurre blanc</p>
+        <p class="dish-price">£ 98</p>
+      </div>
+      <div class="dish-card">
+        <p class="dish-number">04</p>
+        <h3 class="dish-name">Golden Dessert<br>Collection</h3>
+        <p class="dish-desc">Valrhona Dulcey, Tahitian vanilla, gold leaf, salted caramel, edible flowers</p>
+        <p class="dish-price">£ 45</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: The Kitchen -->
+<div class="page-content" id="kitchen-content">
+  <p class="page-number">Page Four · The Kitchen</p>
+  <h2 class="page-heading">Where<br>Alchemy<br>Happens</h2>
+  <div class="gold-divider"></div>
+  <p class="page-body">Sixteen artisans. One purpose. The NOIR kitchen operates as a silent orchestra — each move deliberate, each flame a brushstroke. Our open theatre kitchen seats twelve, with an unobstructed view of creation in its most refined form.</p>
+  <div style="display:flex;gap:2rem;margin-top:2rem;flex-wrap:wrap;">
+    <div style="text-align:center;">
+      <p style="font-family:'Cinzel',serif;font-size:2rem;color:var(--gold)">16</p>
+      <p style="font-family:'Raleway',sans-serif;font-size:0.65rem;letter-spacing:0.3em;color:rgba(201,168,76,0.5);text-transform:uppercase">Artisans</p>
+    </div>
+    <div style="text-align:center;">
+      <p style="font-family:'Cinzel',serif;font-size:2rem;color:var(--gold)">7</p>
+      <p style="font-family:'Raleway',sans-serif;font-size:0.65rem;letter-spacing:0.3em;color:rgba(201,168,76,0.5);text-transform:uppercase">Courses</p>
+    </div>
+    <div style="text-align:center;">
+      <p style="font-family:'Cinzel',serif;font-size:2rem;color:var(--gold)">4h</p>
+      <p style="font-family:'Raleway',sans-serif;font-size:0.65rem;letter-spacing:0.3em;color:rgba(201,168,76,0.5);text-transform:uppercase">Experience</p>
+    </div>
+    <div style="text-align:center;">
+      <p style="font-family:'Cinzel',serif;font-size:2rem;color:var(--gold)">★★★</p>
+      <p style="font-family:'Raleway',sans-serif;font-size:0.65rem;letter-spacing:0.3em;color:rgba(201,168,76,0.5);text-transform:uppercase">Michelin</p>
+    </div>
+  </div>
+</div>
+
+<!-- Page 5: Chef's Table -->
+<div class="page-content" id="chef-content">
+  <p class="page-number">Page Five · Chef's Table</p>
+  <div class="chef-quote">
+    I do not cook for hunger. I cook for the memory you will carry forever. Every plate is a chapter. This book never ends.
+  </div>
+  <div class="gold-divider" style="margin:2rem auto;"></div>
+  <p class="chef-name">Chef Étienne Morel · Executive Chef & Founder</p>
+  <p class="page-body" style="margin-top:1.5rem;text-align:center;font-style:normal;font-size:0.85rem;color:rgba(245,237,214,0.4);letter-spacing:0.15em;font-family:'Cinzel',serif;">FORMERLY OF LE BERNARDIN · NOMA · EL CELLER DE CAN ROCA</p>
+</div>
+
+<!-- Page 6: Wine Collection -->
+<div class="page-content" id="wine-content">
+  <div style="width:100%">
+    <p class="page-number">Page Six · Wine Collection</p>
+    <h2 class="page-heading">The Cellar</h2>
+    <div class="gold-divider"></div>
+    <div class="wine-list">
+      <div class="wine-item">
+        <span class="wine-year">2015</span>
+        <span class="wine-name">Petrus, Pomerol Grand Cru</span>
+        <span class="wine-region">Bordeaux, France</span>
+        <span class="wine-price">£ 1,850</span>
+      </div>
+      <div class="wine-item">
+        <span class="wine-year">2019</span>
+        <span class="wine-name">Opus One, Napa Valley</span>
+        <span class="wine-region">California, USA</span>
+        <span class="wine-price">£ 680</span>
+      </div>
+      <div class="wine-item">
+        <span class="wine-year">2012</span>
+        <span class="wine-name">Sassicaia, Bolgheri DOC</span>
+        <span class="wine-region">Tuscany, Italy</span>
+        <span class="wine-price">£ 440</span>
+      </div>
+      <div class="wine-item">
+        <span class="wine-year">2018</span>
+        <span class="wine-name">Dom Pérignon Vintage</span>
+        <span class="wine-region">Champagne, France</span>
+        <span class="wine-price">£ 320</span>
+      </div>
+      <div class="wine-item">
+        <span class="wine-year">2016</span>
+        <span class="wine-name">Harlan Estate, Oakville</span>
+        <span class="wine-region">Napa Valley, USA</span>
+        <span class="wine-price">£ 950</span>
+      </div>
+    </div>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.85rem;color:rgba(201,168,76,0.4);margin-top:1rem;">Our sommelier holds 1,200+ labels across 38 appellations. Pairing menus available upon request.</p>
+  </div>
+</div>
+
+<!-- Page 7: Reservations -->
+<div class="page-content" id="reservation-content">
+  <div style="width:100%">
+    <p class="page-number">Page Seven · Reservations</p>
+    <h2 class="page-heading" style="font-size:clamp(1.8rem,5vw,3.5rem);">Reserve An<br>Unforgettable Evening</h2>
+    <div class="gold-divider" style="margin:1.5rem auto;"></div>
+    <div class="reservation-form">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" placeholder="Your name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="your@email.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Guests</label>
+          <select class="form-input">
+            <option>2 Guests</option>
+            <option>3 Guests</option>
+            <option>4 Guests</option>
+            <option>Private Dining (6–12)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field" style="margin-top:0.5rem">
+        <label class="form-label">Special Occasion</label>
+        <input class="form-input" type="text" placeholder="Anniversary, birthday, celebration...">
+      </div>
+      <button class="cta-btn"><span>Book Your Table</span></button>
+    </div>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.85rem;color:rgba(201,168,76,0.4);margin-top:1.5rem;text-align:center;">Reservations require 48 hours notice · Dress code: smart formal</p>
+  </div>
+</div>
+
+<!-- Scroll container for wheel events -->
+<div id="scroll-container">
+  <div class="scroll-section" id="s0"></div>
+  <div class="scroll-section" id="s1"></div>
+  <div class="scroll-section" id="s2"></div>
+  <div class="scroll-section" id="s3"></div>
+  <div class="scroll-section" id="s4"></div>
+  <div class="scroll-section" id="s5"></div>
+  <div class="scroll-section" id="s6"></div>
+  <div class="scroll-section" id="s7"></div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<script>
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let currentPage = 0;
+const TOTAL_PAGES = 8;
+let isAnimating = false;
+let sceneReady = false;
+
+const pageIds = [
+  'cover-content','welcome-content','story-content','menu-content',
+  'kitchen-content','chef-content','wine-content','reservation-content'
+];
+
+const pageLabels = [
+  'NOIR — EST. 2021',
+  'I — Welcome',
+  'II — Our Story',
+  'III — Signature Menu',
+  'IV — The Kitchen',
+  'V — Chef\'s Table',
+  'VI — Wine Cellar',
+  'VII — Reservations'
+];
+
+// ─────────────────────────────────────────────
+//  CURSOR
+// ─────────────────────────────────────────────
+const cursor = document.getElementById('custom-cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+document.addEventListener('mouseenter', () => { cursor.style.opacity = 1; });
+document.addEventListener('mouseleave', () => { cursor.style.opacity = 0; });
+document.querySelectorAll('a,button,.dish-card,.wine-item,.nav-dot').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('large'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('large'));
+});
+
+// ─────────────────────────────────────────────
+//  AMBIENT PARTICLE SYSTEM (2D Canvas)
+// ─────────────────────────────────────────────
+const pCanvas = document.getElementById('particle-canvas');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+
+function resizeParticleCanvas() {
+  pCanvas.width = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+resizeParticleCanvas();
+window.addEventListener('resize', resizeParticleCanvas);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * pCanvas.width;
+    this.y = Math.random() * pCanvas.height;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.15;
+    this.speedY = -Math.random() * 0.3 - 0.05;
+    this.opacity = Math.random() * 0.6 + 0.1;
+    this.life = 0;
+    this.maxLife = Math.random() * 300 + 200;
+    this.gold = Math.random() > 0.3;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life++;
+    const lifeRatio = this.life / this.maxLife;
+    this.currentOpacity = this.opacity * Math.sin(lifeRatio * Math.PI);
+    if (this.life > this.maxLife || this.y < -10) this.reset();
+  }
+  draw() {
+    pCtx.save();
+    pCtx.globalAlpha = this.currentOpacity * 0.7;
+    pCtx.fillStyle = this.gold ? '#C9A84C' : '#F5EDD6';
+    pCtx.beginPath();
+    pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    pCtx.fill();
+    pCtx.restore();
+  }
+}
+
+for (let i = 0; i < 120; i++) {
+  const p = new Particle();
+  p.life = Math.random() * p.maxLife;
+  particles.push(p);
+}
+
+function animateParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ─────────────────────────────────────────────
+//  THREE.JS SCENE
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('webgl-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.8;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+scene.fog = new THREE.FogExp2(0x050302, 0.035);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 2, 8);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── Lighting ───
+const ambient = new THREE.AmbientLight(0x1a1005, 0.3);
+scene.add(ambient);
+
+// Spotlight (key light - above book)
+const spotLight = new THREE.SpotLight(0xffd490, 8, 20, Math.PI / 5, 0.4, 1.5);
+spotLight.position.set(0, 8, 3);
+spotLight.target.position.set(0, 0, 0);
+spotLight.castShadow = true;
+spotLight.shadow.mapSize.width = 2048;
+spotLight.shadow.mapSize.height = 2048;
+scene.add(spotLight);
+scene.add(spotLight.target);
+
+// Candle-like warm lights
+const candlePositions = [
+  [-3, -1.5, 2], [3, -1.5, 2], [-2.5, -1.5, -1], [2.5, -1.5, -1],
+  [-4, -1, 0], [4, -1, 0]
+];
+candlePositions.forEach((pos, i) => {
+  const candle = new THREE.PointLight(0xff8820, 0.8, 6, 2);
+  candle.position.set(...pos);
+  scene.add(candle);
+  // Flicker
+  const flicker = () => {
+    gsap.to(candle, {
+      intensity: 0.5 + Math.random() * 0.6,
+      duration: 0.1 + Math.random() * 0.3,
+      onComplete: flicker
+    });
+  };
+  setTimeout(flicker, i * 200);
+});
+
+// ─── Floor (Black Marble) ───
+const floorGeo = new THREE.PlaneGeometry(30, 30, 1, 1);
+const floorMat = new THREE.MeshStandardMaterial({
+  color: 0x080605,
+  roughness: 0.1,
+  metalness: 0.05,
+});
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -2.5;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Subtle floor reflection plane
+const reflGeo = new THREE.PlaneGeometry(20, 20);
+const reflMat = new THREE.MeshStandardMaterial({
+  color: 0x120f08,
+  roughness: 0.05,
+  metalness: 0.3,
+  transparent: true,
+  opacity: 0.5,
+});
+const refl = new THREE.Mesh(reflGeo, reflMat);
+refl.rotation.x = -Math.PI / 2;
+refl.position.y = -2.45;
+scene.add(refl);
+
+// ─── BOOK GROUP ───
+const bookGroup = new THREE.Group();
+scene.add(bookGroup);
+
+// Book cover (base)
+const coverGeo = new THREE.BoxGeometry(4, 5.5, 0.35);
+const coverMat = new THREE.MeshStandardMaterial({
+  color: 0x0f0b07,
+  roughness: 0.8,
+  metalness: 0.05,
+});
+const bookCover = new THREE.Mesh(coverGeo, coverMat);
+bookCover.castShadow = true;
+bookGroup.add(bookCover);
+
+// Book spine detail
+const spineGeo = new THREE.BoxGeometry(0.08, 5.5, 0.35);
+const spineMat = new THREE.MeshStandardMaterial({
+  color: 0xc9a84c,
+  roughness: 0.3,
+  metalness: 0.7,
+});
+const spineL = new THREE.Mesh(spineGeo, spineMat);
+spineL.position.x = -2;
+bookGroup.add(spineL);
+
+// Gold title plate on cover
+const plateMat = new THREE.MeshStandardMaterial({
+  color: 0xc9a84c,
+  roughness: 0.15,
+  metalness: 0.9,
+  emissive: 0x8b6914,
+  emissiveIntensity: 0.3,
+});
+const plateGeo = new THREE.BoxGeometry(2.5, 2, 0.02);
+const plate = new THREE.Mesh(plateGeo, plateMat);
+plate.position.set(0, 0.3, 0.175);
+bookGroup.add(plate);
+
+// Gold border edges
+const borderGeo = new THREE.BoxGeometry(3.7, 0.04, 0.02);
+const topBorder = new THREE.Mesh(borderGeo, spineMat);
+topBorder.position.set(0, 2.6, 0.175);
+bookGroup.add(topBorder);
+const botBorder = new THREE.Mesh(borderGeo, spineMat);
+botBorder.position.set(0, -2.6, 0.175);
+bookGroup.add(botBorder);
+
+// Pages (white stack)
+const pagesGeo = new THREE.BoxGeometry(3.8, 5.3, 0.25);
+const pagesMat = new THREE.MeshStandardMaterial({
+  color: 0xf5edd6,
+  roughness: 0.9,
+  metalness: 0,
+});
+const pages = new THREE.Mesh(pagesGeo, pagesMat);
+pages.position.set(0.05, 0, 0.3);
+bookGroup.add(pages);
+
+// Left page (open state)
+const leftPageGroup = new THREE.Group();
+const leftPageGeo = new THREE.BoxGeometry(3.8, 5.3, 0.02);
+const leftPageMat = new THREE.MeshStandardMaterial({
+  color: 0xf8f0dc,
+  roughness: 0.85,
+  metalness: 0,
+  side: THREE.DoubleSide,
+});
+const leftPage = new THREE.Mesh(leftPageGeo, leftPageMat);
+leftPage.position.x = -1.9;
+leftPageGroup.add(leftPage);
+leftPageGroup.position.set(0, 0, 0.32);
+leftPageGroup.rotation.y = 0;
+bookGroup.add(leftPageGroup);
+
+// Right page
+const rightPageGroup = new THREE.Group();
+const rightPageGeo = new THREE.BoxGeometry(3.8, 5.3, 0.02);
+const rightPage = new THREE.Mesh(rightPageGeo, leftPageMat.clone());
+rightPage.position.x = 1.9;
+rightPageGroup.add(rightPage);
+rightPageGroup.position.set(0, 0, 0.32);
+bookGroup.add(rightPageGroup);
+
+// Page turn pivot groups (for bending effect)
+const leftPivot = new THREE.Group();
+leftPivot.position.set(0, 0, 0.33);
+const leftFlap = new THREE.Mesh(
+  new THREE.BoxGeometry(3.8, 5.3, 0.018),
+  new THREE.MeshStandardMaterial({ color: 0xf5edd6, roughness: 0.9, side: THREE.DoubleSide })
+);
+leftFlap.position.x = -1.9;
+leftPivot.add(leftFlap);
+bookGroup.add(leftPivot);
+leftPivot.visible = false;
+
+// Book initial state: closed, floating
+bookGroup.rotation.y = 0.3;
+bookGroup.position.set(0, 0, 0);
+
+// Floating animation
+let floatTime = 0;
+function animateBook(delta) {
+  floatTime += delta;
+  if (currentPage === 0) {
+    bookGroup.rotation.y = 0.3 + Math.sin(floatTime * 0.4) * 0.15;
+    bookGroup.position.y = Math.sin(floatTime * 0.5) * 0.12;
+  }
+}
+
+// ─── Page states by page index ───
+const pageStates = [
+  // 0: closed, center
+  { bookRot: { x: 0, y: 0.3, z: 0 }, bookPos: { x: 0, y: 0, z: 0 }, leftOpen: 0, rightOpen: 0, cameraPos: { x: 0, y: 2, z: 8 } },
+  // 1: open flat
+  { bookRot: { x: -0.2, y: 0, z: 0 }, bookPos: { x: 0, y: -0.3, z: 0 }, leftOpen: -Math.PI / 2 + 0.15, rightOpen: Math.PI / 2 - 0.15, cameraPos: { x: 0, y: 3, z: 6 } },
+  // 2: tilt left
+  { bookRot: { x: -0.2, y: -0.15, z: 0.03 }, bookPos: { x: -0.5, y: -0.3, z: 0 }, leftOpen: -Math.PI / 2 + 0.1, rightOpen: Math.PI / 2 - 0.1, cameraPos: { x: -1, y: 2.5, z: 6 } },
+  // 3: tilt right, camera lower
+  { bookRot: { x: -0.25, y: 0.1, z: -0.02 }, bookPos: { x: 0.5, y: -0.4, z: 0 }, leftOpen: -Math.PI / 2 + 0.12, rightOpen: Math.PI / 2 - 0.12, cameraPos: { x: 1, y: 2, z: 5.5 } },
+  // 4: wide open, camera low
+  { bookRot: { x: -0.3, y: 0, z: 0 }, bookPos: { x: 0, y: -0.5, z: 0 }, leftOpen: -Math.PI / 2 + 0.05, rightOpen: Math.PI / 2 - 0.05, cameraPos: { x: 0, y: 1.5, z: 5 } },
+  // 5: camera pull back up
+  { bookRot: { x: -0.15, y: 0.2, z: 0 }, bookPos: { x: 0.3, y: -0.2, z: 0 }, leftOpen: -Math.PI / 2 + 0.2, rightOpen: Math.PI / 2 - 0.2, cameraPos: { x: 0.5, y: 3, z: 7 } },
+  // 6: tilted further
+  { bookRot: { x: -0.2, y: -0.1, z: 0.02 }, bookPos: { x: -0.3, y: -0.3, z: 0 }, leftOpen: -Math.PI / 2 + 0.08, rightOpen: Math.PI / 2 - 0.08, cameraPos: { x: -1, y: 2.5, z: 6 } },
+  // 7: closing, grand reveal
+  { bookRot: { x: -0.1, y: 0, z: 0 }, bookPos: { x: 0, y: -0.1, z: 0 }, leftOpen: -Math.PI / 2 + 0.25, rightOpen: Math.PI / 2 - 0.25, cameraPos: { x: 0, y: 2.5, z: 7 } },
+];
+
+// ─── Transition to a page ───
+function transitionToPage(newPage) {
+  if (isAnimating || newPage === currentPage) return;
+  isAnimating = true;
+
+  const state = pageStates[newPage];
+  const tl = gsap.timeline({ onComplete: () => { isAnimating = false; } });
+
+  // Camera
+  tl.to(camera.position, {
+    x: state.cameraPos.x, y: state.cameraPos.y, z: state.cameraPos.z,
+    duration: 1.6, ease: 'power3.inOut'
+  }, 0);
+
+  // Book position
+  tl.to(bookGroup.position, {
+    x: state.bookPos.x, y: state.bookPos.y, z: state.bookPos.z,
+    duration: 1.4, ease: 'power2.inOut'
+  }, 0);
+
+  // Book rotation
+  tl.to(bookGroup.rotation, {
+    x: state.bookRot.x, y: state.bookRot.y, z: state.bookRot.z,
+    duration: 1.4, ease: 'power2.inOut'
+  }, 0);
+
+  // Page open/close
+  if (newPage === 0) {
+    // Close book
+    tl.to(leftPageGroup.rotation, { y: 0, duration: 1.2, ease: 'power2.inOut' }, 0.2);
+    tl.to(rightPageGroup.rotation, { y: 0, duration: 1.2, ease: 'power2.inOut' }, 0.2);
+    leftPivot.visible = false;
+  } else {
+    // Open book with page turn effect
+    leftPivot.visible = true;
+    tl.to(leftPageGroup.rotation, { y: state.leftOpen, duration: 1.2, ease: 'power2.inOut' }, 0.2);
+    tl.to(rightPageGroup.rotation, { y: state.rightOpen, duration: 1.2, ease: 'power2.inOut' }, 0.2);
+  }
+
+  // Page turn flash (light pulse)
+  if (newPage > 0 && newPage !== currentPage) {
+    tl.to(spotLight, { intensity: 15, duration: 0.2, ease: 'power1.in' }, 0.4);
+    tl.to(spotLight, { intensity: 8, duration: 0.8, ease: 'power2.out' }, 0.6);
+  }
+
+  // UI: hide old page
+  const oldEl = document.getElementById(pageIds[currentPage]);
+  tl.to(oldEl, { opacity: 0, y: -20, duration: 0.4, ease: 'power2.in' }, 0);
+  oldEl.classList.remove('visible');
+
+  // UI: show new page
+  const newEl = document.getElementById(pageIds[newPage]);
+  tl.set(newEl, { y: 20 }, 0.8);
+  tl.to(newEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 0.9);
+  setTimeout(() => { newEl.classList.add('visible'); }, 900);
+
+  // Update nav dots
+  document.querySelectorAll('.nav-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === newPage);
+  });
+
+  // Update page label
+  document.getElementById('page-label').textContent = pageLabels[newPage];
+
+  // Scroll hint
+  if (newPage > 0) document.getElementById('scroll-hint').classList.add('hidden');
+  else document.getElementById('scroll-hint').classList.remove('hidden');
+
+  currentPage = newPage;
+}
+
+window.goToPage = (n) => { transitionToPage(n); };
+
+// ─── Scroll / Wheel ───
+let wheelCooldown = false;
+window.addEventListener('wheel', (e) => {
+  if (wheelCooldown || isAnimating) return;
+  wheelCooldown = true;
+  setTimeout(() => { wheelCooldown = false; }, 1200);
+  if (e.deltaY > 0 && currentPage < TOTAL_PAGES - 1) transitionToPage(currentPage + 1);
+  else if (e.deltaY < 0 && currentPage > 0) transitionToPage(currentPage - 1);
+}, { passive: true });
+
+// Touch support
+let touchStartY = 0;
+window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; });
+window.addEventListener('touchend', e => {
+  if (isAnimating) return;
+  const dy = touchStartY - e.changedTouches[0].clientY;
+  if (Math.abs(dy) < 40) return;
+  if (dy > 0 && currentPage < TOTAL_PAGES - 1) transitionToPage(currentPage + 1);
+  else if (dy < 0 && currentPage > 0) transitionToPage(currentPage - 1);
+});
+
+// ─── Render Loop ───
+let prevTime = performance.now();
+function render() {
+  const now = performance.now();
+  const delta = (now - prevTime) * 0.001;
+  prevTime = now;
+
+  animateBook(delta);
+
+  // Subtle parallax on mouse
+  const mx = (mouseX / window.innerWidth - 0.5) * 0.015;
+  const my = (mouseY / window.innerHeight - 0.5) * 0.01;
+  camera.rotation.y += (mx - camera.rotation.y) * 0.05;
+  camera.rotation.x += (-my - camera.rotation.x) * 0.05;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(render);
+}
+
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+render();
+
+// ─── LOADING ───
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const ls = document.getElementById('loading-screen');
+    ls.classList.add('fade-out');
+    setTimeout(() => {
+      ls.style.display = 'none';
+      // Show cover
+      const cover = document.getElementById('cover-content');
+      cover.classList.add('visible');
+      gsap.fromTo(cover, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.4, ease: 'power2.out' });
+      document.getElementById('site-header').classList.add('visible');
+      sceneReady = true;
+    }, 1500);
+  }, 2800);
+});
+
+// Keyboard navigation
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'PageDown') transitionToPage(Math.min(currentPage + 1, TOTAL_PAGES - 1));
+  if (e.key === 'ArrowUp' || e.key === 'PageUp') transitionToPage(Math.max(currentPage - 1, 0));
+});
+</script>
+</body>
+</html>

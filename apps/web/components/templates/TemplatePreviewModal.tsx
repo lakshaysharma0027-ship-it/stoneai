@@ -300,6 +300,11 @@ export default function TemplatePreviewModal({
             </button>
             <button
               type="button"
+              onClick={() => {
+                if (template.htmlPath) {
+                  window.open(template.htmlPath, "_blank", "noopener,noreferrer");
+                }
+              }}
               style={{
                 background: "transparent",
                 border: "0.5px solid #242424",

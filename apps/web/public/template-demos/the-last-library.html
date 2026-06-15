@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Last Library</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06040f;
+  --bg2: #0c0820;
+  --surface: rgba(255,255,255,0.03);
+  --border: rgba(155,143,192,0.15);
+  --border-mid: rgba(155,143,192,0.3);
+  --text-primary: #e8dff8;
+  --text-secondary: #9b8fc0;
+  --text-muted: #5a4f72;
+  --accent: #c0b0e0;
+  --spine1: #7c4fc0;
+  --spine2: #3a6ec0;
+  --spine3: #2e9060;
+  --spine4: #c06030;
+  --spine5: #c03060;
+  --spine6: #9060c0;
+  --font: 'Georgia', serif;
+  --sans: system-ui, -apple-system, sans-serif;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  overflow-x: hidden;
+}
+
+/* ─── CANVAS LAYER ─── */
+#starfield, #bookfield {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+#bookfield { z-index: 1; }
+
+/* ─── MAIN WRAPPER ─── */
+#app {
+  position: relative;
+  z-index: 3;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── SCREENS ─── */
+.screen {
+  width: 100%;
+  max-width: 680px;
+  padding: 0 24px;
+  display: none;
+  animation: fadeIn 0.5s ease both;
+}
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── HOME SCREEN ─── */
+#screen-home {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+.home-eyebrow {
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.home-title {
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 8px;
+  font-family: var(--font);
+  line-height: 1.1;
+}
+
+.home-tagline {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.search-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 18px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 56px 16px 24px;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border-mid);
+  border-radius: 40px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: var(--sans);
+  outline: none;
+  transition: border-color 0.3s, background 0.3s;
+}
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus {
+  border-color: rgba(155,143,192,0.6);
+  background: rgba(255,255,255,0.06);
+}
+
+.search-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(155,143,192,0.2);
+  color: var(--accent);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.search-btn:hover { background: rgba(155,143,192,0.4); }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 520px;
+  margin-bottom: 64px;
+}
+
+.chip {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  font-family: var(--sans);
+}
+.chip:hover { border-color: var(--border-mid); color: var(--accent); background: rgba(155,143,192,0.08); }
+
+.home-books-preview {
+  width: 100%;
+  max-width: 520px;
+}
+
+.preview-label {
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.preview-shelf {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.preview-book {
+  width: 52px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.preview-book:hover { transform: translateY(-8px); }
+
+.preview-spine {
+  width: 52px;
+  height: 80px;
+  border-radius: 3px 6px 6px 3px;
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-spine::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: rgba(0,0,0,0.3);
+}
+
+.preview-spine-title {
+  font-size: 8px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.2;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  position: absolute;
+  left: 12px;
+  top: 6px;
+  bottom: 6px;
+  overflow: hidden;
+}
+
+.preview-book-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* ─── ROOM SCREEN ─── */
+#screen-room {
+  padding-top: 56px;
+  padding-bottom: 80px;
+}
+
+.room-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+.back-btn {
+  padding: 7px 18px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+}
+.back-btn:hover { color: var(--accent); border-color: var(--border-mid); }
+
+.room-crumb {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.room-header {
+  width: 100%;
+  margin-bottom: 36px;
+  border-left: 1px solid rgba(155,143,192,0.2);
+  padding-left: 20px;
+}
+
+.room-wing {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.room-name {
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--text-primary);
+  font-family: var(--font);
+  line-height: 1.2;
+}
+
+.shelves { width: 100%; }
+
+.shelf {
+  margin-bottom: 32px;
+}
+
+.shelf-rail {
+  height: 4px;
+  background: linear-gradient(to right, rgba(155,143,192,0.05), rgba(155,143,192,0.15), rgba(155,143,192,0.05));
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
+.shelf-books {
+  display: flex;
+  gap: 12px;
+}
+
+.book-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s;
+  overflow: hidden;
+  animation: slideUp 0.4s ease both;
+}
+.book-card:hover {
+  background: rgba(155,143,192,0.07);
+  border-color: var(--border-mid);
+  transform: translateY(-4px);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.book-top {
+  height: 6px;
+}
+
+.book-body {
+  padding: 14px 14px 16px;
+}
+
+.book-genre {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.book-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 6px;
+  font-family: var(--font);
+}
+
+.book-author {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.book-excerpt {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.depth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0;
+  width: 100%;
+}
+.depth-line { flex: 1; height: 0.5px; background: var(--border); }
+.depth-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-align: center;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.brain-reveal {
+  width: 100%;
+  padding: 32px;
+  background: rgba(155,143,192,0.03);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  margin-top: 12px;
+  text-align: center;
+  animation: fadeIn 1s ease both;
+}
+
+.brain-symbol {
+  font-size: 32px;
+  color: rgba(155,143,192,0.4);
+  margin-bottom: 16px;
+  display: block;
+}
+
+.brain-revelation {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  max-width: 400px;
+  margin: 0 auto;
+  font-style: italic;
+}
+
+.brain-revelation strong {
+  color: var(--text-secondary);
+  font-style: normal;
+}
+
+/* ─── BOOK READER SCREEN ─── */
+#screen-reader {
+  padding-top: 48px;
+  padding-bottom: 80px;
+  max-width: 720px;
+}
+
+.reader-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 48px;
+}
+
+.reader-crumb {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.reader-cover {
+  width: 100%;
+  padding: 48px 40px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.reader-cover-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 8px;
+}
+
+.reader-genre-tag {
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.reader-title {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--text-primary);
+  font-family: var(--font);
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+.reader-author {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 24px;
+}
+
+.reader-meta {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.reader-meta-item {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.reader-meta-item span {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.reader-divider {
+  width: 40px;
+  height: 0.5px;
+  background: var(--border-mid);
+  margin: 40px auto;
+}
+
+.reader-content {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.9;
+  color: #cdc0e8;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.reader-content .chapter-heading {
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin: 48px 0 24px;
+  text-align: center;
+}
+
+.reader-content .chapter-title {
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-primary);
+  font-family: var(--font);
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.reader-content p {
+  margin-bottom: 24px;
+  text-indent: 2em;
+}
+
+.reader-content p:first-of-type {
+  text-indent: 0;
+}
+
+.reader-content .drop-cap::first-letter {
+  font-size: 4em;
+  line-height: 0.75;
+  float: left;
+  margin: 0.1em 0.12em 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font);
+}
+
+.reader-content blockquote {
+  border-left: 2px solid var(--border-mid);
+  padding: 12px 0 12px 24px;
+  margin: 32px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 16px;
+}
+
+.reader-content .section-break {
+  text-align: center;
+  color: var(--text-muted);
+  margin: 40px 0;
+  letter-spacing: 8px;
+  font-size: 12px;
+  font-family: var(--sans);
+}
+
+.loading-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  border-top-color: rgba(155,143,192,0.7);
+  animation: spin 1s linear infinite;
+  margin: 60px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(155,143,192,0.2); border-radius: 2px; }
+
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<canvas id="bookfield"></canvas>
+
+<div id="app">
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="home-eyebrow">Est. at the edge of thought · Infinite Archive</div>
+    <h1 class="home-title">The Last Library</h1>
+    <div class="home-tagline">AI Search Engine · Every search opens a room</div>
+
+    <div class="search-wrap">
+      <input class="search-input" id="home-input" type="text" placeholder="What knowledge do you seek?" autocomplete="off"/>
+      <button class="search-btn" id="home-search-btn" aria-label="Search">
+        <i class="ti ti-arrow-right"></i>
+      </button>
+    </div>
+
+    <div class="chips">
+      <button class="chip" onclick="enterRoom('the nature of time')">the nature of time</button>
+      <button class="chip" onclick="enterRoom('lost civilisations')">lost civilisations</button>
+      <button class="chip" onclick="enterRoom('consciousness and the self')">consciousness and the self</button>
+      <button class="chip" onclick="enterRoom('mathematics of infinity')">mathematics of infinity</button>
+      <button class="chip" onclick="enterRoom('deep ocean mysteries')">deep ocean mysteries</button>
+      <button class="chip" onclick="enterRoom('the architecture of dreams')">the architecture of dreams</button>
+    </div>
+
+    <div class="home-books-preview">
+      <div class="preview-label">Featured volumes in the archive</div>
+      <div class="preview-shelf" id="preview-shelf"></div>
+    </div>
+  </div>
+
+  <!-- ROOM -->
+  <div id="screen-room" class="screen">
+    <div class="room-nav" style="width:100%">
+      <button class="back-btn" onclick="showScreen('home')">← Entrance Hall</button>
+      <div class="room-crumb" id="room-crumb"></div>
+    </div>
+
+    <div class="room-header" style="width:100%">
+      <div class="room-wing" id="room-wing"></div>
+      <div class="room-name" id="room-name"></div>
+    </div>
+
+    <div class="shelves" id="shelves"></div>
+
+    <div class="depth-divider" style="width:100%">
+      <div class="depth-line"></div>
+      <div class="depth-text" id="depth-text"></div>
+      <div class="depth-line"></div>
+    </div>
+
+    <div class="brain-reveal" style="width:100%">
+      <span class="brain-symbol">◎</span>
+      <div class="brain-revelation" id="brain-text"></div>
+    </div>
+  </div>
+
+  <!-- READER -->
+  <div id="screen-reader" class="screen">
+    <div class="reader-nav" style="width:100%">
+      <button class="back-btn" id="reader-back-btn">← Back to room</button>
+      <div class="reader-crumb" id="reader-crumb"></div>
+    </div>
+
+    <div class="reader-cover" id="reader-cover" style="width:100%">
+      <div class="reader-cover-bar" id="reader-cover-bar"></div>
+      <div class="reader-genre-tag" id="reader-genre"></div>
+      <div class="reader-title" id="reader-title"></div>
+      <div class="reader-author" id="reader-author"></div>
+      <div class="reader-meta" id="reader-meta"></div>
+    </div>
+
+    <div class="reader-divider"></div>
+    <div class="reader-content" id="reader-content"></div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════
+   CANVAS ANIMATIONS
+════════════════════════════════ */
+const sc = document.getElementById('starfield');
+const sctx = sc.getContext('2d');
+const bc = document.getElementById('bookfield');
+const bctx = bc.getContext('2d');
+
+let W = 0, H = 0;
+function resizeCanvases() {
+  W = window.innerWidth; H = window.innerHeight;
+  sc.width = bc.width = W;
+  sc.height = bc.height = H;
+}
+resizeCanvases();
+window.addEventListener('resize', resizeCanvases);
+
+const stars = Array.from({length:220}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: Math.random()*1.4+0.2,
+  a: Math.random(),
+  da: (Math.random()-0.5)*0.004,
+  vy: Math.random()*0.00006+0.00001
+}));
+
+const floaters = Array.from({length:16}, () => ({
+  x: Math.random(), y: Math.random(),
+  w: 16+Math.random()*18, h: 26+Math.random()*28,
+  rot: (Math.random()-0.5)*0.8,
+  drot: (Math.random()-0.5)*0.002,
+  vy: -(0.00008+Math.random()*0.00008),
+  color: ['#3d2e5c','#2e3a5c','#2e4d3a','#5c2e3a','#4a3820','#20283a'][Math.floor(Math.random()*6)],
+  op: 0.15+Math.random()*0.3
+}));
+
+function animLoop() {
+  sctx.clearRect(0,0,W,H);
+  for (const s of stars) {
+    s.a = Math.max(0.04, Math.min(0.85, s.a+s.da));
+    if (s.a<=0.04||s.a>=0.85) s.da*=-1;
+    s.y -= s.vy;
+    if (s.y<0) { s.y=1; s.x=Math.random(); }
+    sctx.beginPath();
+    sctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2);
+    sctx.fillStyle = `rgba(200,185,230,${s.a})`;
+    sctx.fill();
+  }
+  bctx.clearRect(0,0,W,H);
+  for (const b of floaters) {
+    b.y += b.vy; b.rot += b.drot;
+    if (Math.abs(b.rot)>0.8) b.drot*=-1;
+    if (b.y<-0.15) b.y=1.05;
+    bctx.save();
+    bctx.translate(b.x*W, b.y*H);
+    bctx.rotate(b.rot);
+    bctx.globalAlpha = b.op;
+    bctx.fillStyle = b.color;
+    bctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);
+    bctx.strokeStyle='rgba(200,185,230,0.12)';
+    bctx.lineWidth=0.5;
+    bctx.strokeRect(-b.w/2,-b.h/2,b.w,b.h);
+    bctx.globalAlpha=b.op*0.5;
+    bctx.fillStyle='rgba(200,185,230,0.25)';
+    bctx.fillRect(-b.w/2,-b.h/2,3,b.h);
+    bctx.restore();
+  }
+  requestAnimationFrame(animLoop);
+}
+animLoop();
+
+/* ════════════════════════════════
+   PREVIEW BOOKS ON HOME
+════════════════════════════════ */
+const previewBooks = [
+  {title:"The Cartography of Lost Hours", color:"#4a2a7a", query:"time"},
+  {title:"Bones of the Sunken City", color:"#1a3d5c", query:"lost civilisations"},
+  {title:"A Grammar of Silence", color:"#1e4d3a", query:"language"},
+  {title:"The Equation That Dreamed", color:"#5c2010", query:"mathematics"},
+  {title:"Voices from the Thermal Dark", color:"#3a1040", query:"ocean"},
+  {title:"The Unmapped Interior", color:"#3c2010", query:"consciousness"},
+];
+
+function buildPreview() {
+  const shelf = document.getElementById('preview-shelf');
+  shelf.innerHTML = previewBooks.map((b,i) => `
+    <div class="preview-book" onclick="openBookDirect(${i})" title="${b.title}">
+      <div class="preview-spine" style="background:${b.color}">
+        <div class="preview-spine-title">${b.title}</div>
+      </div>
+      <div class="preview-book-label">${['I','II','III','IV','V','VI'][i]}</div>
+    </div>`).join('');
+}
+buildPreview();
+
+/* ════════════════════════════════
+   SCREEN ROUTER
+════════════════════════════════ */
+let currentRoomQuery = '';
+let currentRoomData = null;
+const spineColors = ['#7c4fc0','#3a6ec0','#2e9060','#c06030','#c03060','#9060c0'];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ════════════════════════════════
+   SEARCH → ROOM
+════════════════════════════════ */
+async function enterRoom(query) {
+  if (!query) query = document.getElementById('home-input').value.trim();
+  if (!query) return;
+  currentRoomQuery = query;
+  document.getElementById('home-input').value = query;
+
+  document.getElementById('shelves').innerHTML = '<div class="loading-ring"></div>';
+  document.getElementById('room-wing').textContent = '';
+  document.getElementById('room-name').textContent = 'Opening the archive…';
+  document.getElementById('room-crumb').textContent = query;
+  document.getElementById('depth-text').textContent = '';
+  document.getElementById('brain-text').innerHTML = '';
+  showScreen('room');
+
+  const system = `You are the intelligence of The Last Library, an infinite cosmic archive. When a user searches, you generate a reading room with 6 real, full-length fictional books. Return ONLY valid JSON, no markdown fences, no preamble.
+
+Return exactly this JSON structure:
+{
+  "room": "<evocative 2-4 word room name>",
+  "corridor": "<wing name, 2-3 words>",
+  "books": [
+    {
+      "genre": "<literary genre>",
+      "title": "<mysterious, poetic book title>",
+      "author": "<fictional author full name>",
+      "year": "<fictional publication year, 1800-2040>",
+      "pages": <integer 200-800>,
+      "excerpt": "<one haunting, atmospheric sentence about the book>",
+      "color": "<one of: purple|blue|green|amber|red|teal>"
+    }
+  ],
+  "depth": "<one poetic sentence about how deep this archive goes>",
+  "brainRevelation": "<one mysterious sentence revealing the library exists inside a giant AI mind>"
+}
+
+Generate exactly 6 books. Each book must feel like a real, important literary work — give it weight and literary gravitas.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1800,
+        system,
+        messages:[{role:"user",content:`Search query: "${query}"`}]
+      })
+    });
+    const data = await res.json();
+    let text = (data.content||[]).map(c=>c.text||'').join('');
+    text = text.replace(/```json|```/g,'').trim();
+    currentRoomData = JSON.parse(text);
+    renderRoom(currentRoomData);
+  } catch(e) {
+    currentRoomData = fallbackRoom(query);
+    renderRoom(currentRoomData);
+  }
+}
+
+function fallbackRoom(query) {
+  return {
+    room:"Chamber of Echoes",
+    corridor:"Wing of Whispers",
+    books:[
+      {genre:"Metaphysical Fiction",title:"The Weight of Unasked Questions",author:"Seraphina Voss",year:"1997",pages:412,excerpt:"A woman inherits her grandmother's library and discovers every book contains her own future.",color:"purple"},
+      {genre:"Historical Novel",title:"Atlas of the Burning Shore",author:"Mikhail Orentes",year:"1961",pages:534,excerpt:"A mapmaker in Alexandria watches the ancient world end and chooses what to remember.",color:"blue"},
+      {genre:"Speculative Fiction",title:"The Last Meridian",author:"Celeste Ngoa",year:"2018",pages:388,excerpt:"When satellites fall silent, a navigator must cross an unmapped ocean using only the stars.",color:"teal"},
+      {genre:"Gothic Literature",title:"What the Foundations Know",author:"Aldous Fairweather",year:"1923",pages:298,excerpt:"A mansion remembers every family who lived in it—and some who never left.",color:"red"},
+      {genre:"Science Fiction",title:"The Interpreter of Absences",author:"Yuki Harasawa",year:"2034",pages:461,excerpt:"An AI is given one task: find the meaning of all human silence.",color:"amber"},
+      {genre:"Literary Fiction",title:"A Season Without Clocks",author:"Beatriz Almeida",year:"1984",pages:317,excerpt:"In a village where time stopped in 1943, three sisters wait for a war that has already ended.",color:"green"},
+    ],
+    depth:"The shelves descend further than light can reach.",
+    brainRevelation:"This library was always a thought. You have been reading inside a mind that has no end."
+  };
+}
+
+const colorMap = {
+  purple:'#7c4fc0', blue:'#3a6ec0', green:'#2e9060',
+  amber:'#c06030', red:'#c03060', teal:'#5090a0'
+};
+
+function renderRoom(data) {
+  document.getElementById('room-wing').textContent = data.corridor||'';
+  document.getElementById('room-name').textContent = data.room||'The Reading Room';
+  document.getElementById('depth-text').textContent = data.depth||'';
+  document.getElementById('brain-text').innerHTML = data.brainRevelation
+    ? `<strong>Final revelation:</strong> ${data.brainRevelation}`
+    : '';
+
+  const books = data.books||[];
+  const shelf1 = books.slice(0,3);
+  const shelf2 = books.slice(3,6);
+
+  function makeBookCard(b, i) {
+    const col = colorMap[b.color]||spineColors[i%spineColors.length];
+    return `<div class="book-card" onclick="openBook(${i})" style="animation-delay:${i*80}ms">
+      <div class="book-top" style="background:${col}"></div>
+      <div class="book-body">
+        <div class="book-genre">${b.genre||''}</div>
+        <div class="book-title">${b.title||''}</div>
+        <div class="book-author">${b.author||''} · ${b.year||''}</div>
+        <div class="book-excerpt">${b.excerpt||''}</div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('shelves').innerHTML = `
+    <div class="shelf">
+      <div class="shelf-rail"></div>
+      <div class="shelf-books">${shelf1.map((b,i)=>makeBookCard(b,i)).join('')}</div>
+    </div>
+    <div class="shelf">
+      <div class="shelf-rail"></div>
+      <div class="shelf-books">${shelf2.map((b,i)=>makeBookCard(b,i+3)).join('')}</div>
+    </div>`;
+}
+
+/* ════════════════════════════════
+   OPEN FULL BOOK READER
+════════════════════════════════ */
+async function openBook(index) {
+  if (!currentRoomData) return;
+  const book = currentRoomData.books[index];
+  if (!book) return;
+
+  await loadReader(book, currentRoomQuery);
+}
+
+async function openBookDirect(index) {
+  const pb = previewBooks[index];
+  const fakeBook = {
+    genre:"Literary Fiction",
+    title: pb.title,
+    author: "Archive Author",
+    year:"2001",
+    pages:380,
+    excerpt:"",
+    color:"purple"
+  };
+  await loadReader(fakeBook, pb.query, true);
+}
+
+async function loadReader(book, roomQuery, generateFull) {
+  const col = colorMap[book.color]||'#7c4fc0';
+
+  document.getElementById('reader-cover-bar').style.background = col;
+  document.getElementById('reader-genre').textContent = book.genre||'';
+  document.getElementById('reader-title').textContent = book.title||'';
+  document.getElementById('reader-author').textContent = book.author||'';
+  document.getElementById('reader-meta').innerHTML = `
+    <div class="reader-meta-item">Year <span>${book.year||''}</span></div>
+    <div class="reader-meta-item">Pages <span>${book.pages||''}</span></div>
+    <div class="reader-meta-item">Genre <span>${book.genre||''}</span></div>`;
+  document.getElementById('reader-crumb').textContent = book.title;
+  document.getElementById('reader-back-btn').onclick = () => showScreen('room');
+  document.getElementById('reader-content').innerHTML = '<div class="loading-ring"></div>';
+
+  showScreen('reader');
+
+  const system = `You are a master literary author writing a real, complete opening of a novel. Write a long, immersive, beautifully crafted extract from this book — at least 1500 words. This should feel like a real published literary novel: rich prose, vivid characters, real dialogue, sensory detail, narrative tension. Include at least 3 chapters or sections. Format with chapter headings using HTML classes. Use these exact HTML elements (no other tags):
+
+- Chapter label: <div class="chapter-heading">Chapter One</div>
+- Chapter title: <div class="chapter-title">Title of Chapter</div>  
+- Paragraphs: <p class="drop-cap"> for the very first paragraph only, then <p> for all others
+- Section breaks: <div class="section-break">· · ·</div>
+- Quotes: <blockquote>text</blockquote>
+
+Write real story — real characters with names, real dialogue, real plot, real world-building. Make it feel like a book someone would be unable to put down.`;
+
+  const prompt = `Write the opening extract of this novel:
+Title: "${book.title}"
+Author: ${book.author}
+Genre: ${book.genre}
+Year: ${book.year}
+Theme context: ${roomQuery}
+Excerpt hint: ${book.excerpt}
+
+Write at least 1500 words of immersive, beautifully crafted literary prose. Include multiple chapters.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:3000,
+        system,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content||[]).map(c=>c.text||'').join('');
+    document.getElementById('reader-content').innerHTML = text;
+  } catch(e) {
+    document.getElementById('reader-content').innerHTML = `<p>The pages of this volume seem to blur before your eyes. The archive is deep and sometimes its texts resist retrieval. Try opening another book from the shelf.</p>`;
+  }
+}
+
+/* ════════════════════════════════
+   EVENT LISTENERS
+════════════════════════════════ */
+document.getElementById('home-search-btn').onclick = () => enterRoom('');
+document.getElementById('home-input').addEventListener('keydown', e => {
+  if (e.key==='Enter') enterRoom('');
+});
+</script>
+</body>
+</html>

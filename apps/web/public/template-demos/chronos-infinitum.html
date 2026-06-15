@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ÆTHER — Architects of Time</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Josefin+Sans:wght@100;300&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #C9A96E;
+    --gold-light: #E8D5A3;
+    --gold-dim: #7A6340;
+    --void: #02020A;
+    --nebula: #0A0818;
+    --text: #D4C5A0;
+    --text-dim: #6B5E45;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 100;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  #cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, opacity 0.3s;
+    mix-blend-mode: screen;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(201,169,110,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: all 0.12s ease;
+  }
+
+  /* CANVAS */
+  #cosmos {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* SCROLL CONTAINER */
+  #scroll-container {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* SECTIONS */
+  .chapter {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    pointer-events: none;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 2.5rem 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: auto;
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .nav-logo span { font-style: italic; color: var(--gold-light); }
+  .nav-links {
+    display: flex;
+    gap: 3rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.62rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.4s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+
+  /* HERO */
+  .hero-content {
+    text-align: center;
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 0.58rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 2.5rem;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(4rem, 10vw, 9rem);
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--gold-light);
+    margin-bottom: 1.5rem;
+  }
+  .hero-title em { font-style: italic; color: var(--gold); display: block; }
+  .hero-subtitle {
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    max-width: 420px;
+    margin: 0 auto 3rem;
+    line-height: 2.2;
+  }
+  .hero-scroll {
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  /* CHAPTER TEXT */
+  .chapter-text {
+    max-width: 560px;
+    padding: 4rem;
+  }
+  .chapter-number {
+    font-size: 0.5rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .chapter-number::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--gold-dim);
+    display: block;
+  }
+  .chapter-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--gold-light);
+    margin-bottom: 1.5rem;
+  }
+  .chapter-title em { font-style: italic; }
+  .chapter-body {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    line-height: 2.4;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+  }
+  .chapter-detail {
+    font-size: 0.55rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(201,169,110,0.15);
+  }
+
+  /* PRODUCT REVEAL */
+  .product-chapter {
+    flex-direction: column;
+    gap: 0;
+    padding: 8rem 0;
+    min-height: 150vh;
+  }
+  .product-label {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  .product-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 300;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+  }
+  .product-ref {
+    font-size: 0.55rem;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+  .product-specs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(201,169,110,0.08);
+    border: 1px solid rgba(201,169,110,0.12);
+    max-width: 780px;
+    margin: 0 auto;
+    pointer-events: auto;
+  }
+  .spec-cell {
+    padding: 2.5rem 2rem;
+    background: rgba(2,2,10,0.7);
+    text-align: center;
+    transition: background 0.4s;
+    backdrop-filter: blur(10px);
+  }
+  .spec-cell:hover { background: rgba(201,169,110,0.06); }
+  .spec-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--gold-light);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .spec-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* MANIFESTO */
+  .manifesto {
+    text-align: center;
+    max-width: 800px;
+    padding: 4rem;
+  }
+  .manifesto-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--gold-light);
+    line-height: 1.5;
+    margin-bottom: 2rem;
+  }
+  .manifesto-attr {
+    font-size: 0.55rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+
+  /* CTA */
+  .cta-section { text-align: center; }
+  .cta-btn {
+    display: inline-block;
+    padding: 1.2rem 3.5rem;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    text-decoration: none;
+    pointer-events: auto;
+    transition: all 0.5s;
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+  }
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+    z-index: -1;
+  }
+  .cta-btn:hover::before { transform: translateX(0); }
+  .cta-btn:hover { color: var(--void); border-color: var(--gold); }
+
+  /* FOOTER */
+  footer {
+    padding: 6rem 4rem 3rem;
+    border-top: 1px solid rgba(201,169,110,0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.9rem;
+    color: var(--gold-dim);
+    letter-spacing: 0.3em;
+  }
+  .footer-tagline {
+    font-size: 0.5rem;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+  .footer-copy {
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+  }
+
+  /* SCROLL PROGRESS */
+  #progress {
+    position: fixed;
+    right: 3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    pointer-events: none;
+  }
+  .prog-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--gold-dim);
+    transition: all 0.4s;
+  }
+  .prog-dot.active {
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    transform: scale(1.5);
+  }
+
+  /* FADE IN ANIM */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SIDE TEXT */
+  .side-text {
+    position: fixed;
+    left: 3rem;
+    bottom: 3rem;
+    z-index: 500;
+    writing-mode: vertical-rl;
+    font-size: 0.48rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    pointer-events: none;
+  }
+
+  /* CHAPTER alignment variants */
+  .chapter.left { justify-content: flex-start; padding-left: 8vw; }
+  .chapter.right { justify-content: flex-end; padding-right: 8vw; }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<canvas id="cosmos"></canvas>
+
+<div id="side-text" class="side-text">Est. MMXXIV — Geneva</div>
+
+<div id="progress">
+  <div class="prog-dot active" data-section="0"></div>
+  <div class="prog-dot" data-section="1"></div>
+  <div class="prog-dot" data-section="2"></div>
+  <div class="prog-dot" data-section="3"></div>
+  <div class="prog-dot" data-section="4"></div>
+  <div class="prog-dot" data-section="5"></div>
+</div>
+
+<nav>
+  <div class="nav-logo">Æ<span>ther</span></div>
+  <ul class="nav-links">
+    <li><a href="#">Horology</a></li>
+    <li><a href="#">Atelier</a></li>
+    <li><a href="#">Collections</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+</nav>
+
+<div id="scroll-container">
+
+  <!-- CHAPTER 0: HERO -->
+  <section class="chapter" id="section-0" style="min-height:100vh;">
+    <div class="hero-content fade-in">
+      <div class="hero-eyebrow">Since the first rotation of the cosmos</div>
+      <h1 class="hero-title">The Engine<em>of All Time</em></h1>
+      <p class="hero-subtitle">We do not make watches. We architect the instruments through which eternity becomes legible to human hands.</p>
+      <div class="hero-scroll">↓ &nbsp; Descend into the mechanism &nbsp; ↓</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 1: THE GREAT GEAR -->
+  <section class="chapter left" id="section-1" style="min-height:120vh;">
+    <div class="chapter-text fade-in">
+      <div class="chapter-number">I — The Primary Wheel</div>
+      <h2 class="chapter-title">A gear the <em>size of a world</em></h2>
+      <p class="chapter-body">Every rotation of the escapement wheel in an Æther movement takes precisely 0.4 seconds. We have spent forty years understanding why those 0.4 seconds are the most important interval in the known universe. Gravity, metallurgy, and mathematics converge at the pivot point.</p>
+      <div class="chapter-detail">316L Marine Grade Steel — 0.002mm Tolerance</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 2: MANIFESTO -->
+  <section class="chapter" id="section-2" style="min-height:100vh;">
+    <div class="manifesto fade-in">
+      <p class="manifesto-quote">"Time does not pass. It accumulates in the grooves of precisely machined brass, patient as geology, ruthless as entropy."</p>
+      <div class="manifesto-attr">— Maison Æther, Founding Doctrine, 1984</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 3: MOVEMENT DETAIL -->
+  <section class="chapter right" id="section-3" style="min-height:130vh;">
+    <div class="chapter-text fade-in">
+      <div class="chapter-number">II — The Tourbillon Nebula</div>
+      <h2 class="chapter-title">Defeating <em>gravity</em>, one revolution at a time</h2>
+      <p class="chapter-body">The Æther Tourbillon Cosmique rotates once per sixty seconds, neutralising positional error introduced by Earth's own gravitational field. Each cage holds 72 individual components. Combined mass: 0.295 grams. It is the most delicate mechanical structure manufactured by human hands.</p>
+      <div class="chapter-detail">72 Components — 0.295g — 60-Second Rotation</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 4: PRODUCT -->
+  <section class="chapter product-chapter" id="section-4">
+    <div class="product-label fade-in">
+      <div style="font-size:0.55rem;letter-spacing:0.5em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:1.5rem;">Now entering orbit</div>
+      <div class="product-name">Solaris I</div>
+      <div class="product-ref">Ref. ÆTH-001 · Grand Complication</div>
+    </div>
+    <div class="product-specs fade-in">
+      <div class="spec-cell">
+        <span class="spec-value">487</span>
+        <span class="spec-label">Components</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-value">96h</span>
+        <span class="spec-label">Power Reserve</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-value">38mm</span>
+        <span class="spec-label">Case Diameter</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-value">0.002</span>
+        <span class="spec-label">mm Tolerance</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-value">18K</span>
+        <span class="spec-label">Rose Gold</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-value">∞</span>
+        <span class="spec-label">Service Guarantee</span>
+      </div>
+    </div>
+    <div style="margin-top:4rem;" class="fade-in">
+      <a href="#" class="cta-btn">Request Consultation</a>
+    </div>
+  </section>
+
+  <!-- CHAPTER 5: CLOSING -->
+  <section class="chapter" id="section-5" style="min-height:100vh;">
+    <div class="manifesto fade-in">
+      <p class="manifesto-quote">"You will wear it on your wrist. But what you carry is the architecture of eternity — compressed, patient, and impossibly precise."</p>
+      <div class="manifesto-attr" style="margin-top:3rem;">
+        <a href="#" class="cta-btn">Enter the Atelier</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="footer-brand">Æther Horology</div>
+      <div class="footer-tagline">Architects of Time · Geneva, Switzerland</div>
+    </div>
+    <div class="footer-copy">© MMXXIV Æther Maison. All rights reserved.</div>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// CUSTOM CURSOR
+// ═══════════════════════════════════════════════════════
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+});
+
+function animateCursor() {
+  ringX += (mouseX - ringX) * 0.1;
+  ringY += (mouseY - ringY) * 0.1;
+  cursorRing.style.left = ringX + 'px';
+  cursorRing.style.top = ringY + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+document.querySelectorAll('a, button, .spec-cell').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '16px';
+    cursor.style.height = '16px';
+    cursorRing.style.width = '56px';
+    cursorRing.style.height = '56px';
+    cursorRing.style.borderColor = 'rgba(201,169,110,0.7)';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '8px';
+    cursor.style.height = '8px';
+    cursorRing.style.width = '36px';
+    cursorRing.style.height = '36px';
+    cursorRing.style.borderColor = 'rgba(201,169,110,0.4)';
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// THREE.JS COSMIC ENGINE
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('cosmos');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.9;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x02020A, 0.0015);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 3000);
+camera.position.set(0, 0, 120);
+
+// ── COLOURS ──
+const GOLD = new THREE.Color(0xC9A96E);
+const GOLD_LIGHT = new THREE.Color(0xE8D5A3);
+const GOLD_DIM = new THREE.Color(0x7A6340);
+const VOID = new THREE.Color(0x02020A);
+const NEBULA_BLUE = new THREE.Color(0x0A0818);
+
+// ── LIGHTING ──
+const ambientLight = new THREE.AmbientLight(0x0A0818, 0.6);
+scene.add(ambientLight);
+
+const goldSun = new THREE.PointLight(0xC9A96E, 3, 600, 1.5);
+goldSun.position.set(80, 60, 100);
+scene.add(goldSun);
+
+const coolLight = new THREE.PointLight(0x1A1060, 2, 800, 1.2);
+coolLight.position.set(-120, -80, 80);
+scene.add(coolLight);
+
+const rimLight = new THREE.DirectionalLight(0xE8D5A3, 0.5);
+rimLight.position.set(0, 100, -100);
+scene.add(rimLight);
+
+// ── STARFIELD ──
+function createStarfield(count, spread, size, color, opacity) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count * 3; i++) {
+    pos[i] = (Math.random() - 0.5) * spread;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color, size, transparent: true, opacity,
+    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  return new THREE.Points(geo, mat);
+}
+
+scene.add(createStarfield(4000, 2000, 0.6, 0xE8D5A3, 0.8));
+scene.add(createStarfield(1500, 1500, 1.2, 0xC9A96E, 0.5));
+scene.add(createStarfield(800, 1000, 2.0, 0xFFFFFF, 0.3));
+
+// ── NEBULA PARTICLES ──
+function createNebulaCloud(count, radius, color, opacity) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = radius * (0.3 + Math.random() * 0.7);
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta) + (Math.random()-0.5)*20;
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.4 + (Math.random()-0.5)*10;
+    pos[i*3+2] = r * Math.cos(phi) + (Math.random()-0.5)*15;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color, size: 3 + Math.random()*4, transparent: true, opacity,
+    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  return new THREE.Points(geo, mat);
+}
+
+const nebula1 = createNebulaCloud(600, 200, 0x2A1060, 0.15);
+nebula1.position.set(-80, 20, -200);
+scene.add(nebula1);
+
+const nebula2 = createNebulaCloud(400, 150, 0x60200A, 0.1);
+nebula2.position.set(100, -40, -180);
+scene.add(nebula2);
+
+// ── GEAR CREATION FUNCTION ──
+function createGear(outerR, innerR, toothCount, toothHeight, thickness, mat) {
+  const shape = new THREE.Shape();
+  const toothW = (Math.PI * 2 / toothCount) * 0.4;
+
+  for (let i = 0; i < toothCount; i++) {
+    const angle = (i / toothCount) * Math.PI * 2;
+    const nextAngle = ((i + 1) / toothCount) * Math.PI * 2;
+    const midAngle = angle + toothW / 2;
+    const afterMid = angle + toothW;
+
+    const x0 = Math.cos(angle) * outerR;
+    const y0 = Math.sin(angle) * outerR;
+    const x1 = Math.cos(midAngle) * (outerR + toothHeight);
+    const y1 = Math.sin(midAngle) * (outerR + toothHeight);
+    const x2 = Math.cos(afterMid) * (outerR + toothHeight);
+    const y2 = Math.sin(afterMid) * (outerR + toothHeight);
+    const x3 = Math.cos(nextAngle) * outerR;
+    const y3 = Math.sin(nextAngle) * outerR;
+
+    if (i === 0) shape.moveTo(x0, y0);
+    else shape.lineTo(x0, y0);
+    shape.lineTo(x1, y1);
+    shape.lineTo(x2, y2);
+    shape.lineTo(x3, y3);
+  }
+  shape.closePath();
+
+  const hole = new THREE.Path();
+  for (let i = 0; i <= 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    if (i === 0) hole.moveTo(Math.cos(a)*innerR, Math.sin(a)*innerR);
+    else hole.lineTo(Math.cos(a)*innerR, Math.sin(a)*innerR);
+  }
+  shape.holes.push(hole);
+
+  // Spokes
+  const spokeCount = 5;
+  for (let s = 0; s < spokeCount; s++) {
+    const sa = (s / spokeCount) * Math.PI * 2;
+    const spokeW = 0.06;
+    const spk = new THREE.Path();
+    spk.moveTo(Math.cos(sa - spokeW) * innerR * 1.1, Math.sin(sa - spokeW) * innerR * 1.1);
+    spk.lineTo(Math.cos(sa) * (outerR * 0.88), Math.sin(sa) * (outerR * 0.88));
+    spk.lineTo(Math.cos(sa + spokeW) * (outerR * 0.88), Math.sin(sa + spokeW) * (outerR * 0.88));
+    spk.lineTo(Math.cos(sa + spokeW) * innerR * 1.1, Math.sin(sa + spokeW) * innerR * 1.1);
+    spk.closePath();
+    shape.holes.push(spk);
+  }
+
+  const extrudeSettings = {
+    depth: thickness,
+    bevelEnabled: true,
+    bevelThickness: thickness * 0.08,
+    bevelSize: thickness * 0.06,
+    bevelSegments: 4,
+    curveSegments: 48
+  };
+  const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  geo.center();
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// ── MATERIALS ──
+const goldMat = new THREE.MeshStandardMaterial({
+  color: 0xC9A96E,
+  metalness: 0.97,
+  roughness: 0.08,
+  envMapIntensity: 1.5
+});
+const darkGoldMat = new THREE.MeshStandardMaterial({
+  color: 0x7A6340,
+  metalness: 0.95,
+  roughness: 0.15,
+  envMapIntensity: 1.2
+});
+const brightGoldMat = new THREE.MeshStandardMaterial({
+  color: 0xE8D5A3,
+  metalness: 0.99,
+  roughness: 0.04,
+  envMapIntensity: 2.0
+});
+const steelMat = new THREE.MeshStandardMaterial({
+  color: 0x9BADC0,
+  metalness: 0.99,
+  roughness: 0.05,
+  envMapIntensity: 1.8
+});
+
+// ── SCENE-SPECIFIC GEAR SYSTEMS ──
+// These are layered "worlds" that evolve as you scroll
+
+// === WORLD 0: GRAND ORRERY (hero) ===
+const world0 = new THREE.Group();
+scene.add(world0);
+
+// Massive background gear
+const bigGear = createGear(70, 28, 32, 5, 4, darkGoldMat);
+bigGear.position.set(30, -10, -80);
+bigGear.rotation.x = 0.2;
+world0.add(bigGear);
+
+const midGear1 = createGear(32, 14, 18, 3, 3, goldMat);
+midGear1.position.set(-50, 20, -60);
+midGear1.rotation.x = -0.15;
+world0.add(midGear1);
+
+const midGear2 = createGear(20, 9, 14, 2.5, 2.5, brightGoldMat);
+midGear2.position.set(60, 35, -50);
+midGear2.rotation.x = 0.3;
+world0.add(midGear2);
+
+const smallGear1 = createGear(12, 5, 10, 2, 2, steelMat);
+smallGear1.position.set(-20, -30, -40);
+world0.add(smallGear1);
+
+const smallGear2 = createGear(8, 3.5, 8, 1.5, 2, goldMat);
+smallGear2.position.set(15, 25, -35);
+world0.add(smallGear2);
+
+// Connecting axle lines
+function createRod(from, to, radius, mat) {
+  const dir = new THREE.Vector3().subVectors(to, from);
+  const length = dir.length();
+  const geo = new THREE.CylinderGeometry(radius, radius, length, 12);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(from.clone().add(to).multiplyScalar(0.5));
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+  return mesh;
+}
+
+// === WORLD 1: THE GEAR FOREST ===
+const world1 = new THREE.Group();
+world1.position.set(0, -300, 0);
+scene.add(world1);
+
+for (let i = 0; i < 12; i++) {
+  const r = 8 + Math.random() * 30;
+  const tc = Math.floor(8 + Math.random() * 20);
+  const th = 1 + Math.random() * 3;
+  const mat = [goldMat, darkGoldMat, brightGoldMat, steelMat][Math.floor(Math.random()*4)];
+  const g = createGear(r, r*0.4, tc, th, 1.5 + Math.random()*3, mat);
+  g.position.set(
+    (Math.random()-0.5)*160,
+    (Math.random()-0.5)*80,
+    -40 + Math.random()*-120
+  );
+  g.rotation.set(
+    (Math.random()-0.5)*0.6,
+    (Math.random()-0.5)*0.3,
+    Math.random()*Math.PI*2
+  );
+  g.userData.rotSpeed = (Math.random()-0.5)*0.003;
+  g.userData.rotAxis = ['x','y','z'][Math.floor(Math.random()*3)];
+  world1.add(g);
+}
+
+// === WORLD 2: TOURBILLON NEBULA ===
+const world2 = new THREE.Group();
+world2.position.set(0, -600, 0);
+scene.add(world2);
+
+// Central tourbillon cage
+function createTourbillonCage(r) {
+  const group = new THREE.Group();
+  const ringGeo = new THREE.TorusGeometry(r, 0.4, 16, 80);
+  const ring = new THREE.Mesh(ringGeo, brightGoldMat);
+  group.add(ring);
+  const innerRing = new THREE.Mesh(new THREE.TorusGeometry(r*0.7, 0.25, 12, 60), goldMat);
+  group.add(innerRing);
+  // Cage arms
+  for (let i = 0; i < 4; i++) {
+    const a = (i/4)*Math.PI*2;
+    const armGeo = new THREE.CylinderGeometry(0.12, 0.12, r*1.8, 6);
+    const arm = new THREE.Mesh(armGeo, brightGoldMat);
+    arm.rotation.z = a;
+    arm.rotation.order = 'ZXY';
+    arm.rotation.x = Math.PI/2;
+    group.add(arm);
+  }
+  // Small balance wheel at center
+  const bwGeo = new THREE.TorusGeometry(r*0.25, 0.15, 10, 40);
+  const bw = new THREE.Mesh(bwGeo, steelMat);
+  group.add(bw);
+  return group;
+}
+
+const tourbillon = createTourbillonCage(18);
+tourbillon.position.set(0, 0, -20);
+world2.add(tourbillon);
+
+// Surrounding orbital gears
+for (let i = 0; i < 6; i++) {
+  const a = (i/6)*Math.PI*2;
+  const og = createGear(10, 4, 12, 1.5, 2, [goldMat, steelMat][i%2]);
+  og.position.set(Math.cos(a)*45, Math.sin(a)*45, -60 + Math.random()*30);
+  og.rotation.x = 0.5;
+  og.userData.orbitAngle = a;
+  og.userData.orbitSpeed = 0.001;
+  og.userData.orbitR = 45;
+  world2.add(og);
+}
+
+// === WORLD 3: THE MAINSPRING SPIRAL ===
+const world3 = new THREE.Group();
+world3.position.set(0, -950, 0);
+scene.add(world3);
+
+// Mainspring spiral
+function createMainspring(turns, innerR, outerR, height) {
+  const points = [];
+  const segments = turns * 80;
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const angle = t * turns * Math.PI * 2;
+    const r = innerR + (outerR - innerR) * t;
+    points.push(new THREE.Vector3(
+      Math.cos(angle) * r,
+      (t - 0.5) * height * 0.5,
+      Math.sin(angle) * r
+    ));
+  }
+  const curve = new THREE.CatmullRomCurve3(points);
+  const geo = new THREE.TubeGeometry(curve, segments, 0.3, 8, false);
+  return new THREE.Mesh(geo, brightGoldMat);
+}
+
+const mainspring = createMainspring(6, 8, 40, 12);
+mainspring.position.set(0, 0, -60);
+world3.add(mainspring);
+
+// Large gear on each side
+const sideGearL = createGear(35, 14, 22, 3, 3, goldMat);
+sideGearL.position.set(-70, 0, -80);
+sideGearL.rotation.x = 0.3;
+world3.add(sideGearL);
+
+const sideGearR = createGear(25, 10, 18, 2.5, 2.5, steelMat);
+sideGearR.position.set(65, 10, -70);
+sideGearR.rotation.x = -0.3;
+world3.add(sideGearR);
+
+// === WORLD 4: PRODUCT SPACE ===
+const world4 = new THREE.Group();
+world4.position.set(0, -1280, 0);
+scene.add(world4);
+
+// Watch case silhouette
+function createWatchCase(r, thickness) {
+  const geo = new THREE.CylinderGeometry(r, r, thickness, 64);
+  const mesh = new THREE.Mesh(geo, brightGoldMat);
+  const bezelGeo = new THREE.TorusGeometry(r, thickness*0.3, 16, 64);
+  const bezel = new THREE.Mesh(bezelGeo, goldMat);
+  bezel.rotation.x = Math.PI/2;
+  const grp = new THREE.Group();
+  grp.add(mesh);
+  grp.add(bezel);
+  return grp;
+}
+
+const watchCase = createWatchCase(22, 5);
+watchCase.position.set(0, 5, -30);
+world4.add(watchCase);
+
+// Dial details
+const dialGeo = new THREE.CircleGeometry(21, 64);
+const dialMat = new THREE.MeshStandardMaterial({ color: 0x050510, metalness: 0.3, roughness: 0.7 });
+const dial = new THREE.Mesh(dialGeo, dialMat);
+dial.rotation.x = -Math.PI/2;
+dial.position.y = 2.6;
+watchCase.add(dial);
+
+// Hour markers
+for (let i = 0; i < 12; i++) {
+  const a = (i/12)*Math.PI*2 - Math.PI/2;
+  const markerGeo = new THREE.BoxGeometry(i%3===0 ? 1.2 : 0.6, 0.15, i%3===0 ? 0.3 : 0.2);
+  const marker = new THREE.Mesh(markerGeo, brightGoldMat);
+  marker.position.set(Math.cos(a)*18, 2.62, Math.sin(a)*18);
+  watchCase.add(marker);
+}
+
+// Hands
+function createHand(length, width, mat) {
+  const geo = new THREE.BoxGeometry(width, 0.2, length);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.z = -length/2;
+  const pivot = new THREE.Group();
+  pivot.add(mesh);
+  return pivot;
+}
+
+const hourHand = createHand(12, 0.8, goldMat);
+hourHand.position.y = 2.65;
+watchCase.add(hourHand);
+const minuteHand = createHand(17, 0.5, brightGoldMat);
+minuteHand.position.y = 2.67;
+watchCase.add(minuteHand);
+const secondHand = createHand(19, 0.2, steelMat);
+secondHand.position.y = 2.69;
+watchCase.add(secondHand);
+
+// Floating component particles
+const compPositions = [];
+for (let i = 0; i < 80; i++) {
+  const theta = Math.random()*Math.PI*2;
+  const phi = Math.acos(2*Math.random()-1);
+  const r = 35 + Math.random()*40;
+  compPositions.push(new THREE.Vector3(
+    r*Math.sin(phi)*Math.cos(theta),
+    r*Math.sin(phi)*Math.sin(theta)*0.4,
+    r*Math.cos(phi) - 50
+  ));
+}
+
+const compGeo = new THREE.BufferGeometry().setFromPoints(compPositions);
+const compMat = new THREE.PointsMaterial({
+  color: 0xC9A96E, size: 1.5, transparent: true, opacity: 0.7,
+  blending: THREE.AdditiveBlending, depthWrite: false
+});
+const compParticles = new THREE.Points(compGeo, compMat);
+world4.add(compParticles);
+
+// === WORLD 5: INFINITY ===
+const world5 = new THREE.Group();
+world5.position.set(0, -1600, 0);
+scene.add(world5);
+
+// Grand finale: concentric rings
+for (let i = 0; i < 7; i++) {
+  const ringR = 20 + i*18;
+  const ringGeo = new THREE.TorusGeometry(ringR, 0.3, 12, 128);
+  const ring = new THREE.Mesh(ringGeo, [goldMat, brightGoldMat, steelMat][i%3]);
+  ring.rotation.x = (i*0.18);
+  ring.rotation.y = (i*0.24);
+  ring.userData.rotSpeedX = 0.0003*(i%2===0?1:-1);
+  ring.userData.rotSpeedY = 0.0002*(i%3===0?1:-1);
+  ring.userData.rotSpeedZ = 0.0001*(i%2===0?-1:1);
+  world5.add(ring);
+}
+
+// Central orb
+const orbGeo = new THREE.SphereGeometry(8, 64, 64);
+const orbMat = new THREE.MeshStandardMaterial({
+  color: 0xC9A96E, metalness: 1, roughness: 0.0, envMapIntensity: 3
+});
+const orb = new THREE.Mesh(orbGeo, orbMat);
+world5.add(orb);
+
+// ── ENV MAP SIMULATION (manual IBL via CubeCamera) ──
+// RoomEnvironment not available in r128 — build a lightweight env instead
+const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
+  format: THREE.RGBFormat,
+  generateMipmaps: true,
+  minFilter: THREE.LinearMipmapLinearFilter
+});
+const cubeCamera = new THREE.CubeCamera(0.1, 500, cubeRenderTarget);
+scene.add(cubeCamera);
+
+// Warm gold fill + cool blue fill for metallic reflections
+const envFill1 = new THREE.PointLight(0xC9A96E, 4, 300);
+envFill1.position.set(0, 80, 0);
+scene.add(envFill1);
+const envFill2 = new THREE.PointLight(0x1A1060, 3, 300);
+envFill2.position.set(0, -80, 0);
+scene.add(envFill2);
+
+// Update cube camera once on init for static env
+cubeCamera.update(renderer, scene);
+scene.environment = cubeRenderTarget.texture;
+
+// ── SCROLL CAMERA SYSTEM ──
+let scrollY = 0;
+let targetScrollY = 0;
+const totalScrollH = 1800;
+
+window.addEventListener('scroll', () => {
+  scrollY = window.scrollY;
+  const sections = document.querySelectorAll('.chapter');
+  let active = 0;
+  sections.forEach((s, i) => {
+    const rect = s.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.6) active = i;
+  });
+  document.querySelectorAll('.prog-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === active);
+  });
+});
+
+// Scroll easing
+let easedScroll = 0;
+
+// Camera path control points
+function getCameraState(progress) {
+  // progress 0-1 through the full scroll
+  const p = Math.max(0, Math.min(1, progress));
+
+  // Camera position keyframes
+  const camPositions = [
+    new THREE.Vector3(0, 0, 120),
+    new THREE.Vector3(-20, -60, 90),
+    new THREE.Vector3(0, -200, 100),
+    new THREE.Vector3(25, -360, 80),
+    new THREE.Vector3(0, -530, 70),
+    new THREE.Vector3(0, -680, 110)
+  ];
+  const camTargets = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(-10, -70, -50),
+    new THREE.Vector3(0, -190, -60),
+    new THREE.Vector3(20, -350, -40),
+    new THREE.Vector3(0, -530, -30),
+    new THREE.Vector3(0, -680, 0)
+  ];
+
+  const seg = (camPositions.length - 1) * p;
+  const idx = Math.min(Math.floor(seg), camPositions.length - 2);
+  const t = seg - idx;
+
+  const pos = camPositions[idx].clone().lerp(camPositions[idx+1], smoothstep(t));
+  const tgt = camTargets[idx].clone().lerp(camTargets[idx+1], smoothstep(t));
+
+  return { pos, tgt };
+}
+
+function smoothstep(t) {
+  return t * t * (3 - 2 * t);
+}
+
+// ── INTERSECTION OBSERVER FOR FADE-INS ──
+const fadeEls = document.querySelectorAll('.fade-in');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.2 });
+fadeEls.forEach(el => observer.observe(el));
+
+// ── CLOCK FOR WATCH HANDS ──
+const clock = new THREE.Clock();
+
+// ── ANIMATION LOOP ──
+function animate() {
+  requestAnimationFrame(animate);
+
+  const t = clock.getElapsedTime();
+  const delta = clock.getDelta ? clock.getDelta() : 0.016;
+
+  // Smooth scroll
+  easedScroll += (scrollY - easedScroll) * 0.06;
+
+  // Scroll progress 0-1
+  const maxScroll = document.body.scrollHeight - window.innerHeight;
+  const progress = Math.max(0, Math.min(1, easedScroll / maxScroll));
+
+  // Camera movement
+  const { pos, tgt } = getCameraState(progress);
+  camera.position.lerp(pos, 0.04);
+  camera.lookAt(tgt);
+
+  // Subtle camera breathing
+  camera.position.x += Math.sin(t * 0.3) * 0.3;
+  camera.position.y += Math.cos(t * 0.2) * 0.2;
+
+  // ── WORLD 0 ROTATIONS ──
+  bigGear.rotation.z += 0.0008;
+  midGear1.rotation.z -= 0.0018;
+  midGear2.rotation.z += 0.0025;
+  smallGear1.rotation.z -= 0.004;
+  smallGear2.rotation.z += 0.006;
+  world0.rotation.y = Math.sin(t*0.05)*0.03;
+
+  // ── WORLD 1 ROTATIONS ──
+  world1.children.forEach((g, i) => {
+    if (g.userData.rotSpeed !== undefined) {
+      g.rotation.z += g.userData.rotSpeed * 2;
+    }
+  });
+
+  // ── WORLD 2 ROTATIONS ──
+  tourbillon.rotation.z += 0.006; // tourbillon cage
+  tourbillon.children[0].rotation.z -= 0.003; // outer ring counter
+  world2.children.forEach((child, i) => {
+    if (child.userData.orbitAngle !== undefined) {
+      child.userData.orbitAngle += child.userData.orbitSpeed;
+      child.position.x = Math.cos(child.userData.orbitAngle) * child.userData.orbitR;
+      child.position.y = Math.sin(child.userData.orbitAngle) * child.userData.orbitR;
+      child.rotation.z += 0.01;
+    }
+  });
+
+  // ── WORLD 3 ──
+  mainspring.rotation.y += 0.002;
+  sideGearL.rotation.z += 0.001;
+  sideGearR.rotation.z -= 0.0015;
+
+  // ── WORLD 4: WATCH HANDS ──
+  const now = new Date();
+  const secs = now.getSeconds() + now.getMilliseconds()/1000;
+  const mins = now.getMinutes() + secs/60;
+  const hours = (now.getHours() % 12) + mins/60;
+
+  secondHand.rotation.y = -(secs/60)*Math.PI*2;
+  minuteHand.rotation.y = -(mins/60)*Math.PI*2;
+  hourHand.rotation.y = -(hours/12)*Math.PI*2;
+
+  watchCase.rotation.y = Math.sin(t*0.15)*0.15 + t*0.0008;
+  watchCase.rotation.x = Math.sin(t*0.1)*0.05;
+  compParticles.rotation.y += 0.001;
+
+  // ── WORLD 5: RINGS ──
+  world5.children.forEach(child => {
+    if (child.userData.rotSpeedX !== undefined) {
+      child.rotation.x += child.userData.rotSpeedX * 3;
+      child.rotation.y += child.userData.rotSpeedY * 3;
+      child.rotation.z += child.userData.rotSpeedZ * 3;
+    }
+  });
+  orb.rotation.y += 0.003;
+
+  // Light animation
+  goldSun.position.x = 80 + Math.sin(t*0.15)*20;
+  goldSun.position.y = 60 + Math.cos(t*0.1)*15;
+  goldSun.intensity = 2.5 + Math.sin(t*0.4)*0.5;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ── RESIZE ──
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

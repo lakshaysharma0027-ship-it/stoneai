@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陈磊 — Creative Technologist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #000000;
+  --near-black: #0d0d0d;
+  --grey-d: #1a1a1a;
+  --grey-m: #404040;
+  --grey-l: #888888;
+  --grey-xl: #cccccc;
+  --white: #ffffff;
+}
+
+html { scroll-behavior: smooth; overflow-x: hidden; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+/* CURSOR */
+.cursor-dot {
+  position: fixed;
+  width: 6px; height: 6px;
+  background: var(--white);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.05s linear;
+  mix-blend-mode: difference;
+}
+.cursor-cross {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  width: 24px; height: 24px;
+  mix-blend-mode: difference;
+}
+.cursor-cross::before, .cursor-cross::after {
+  content: '';
+  position: absolute;
+  background: rgba(255,255,255,0.4);
+}
+.cursor-cross::before { width: 1px; height: 100%; left: 50%; top: 0; }
+.cursor-cross::after { width: 100%; height: 1px; top: 50%; left: 0; }
+
+/* WEBGL CANVAS — fixed ground */
+#gl-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+/* CONTENT LAYER */
+.content {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+}
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 28px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  mix-blend-mode: difference;
+}
+.nav-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-name-zh {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 4px;
+  color: var(--white);
+  line-height: 1;
+}
+.nav-name-en {
+  font-size: 9px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--grey-xl);
+}
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  list-style: none;
+}
+.nav-links li {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--grey-l);
+  cursor: none;
+  transition: color 0.2s;
+}
+.nav-links li:hover { color: var(--white); }
+.nav-links a { color: inherit; text-decoration: none; }
+
+/* HERO */
+#hero {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 48px 60px;
+  overflow: hidden;
+}
+
+/* Dissolving Chinese text layers — pure atmosphere */
+.zh-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.zh-char {
+  position: absolute;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+  user-select: none;
+}
+
+/* Hero identity block */
+.hero-identity {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  gap: 0;
+  align-items: end;
+  mix-blend-mode: difference;
+}
+
+.hero-name-block {}
+.hero-name-zh {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: clamp(80px, 12vw, 180px);
+  line-height: 0.9;
+  letter-spacing: -2px;
+  color: var(--white);
+  display: block;
+}
+.hero-name-en {
+  font-size: clamp(12px, 1.4vw, 20px);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--grey-xl);
+  display: block;
+  margin-top: 16px;
+}
+
+.hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 8px;
+  padding-left: 40px;
+}
+.hero-role {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--grey-l);
+  line-height: 1.8;
+}
+.hero-role strong { color: var(--white); }
+.hero-coords {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--grey-m);
+}
+
+/* SCROLL INDICATOR */
+.scroll-indicator {
+  position: absolute;
+  bottom: 60px;
+  right: 48px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  mix-blend-mode: difference;
+}
+.scroll-label {
+  font-size: 7px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--grey-m);
+  writing-mode: vertical-rl;
+}
+.scroll-track {
+  width: 1px;
+  height: 80px;
+  background: var(--grey-d);
+  position: relative;
+  overflow: hidden;
+}
+.scroll-fill {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  background: var(--white);
+  animation: scrollFill 2.5s ease-in-out infinite;
+}
+@keyframes scrollFill {
+  0% { top: 0; height: 0; }
+  50% { top: 0; height: 100%; }
+  51% { top: 100%; height: 0; }
+  100% { top: 100%; height: 0; }
+}
+
+/* SECTION BASE */
+.portfolio-section {
+  min-height: 100vh;
+  position: relative;
+  z-index: 10;
+  padding: 120px 48px;
+}
+
+/* SECTION DIVIDER */
+.section-marker {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 80px;
+  mix-blend-mode: difference;
+}
+.marker-zh {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 6px;
+  color: var(--grey-l);
+}
+.marker-en {
+  font-size: 8px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--grey-m);
+}
+.marker-line {
+  flex: 1;
+  height: 1px;
+  background: var(--grey-d);
+}
+
+/* PROJECT APERTURES */
+#work { padding-top: 0; }
+
+.work-intro {
+  padding: 120px 48px 0;
+  mix-blend-mode: difference;
+  position: relative;
+  z-index: 20;
+}
+.work-intro-text {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: clamp(32px, 5vw, 72px);
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--white);
+  max-width: 800px;
+}
+.work-intro-text .zh { display: block; font-weight: 900; }
+.work-intro-text .en {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(14px, 1.8vw, 22px);
+  font-weight: 300;
+  color: var(--grey-l);
+  letter-spacing: 2px;
+  display: block;
+  margin-top: 12px;
+}
+
+.projects-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 60px;
+}
+
+/* APERTURE PANEL — bleeds from edge */
+.aperture {
+  position: relative;
+  background: var(--black);
+  overflow: hidden;
+  border: 1px solid var(--grey-d);
+  cursor: none;
+  transition: border-color 0.4s;
+}
+.aperture:hover { border-color: var(--white); }
+
+.aperture-inner {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 120px;
+  gap: 0;
+  padding: 0;
+  min-height: 220px;
+  align-items: stretch;
+}
+
+.aperture-index {
+  padding: 40px 24px;
+  border-right: 1px solid var(--grey-d);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.idx-num {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: 42px;
+  color: var(--grey-d);
+  line-height: 1;
+  transition: color 0.4s;
+}
+.aperture:hover .idx-num { color: var(--white); }
+.idx-year { font-size: 8px; letter-spacing: 2px; color: var(--grey-m); }
+
+.aperture-title-block {
+  padding: 40px 40px;
+  border-right: 1px solid var(--grey-d);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+.proj-title-zh {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: clamp(28px, 3.5vw, 52px);
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+.proj-title-en {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--grey-l);
+}
+
+.aperture-desc {
+  padding: 40px;
+  border-right: 1px solid var(--grey-d);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+.proj-desc {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--grey-l);
+  font-style: italic;
+  max-width: 360px;
+}
+.proj-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.proj-tag {
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--grey-d);
+  color: var(--grey-m);
+}
+
+.aperture-visual {
+  position: relative;
+  overflow: hidden;
+  background: var(--near-black);
+}
+.aperture-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+.aperture:hover .aperture-pattern { opacity: 0.8; }
+.aperture-arrow {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--grey-m);
+  transition: color 0.3s, transform 0.3s;
+}
+.aperture:hover .aperture-arrow { color: var(--white); transform: translate(4px, -4px); }
+
+/* ABOUT SECTION */
+#about {
+  background: transparent;
+  mix-blend-mode: normal;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr;
+  gap: 0;
+  min-height: 60vh;
+}
+.about-divider { background: var(--grey-d); }
+
+.about-col {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+.about-col-l { padding-right: 80px; }
+.about-col-r { padding-left: 80px; }
+
+.about-statement-zh {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: clamp(24px, 3vw, 44px);
+  line-height: 1.3;
+  color: var(--white);
+  mix-blend-mode: difference;
+}
+
+.about-statement-en {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--grey-l);
+  font-style: italic;
+  font-weight: 300;
+}
+
+.about-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.cred-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--grey-d);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.cred-year { color: var(--grey-m); }
+.cred-val { color: var(--grey-xl); }
+.cred-val strong { color: var(--white); display: block; }
+
+.about-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.skill-name {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--grey-m);
+  min-width: 120px;
+}
+.skill-track {
+  flex: 1;
+  height: 1px;
+  background: var(--grey-d);
+  position: relative;
+}
+.skill-fill {
+  height: 100%;
+  background: var(--white);
+  transform-origin: left;
+  animation: fillIn 1.5s ease forwards;
+  transform: scaleX(0);
+}
+@keyframes fillIn {
+  to { transform: scaleX(1); }
+}
+
+/* CONTACT FOOTER */
+#contact {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 120px 48px 80px;
+  position: relative;
+  z-index: 10;
+  mix-blend-mode: difference;
+}
+
+.contact-big {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: clamp(60px, 9vw, 140px);
+  line-height: 0.9;
+  color: var(--white);
+  letter-spacing: -2px;
+}
+.contact-big .zh { display: block; }
+.contact-big .en {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(14px, 1.5vw, 20px);
+  letter-spacing: 6px;
+  font-weight: 300;
+  color: var(--grey-l);
+  display: block;
+  margin-top: 20px;
+}
+
+.contact-row {
+  margin-top: 60px;
+  display: flex;
+  gap: 48px;
+  align-items: flex-end;
+  border-top: 1px solid var(--grey-d);
+  padding-top: 32px;
+}
+.contact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.contact-label { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--grey-m); }
+.contact-val { font-size: 12px; letter-spacing: 1px; color: var(--white); }
+
+.footer-sig {
+  margin-top: auto;
+  margin-left: auto;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--grey-d);
+}
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-cross" id="cursorCross"></div>
+
+<canvas id="gl-canvas"></canvas>
+
+<div class="content">
+
+  <nav>
+    <div class="nav-id">
+      <span class="nav-name-zh">陈 磊</span>
+      <span class="nav-name-en">Chen Lei</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#work">作品 Work</a></li>
+      <li><a href="#about">关于 About</a></li>
+      <li><a href="#contact">联系 Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="zh-atmosphere" id="zhAtmo"></div>
+
+    <div class="hero-identity">
+      <div class="hero-name-block">
+        <span class="hero-name-zh">陈磊</span>
+        <span class="hero-name-en">Chen Lei</span>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-role">
+          <strong>Creative Technologist</strong><br>
+          创意技术师<br>
+          Shanghai → Berlin → Everywhere
+        </div>
+        <div class="hero-coords">
+          31.2304° N, 121.4737° E<br>
+          System: Active / 系统：运行中
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-indicator">
+      <div class="scroll-track"><div class="scroll-fill"></div></div>
+      <span class="scroll-label">Scroll</span>
+    </div>
+  </section>
+
+  <!-- WORK -->
+  <section id="work">
+    <div class="work-intro">
+      <div class="section-marker">
+        <span class="marker-zh">作品集</span>
+        <span class="marker-en">Selected Work</span>
+        <div class="marker-line"></div>
+        <span class="marker-en">2019—2025</span>
+      </div>
+      <div class="work-intro-text">
+        <span class="zh">每件作品都是<br>一次系统入侵</span>
+        <span class="en">Every project is a breach in the expected surface.</span>
+      </div>
+    </div>
+
+    <div class="projects-grid" id="projects">
+
+      <div class="aperture" data-idx="1">
+        <div class="aperture-inner">
+          <div class="aperture-index">
+            <span class="idx-num">一</span>
+            <span class="idx-year">2025</span>
+          </div>
+          <div class="aperture-title-block">
+            <div class="proj-title-zh">镜像城市</div>
+            <div class="proj-title-en">Mirror City</div>
+          </div>
+          <div class="aperture-desc">
+            <p class="proj-desc">A real-time urban data visualization installed across the facade of Shanghai Tower. 12,000 LED nodes driven by live transit, weather, and social signal feeds — the building becomes a nervous system.</p>
+            <div class="proj-tags">
+              <span class="proj-tag">WebGL</span>
+              <span class="proj-tag">Data Viz</span>
+              <span class="proj-tag">Installation</span>
+              <span class="proj-tag">Spatial</span>
+            </div>
+          </div>
+          <div class="aperture-visual" id="ap-canvas-1">
+            <canvas class="aperture-pattern" data-pattern="1"></canvas>
+            <span class="aperture-arrow">Open ↗</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="aperture" data-idx="2">
+        <div class="aperture-inner">
+          <div class="aperture-index">
+            <span class="idx-num">二</span>
+            <span class="idx-year">2024</span>
+          </div>
+          <div class="aperture-title-block">
+            <div class="proj-title-zh">语言残骸</div>
+            <div class="proj-title-en">Language Debris</div>
+          </div>
+          <div class="aperture-desc">
+            <p class="proj-desc">An ML model trained exclusively on deleted WeChat messages — the ghosts of unspoken thoughts. Outputs rendered as generative calligraphy, each stroke weighted by emotional valence score.</p>
+            <div class="proj-tags">
+              <span class="proj-tag">Machine Learning</span>
+              <span class="proj-tag">Generative Art</span>
+              <span class="proj-tag">NLP</span>
+            </div>
+          </div>
+          <div class="aperture-visual">
+            <canvas class="aperture-pattern" data-pattern="2"></canvas>
+            <span class="aperture-arrow">Open ↗</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="aperture" data-idx="3">
+        <div class="aperture-inner">
+          <div class="aperture-index">
+            <span class="idx-num">三</span>
+            <span class="idx-year">2024</span>
+          </div>
+          <div class="aperture-title-block">
+            <div class="proj-title-zh">身体协议</div>
+            <div class="proj-title-en">Body Protocol</div>
+          </div>
+          <div class="aperture-desc">
+            <p class="proj-desc">Wearable biosensor network translates physiological noise — heartbeat, galvanic response, breath — into a shared sonic environment. Performed at Centre Pompidou, Paris. Audience wears the instruments.</p>
+            <div class="proj-tags">
+              <span class="proj-tag">Wearables</span>
+              <span class="proj-tag">Performance</span>
+              <span class="proj-tag">Biometric</span>
+              <span class="proj-tag">Sound</span>
+            </div>
+          </div>
+          <div class="aperture-visual">
+            <canvas class="aperture-pattern" data-pattern="3"></canvas>
+            <span class="aperture-arrow">Open ↗</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="aperture" data-idx="4">
+        <div class="aperture-inner">
+          <div class="aperture-index">
+            <span class="idx-num">四</span>
+            <span class="idx-year">2023</span>
+          </div>
+          <div class="aperture-title-block">
+            <div class="proj-title-zh">空白记忆</div>
+            <div class="proj-title-en">Blank Memory</div>
+          </div>
+          <div class="aperture-desc">
+            <p class="proj-desc">A browser-based archive of images that automatically degrade over time, simulating the neurological process of forgetting. Revisiting a page accelerates the decay — attention as erasure.</p>
+            <div class="proj-tags">
+              <span class="proj-tag">Web Art</span>
+              <span class="proj-tag">Canvas API</span>
+              <span class="proj-tag">Conceptual</span>
+            </div>
+          </div>
+          <div class="aperture-visual">
+            <canvas class="aperture-pattern" data-pattern="4"></canvas>
+            <span class="aperture-arrow">Open ↗</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="aperture" data-idx="5">
+        <div class="aperture-inner">
+          <div class="aperture-index">
+            <span class="idx-num">五</span>
+            <span class="idx-year">2022</span>
+          </div>
+          <div class="aperture-title-block">
+            <div class="proj-title-zh">系统故障</div>
+            <div class="proj-title-en">System Failure</div>
+          </div>
+          <div class="aperture-desc">
+            <p class="proj-desc">Interactive installation where gallery visitors collectively break a running program through touch. The accumulated errors become the final artwork — a collaborative portrait of disruption.</p>
+            <div class="proj-tags">
+              <span class="proj-tag">Installation</span>
+              <span class="proj-tag">Interaction</span>
+              <span class="proj-tag">Collective</span>
+            </div>
+          </div>
+          <div class="aperture-visual">
+            <canvas class="aperture-pattern" data-pattern="5"></canvas>
+            <span class="aperture-arrow">Open ↗</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="portfolio-section">
+    <div class="section-marker mix-blend-mode: difference;">
+      <span class="marker-zh">关于</span>
+      <span class="marker-en">About</span>
+      <div class="marker-line"></div>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-col about-col-l">
+        <p class="about-statement-zh">我在系统的缝隙中工作。代码是材料，空间是画布，时间是媒介。</p>
+        <p class="about-statement-en">I work in the gaps between systems. Code as material, space as canvas, time as medium. My practice exists at the point where technology loses its neutrality and becomes something uncomfortably alive.</p>
+
+        <div class="about-credentials">
+          <div class="cred-row">
+            <span class="cred-year">2019</span>
+            <span class="cred-val"><strong>同济大学 / Tongji University</strong>MFA, Interaction Design</span>
+          </div>
+          <div class="cred-row">
+            <span class="cred-year">2021</span>
+            <span class="cred-val"><strong>Ars Electronica</strong>Honorary Mention, Digital Communities</span>
+          </div>
+          <div class="cred-row">
+            <span class="cred-year">2022</span>
+            <span class="cred-val"><strong>Centre Pompidou</strong>Artist in Residence</span>
+          </div>
+          <div class="cred-row">
+            <span class="cred-year">2023</span>
+            <span class="cred-val"><strong>TED Shenzhen</strong>Speaker — The Living Interface</span>
+          </div>
+          <div class="cred-row">
+            <span class="cred-year">2024</span>
+            <span class="cred-val"><strong>Shanghai Biennale</strong>Commissioned work, Mirror City</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-divider"></div>
+
+      <div class="about-col about-col-r">
+        <div class="section-marker" style="margin-bottom: 32px;">
+          <span class="marker-en">Technical Stack / 技术栈</span>
+          <div class="marker-line"></div>
+        </div>
+        <div class="about-skills">
+          <div class="skill-row"><span class="skill-name">WebGL / GLSL</span><div class="skill-track"><div class="skill-fill" style="width:95%;animation-delay:0.1s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Three.js / R3F</span><div class="skill-track"><div class="skill-fill" style="width:92%;animation-delay:0.2s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Creative Coding</span><div class="skill-track"><div class="skill-fill" style="width:98%;animation-delay:0.3s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Machine Learning</span><div class="skill-track"><div class="skill-fill" style="width:78%;animation-delay:0.4s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Physical Computing</span><div class="skill-track"><div class="skill-fill" style="width:85%;animation-delay:0.5s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Sound Design</span><div class="skill-track"><div class="skill-fill" style="width:70%;animation-delay:0.6s"></div></div></div>
+          <div class="skill-row"><span class="skill-name">Spatial Design</span><div class="skill-track"><div class="skill-fill" style="width:88%;animation-delay:0.7s"></div></div></div>
+        </div>
+
+        <div style="margin-top: 48px;">
+          <div class="section-marker" style="margin-bottom: 24px;">
+            <span class="marker-en">Languages / 语言</span>
+            <div class="marker-line"></div>
+          </div>
+          <div class="about-credentials">
+            <div class="cred-row"><span class="cred-year">中文</span><span class="cred-val">Native / 母语</span></div>
+            <div class="cred-row"><span class="cred-year">English</span><span class="cred-val">Fluent / 流利</span></div>
+            <div class="cred-row"><span class="cred-year">Deutsch</span><span class="cred-val">Intermediate / 中级</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-big">
+      <span class="zh">开始对话</span>
+      <span class="en">Start a conversation.</span>
+    </div>
+    <div class="contact-row">
+      <div class="contact-item">
+        <span class="contact-label">Email</span>
+        <span class="contact-val">lei@chenlei.studio</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">Location</span>
+        <span class="contact-val">Shanghai / Berlin</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">Available</span>
+        <span class="contact-val">Commissions open — 接受委托</span>
+      </div>
+      <div class="footer-sig">陈磊工作室 © 2025</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ============================
+// CURSOR
+// ============================
+const dot = document.getElementById('cursorDot');
+const cross = document.getElementById('cursorCross');
+let mx = 0, my = 0, cx = 0, cy = 0;
+
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx+'px'; dot.style.top = my+'px'; });
+(function animCross() {
+  cx += (mx - cx) * 0.1; cy += (my - cy) * 0.1;
+  cross.style.left = cx+'px'; cross.style.top = cy+'px';
+  requestAnimationFrame(animCross);
+})();
+
+// ============================
+// DISSOLVING ZH ATMOSPHERE
+// ============================
+const chars = '陈磊创意技术师系统镜像语言城市身体协议空白记忆虚空几何抽象结构时间空间意识代码材料缝隙碎片投影表面';
+const atmo = document.getElementById('zhAtmo');
+const placed = [];
+function placeChar() {
+  const el = document.createElement('div');
+  el.classList.add('zh-char');
+  const c = chars[Math.floor(Math.random() * chars.length)];
+  el.textContent = c;
+  const sz = 20 + Math.random() * 160;
+  const opacity = 0.03 + Math.random() * 0.12;
+  const x = Math.random() * 100;
+  const y = Math.random() * 100;
+  el.style.cssText = `font-size:${sz}px;opacity:${opacity};left:${x}%;top:${y}%;transform:rotate(${(Math.random()-0.5)*20}deg);`;
+  atmo.appendChild(el);
+  // slow drift
+  let vy = -0.004 - Math.random() * 0.008;
+  let cy2 = y;
+  let alpha = opacity;
+  let fade = 'in';
+  const delay = Math.random() * 5000;
+  setTimeout(() => {
+    placed.push({ el, vy, cy2, alpha, opacity, fade });
+  }, delay);
+}
+for (let i = 0; i < 28; i++) placeChar();
+
+setInterval(() => {
+  placed.forEach((p, i) => {
+    p.cy2 += p.vy;
+    if (p.cy2 < -15) { p.cy2 = 110; p.alpha = 0; }
+    p.el.style.top = p.cy2 + '%';
+    if (p.fade === 'in') { p.alpha = Math.min(p.opacity, p.alpha + 0.0005); if (p.alpha >= p.opacity) p.fade = 'hold'; }
+  });
+}, 50);
+
+// ============================
+// WEBGL TESSELLATION SHADER
+// ============================
+(function() {
+  const canvas = document.getElementById('gl-canvas');
+  const gl = canvas.getContext('webgl', { antialias: true, alpha: false });
+  if (!gl) return;
+
+  function resize() {
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const vert = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+
+  const frag = `
+    precision highp float;
+    uniform vec2 u_res;
+    uniform float u_time;
+    uniform vec2 u_mouse;
+    uniform float u_scroll;
+
+    // Simplex-like hash
+    vec2 hash2(vec2 p) {
+      p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+      return fract(sin(p) * 43758.5453);
+    }
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    // Voronoi / cell distance for tessellation
+    vec2 voronoi(vec2 x) {
+      vec2 n = floor(x);
+      vec2 f = fract(x);
+      float minDist = 8.0;
+      vec2 minP = vec2(0.0);
+      for (int j = -2; j <= 2; j++) {
+        for (int i = -2; i <= 2; i++) {
+          vec2 g = vec2(float(i), float(j));
+          vec2 o = hash2(n + g);
+          // animate the cell centers slightly
+          o = 0.5 + 0.45 * sin(u_time * 0.4 + 6.28 * o);
+          vec2 r = g + o - f;
+          float d = dot(r, r);
+          if (d < minDist) { minDist = d; minP = n + g + o; }
+        }
+      }
+      return vec2(sqrt(minDist), hash(minP));
+    }
+
+    // Triangle grid distance
+    float triGrid(vec2 uv, float scale) {
+      uv *= scale;
+      vec2 a = mod(uv, 1.0);
+      vec2 b = mod(uv + 0.5, 1.0);
+      float d = min(min(a.x, 1.0 - a.x), min(a.y, 1.0 - a.y));
+      float d2 = min(min(b.x, 1.0 - b.x), min(b.y, 1.0 - b.y));
+      // diagonal cut
+      float diag = abs(a.x - a.y);
+      return min(min(d, d2), diag);
+    }
+
+    // Distort UV based on mouse proximity
+    vec2 mouseDistort(vec2 uv, vec2 mouse, float strength) {
+      vec2 delta = uv - mouse;
+      float dist = length(delta);
+      float radius = 0.25;
+      float falloff = smoothstep(radius, 0.0, dist);
+      // push outward from mouse
+      vec2 push = normalize(delta + vec2(0.0001)) * falloff * strength;
+      return uv + push;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_res;
+      uv.y = 1.0 - uv.y;
+
+      // Normalize mouse 0→1
+      vec2 mouse = u_mouse / u_res;
+      mouse.y = 1.0 - mouse.y;
+
+      // Apply cursor distortion — membrane press effect
+      float distortStrength = 0.06;
+      vec2 dUV = mouseDistort(uv, mouse, distortStrength);
+
+      // Scroll parallax — geometry slowly shifts
+      dUV.y += u_scroll * 0.0003;
+
+      // Multi-layer tessellation
+      // Layer 1: Large voronoi cells
+      vec2 v1 = voronoi(dUV * 5.0 + vec2(u_time * 0.05, 0.0));
+      float cell1 = v1.x;
+      float id1 = v1.y;
+
+      // Layer 2: Medium triangular grid, rotated
+      float angle = u_time * 0.02;
+      mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+      vec2 rotUV = rot * (dUV - 0.5) + 0.5;
+      float tri = triGrid(rotUV, 12.0);
+
+      // Layer 3: Fine diamond grid
+      vec2 diaUV = dUV;
+      diaUV = (diaUV - 0.5) * mat2(0.707, -0.707, 0.707, 0.707) + 0.5;
+      float dia = triGrid(diaUV + vec2(u_time * 0.01, u_time * 0.007), 24.0);
+
+      // Cell edge detection — sharp lines
+      float edge1 = 1.0 - smoothstep(0.02, 0.06, cell1);
+      float edge2 = 1.0 - smoothstep(0.01, 0.03, tri);
+      float edge3 = 1.0 - smoothstep(0.005, 0.02, dia);
+
+      // Cell interior brightness — oscillates per cell
+      float cellBright = hash(floor(dUV * 5.0)) * 0.12;
+      cellBright *= (0.5 + 0.5 * sin(u_time * 0.8 + id1 * 12.0));
+
+      // Assemble: dark background, geometry lines in various greys
+      float base = 0.04; // near-black
+      float g = base + cellBright;
+
+      // Edges at different opacities/depths
+      g += edge1 * 0.25;  // voronoi — mid grey
+      g += edge2 * 0.12;  // tri — subtle
+      g += edge3 * 0.06;  // diamond — barely-there
+
+      // Mouse proximity glow — area around cursor slightly brighter
+      vec2 mdelta = uv - mouse;
+      float mDist = length(mdelta);
+      float mGlow = smoothstep(0.18, 0.0, mDist) * 0.08;
+      g += mGlow;
+
+      // Fracture burst at mouse — strong local contrast
+      float fracture = smoothstep(0.06, 0.0, mDist) * edge1 * 0.5;
+      g += fracture;
+
+      // Vignette
+      vec2 vUV = uv - 0.5;
+      float vign = 1.0 - dot(vUV, vUV) * 1.6;
+      g *= clamp(vign, 0.0, 1.0);
+
+      // Clamp
+      g = clamp(g, 0.0, 1.0);
+
+      gl_FragColor = vec4(g, g, g, 1.0);
+    }
+  `;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const posLoc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, 'u_res');
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+  const uScroll = gl.getUniformLocation(prog, 'u_scroll');
+
+  let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+  let smoothMX = mouseX, smoothMY = mouseY;
+  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+  function draw(t) {
+    smoothMX += (mouseX - smoothMX) * 0.08;
+    smoothMY += (mouseY - smoothMY) * 0.08;
+    const w = canvas.width, h = canvas.height;
+    gl.uniform2f(uRes, w, h);
+    gl.uniform1f(uTime, t * 0.001);
+    gl.uniform2f(uMouse, smoothMX * devicePixelRatio, smoothMY * devicePixelRatio);
+    gl.uniform1f(uScroll, window.scrollY);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+// ============================
+// APERTURE MINI-CANVASES
+// (animated geometric patterns per project)
+// ============================
+document.querySelectorAll('.aperture-pattern').forEach(canvas => {
+  const ctx = canvas.getContext('2d');
+  const pattern = parseInt(canvas.dataset.pattern);
+  let t = Math.random() * 1000;
+
+  function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resizeCanvas();
+
+  function drawPattern() {
+    const w = canvas.width, h = canvas.height;
+    if (!w || !h) { requestAnimationFrame(drawPattern); return; }
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, w, h);
+
+    t += 0.008;
+    const freq = [10, 14, 8, 18, 12][pattern - 1] || 10;
+    const cols = Math.ceil(w / freq) + 2;
+    const rows = Math.ceil(h / freq) + 2;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 0.5;
+
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c <= cols; c++) {
+        const x = c * freq;
+        const y = r * freq;
+        const wave = Math.sin(t + c * 0.4 + r * 0.3) * 3;
+        const wave2 = Math.cos(t * 0.7 + c * 0.2 - r * 0.5) * 3;
+
+        if (c < cols && r < rows) {
+          ctx.beginPath();
+          ctx.moveTo(x + wave, y + wave2);
+          ctx.lineTo(x + freq + wave2, y + wave);
+          ctx.lineTo(x + freq / 2 + wave, y + freq + wave2);
+          ctx.closePath();
+          const br = 0.05 + 0.2 * Math.abs(Math.sin(t * 0.5 + c + r));
+          ctx.strokeStyle = `rgba(255,255,255,${br})`;
+          ctx.stroke();
+
+          if (Math.abs(Math.sin(t * 0.3 + c * 0.7 + r * 1.1)) > 0.85) {
+            ctx.fillStyle = `rgba(255,255,255,${br * 0.3})`;
+            ctx.fill();
+          }
+        }
+      }
+    }
+    requestAnimationFrame(drawPattern);
+  }
+  drawPattern();
+});
+
+// ============================
+// SCROLL-TRIGGERED REVEAL
+// ============================
+const reveals = document.querySelectorAll('.aperture, .about-col, .contact-big');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+reveals.forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(40px)';
+  el.style.transition = 'opacity 0.9s ease, transform 0.9s ease';
+  obs.observe(el);
+});
+
+// Stagger apertures
+document.querySelectorAll('.aperture').forEach((el, i) => {
+  el.style.transitionDelay = (i * 0.08) + 's';
+});
+</script>
+</body>
+</html>

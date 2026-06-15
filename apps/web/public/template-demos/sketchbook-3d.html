@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inside My Mind — A Sketchbook World</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Permanent+Marker&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f5f0e8;
+    font-family: 'Caveat', cursive;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  #canvas-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  #canvas-container canvas {
+    display: block;
+  }
+
+  /* HUD overlays */
+  #hud {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #title-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: all;
+    transition: opacity 0.8s ease;
+  }
+
+  #title-card h1 {
+    font-family: 'Permanent Marker', cursive;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    color: #1a1a2e;
+    text-shadow: 4px 4px 0 #e8d5b7, 6px 6px 0 rgba(0,0,0,0.1);
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  #title-card h1 span {
+    color: #c94040;
+    display: inline-block;
+    animation: wobble 2s ease-in-out infinite;
+  }
+
+  #title-card p {
+    font-size: 1.4rem;
+    color: #444;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+
+  #enter-btn {
+    margin-top: 28px;
+    background: #1a1a2e;
+    color: #f5f0e8;
+    border: 3px solid #1a1a2e;
+    font-family: 'Permanent Marker', cursive;
+    font-size: 1.3rem;
+    padding: 12px 32px;
+    cursor: pointer;
+    border-radius: 4px;
+    box-shadow: 5px 5px 0 #c94040;
+    transform: rotate(-1deg);
+    transition: all 0.15s;
+    pointer-events: all;
+  }
+
+  #enter-btn:hover {
+    transform: rotate(1deg) translate(-2px, -2px);
+    box-shadow: 7px 7px 0 #c94040;
+  }
+
+  #enter-btn:active {
+    transform: rotate(0deg) translate(3px, 3px);
+    box-shadow: 2px 2px 0 #c94040;
+  }
+
+  /* Navigation controls */
+  #nav-hints {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.6s;
+    pointer-events: all;
+  }
+
+  #nav-hints.visible { opacity: 1; }
+
+  .key-hint {
+    background: rgba(255,255,255,0.85);
+    border: 2px solid #1a1a2e;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    box-shadow: 3px 3px 0 #1a1a2e;
+  }
+
+  /* Info panel */
+  #info-panel {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: rgba(245,240,232,0.95);
+    border: 2px solid #1a1a2e;
+    border-radius: 6px;
+    padding: 16px 20px;
+    max-width: 220px;
+    box-shadow: 4px 4px 0 #1a1a2e;
+    transform: rotate(1.5deg);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: all;
+  }
+
+  #info-panel.visible { opacity: 1; }
+
+  #info-panel h3 {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 1.1rem;
+    color: #c94040;
+    margin-bottom: 6px;
+  }
+
+  #info-panel p {
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.4;
+  }
+
+  /* Crosshair */
+  #crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px; height: 24px;
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+
+  #crosshair.visible { opacity: 0.6; }
+
+  #crosshair::before, #crosshair::after {
+    content: '';
+    position: absolute;
+    background: #1a1a2e;
+    border-radius: 2px;
+  }
+
+  #crosshair::before {
+    width: 2px; height: 100%;
+    left: 50%; transform: translateX(-50%);
+  }
+
+  #crosshair::after {
+    height: 2px; width: 100%;
+    top: 50%; transform: translateY(-50%);
+  }
+
+  /* Section popup */
+  #section-popup {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg);
+    background: #fff9f0;
+    border: 2.5px solid #1a1a2e;
+    border-radius: 6px;
+    padding: 18px 26px;
+    max-width: 340px;
+    box-shadow: 5px 5px 0 #1a1a2e;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    text-align: center;
+  }
+
+  #section-popup.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  #section-popup h2 {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 1.5rem;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+
+  #section-popup p {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+  }
+
+  #section-popup .close-btn {
+    margin-top: 12px;
+    background: none;
+    border: 2px solid #1a1a2e;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 5px 16px;
+    cursor: pointer;
+    border-radius: 3px;
+    box-shadow: 2px 2px 0 #1a1a2e;
+  }
+
+  /* Mini-map */
+  #minimap {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    width: 120px;
+    height: 80px;
+    background: rgba(245,240,232,0.92);
+    border: 2px solid #1a1a2e;
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 #1a1a2e;
+    transform: rotate(-1deg);
+    opacity: 0;
+    transition: opacity 0.5s;
+    overflow: hidden;
+  }
+
+  #minimap.visible { opacity: 1; }
+  #minimap canvas { width: 100%; height: 100%; }
+
+  /* Loading */
+  #loading {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #f5f0e8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.8s;
+  }
+
+  #loading h2 {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 2.2rem;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+  }
+
+  #loading-bar-wrap {
+    width: 260px;
+    height: 14px;
+    background: #ddd;
+    border: 2px solid #1a1a2e;
+    border-radius: 99px;
+    overflow: hidden;
+    box-shadow: 3px 3px 0 #1a1a2e;
+  }
+
+  #loading-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #c94040, #f4a261);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  #loading-tip {
+    margin-top: 14px;
+    font-size: 1.1rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-2deg) scale(1); }
+    50% { transform: rotate(2deg) scale(1.04); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes scribble {
+    0%, 100% { stroke-dashoffset: 0; }
+    50% { stroke-dashoffset: 10; }
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: absolute;
+    background: #1a1a2e;
+    color: #f5f0e8;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    padding: 6px 12px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    transform: rotate(-1deg);
+    white-space: nowrap;
+  }
+
+  #tooltip.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <h2>✏️ Sketching your world...</h2>
+  <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+  <p id="loading-tip">Sharpening pencils...</p>
+</div>
+
+<div id="canvas-container"></div>
+
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="title-card">
+    <h1>Inside My<br><span>Mind</span></h1>
+    <p>A sketchbook brought to life 🎨</p>
+    <button id="enter-btn">→ Step Inside</button>
+  </div>
+
+  <div id="nav-hints">
+    <div class="key-hint">↑↓ or W/S — Walk</div>
+    <div class="key-hint">←→ or A/D — Turn</div>
+    <div class="key-hint">Mouse — Look</div>
+    <div class="key-hint">Click — Interact</div>
+  </div>
+
+  <div id="info-panel">
+    <h3>📍 You are here</h3>
+    <p id="info-text">Walking through the hallway of ideas...</p>
+  </div>
+
+  <div id="minimap">
+    <canvas id="minimap-canvas"></canvas>
+  </div>
+
+  <div id="section-popup">
+    <h2 id="popup-title">✨ Discovered!</h2>
+    <p id="popup-body">Something cool here.</p>
+    <button class="close-btn" id="close-popup">✕ Close</button>
+  </div>
+
+  <div id="tooltip"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── WORLD SETUP ────────────────────────────────────────────────
+const W = window.innerWidth, H = window.innerHeight;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf5f0e8);
+scene.fog = new THREE.Fog(0xf5f0e8, 18, 60);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(70, W / H, 0.1, 100);
+camera.position.set(0, 1.6, 0);
+
+// ─── LOADING ──────────────────────────────────────────────────────
+const tips = [
+  "Sharpening pencils...",
+  "Doodling hallway walls...",
+  "Hiding easter eggs...",
+  "Teaching the guide to wave...",
+  "Spilling some ink (accidentally)...",
+  "Almost ready!"
+];
+let tipIndex = 0;
+const loadBar = document.getElementById('loading-bar');
+const loadTip = document.getElementById('loading-tip');
+
+function fakeLoad() {
+  let p = 0;
+  const iv = setInterval(() => {
+    p += Math.random() * 18;
+    if (p > 100) p = 100;
+    loadBar.style.width = p + '%';
+    loadTip.textContent = tips[Math.min(Math.floor(p / 17), tips.length - 1)];
+    if (p >= 100) {
+      clearInterval(iv);
+      setTimeout(() => {
+        const l = document.getElementById('loading');
+        l.style.opacity = '0';
+        setTimeout(() => l.remove(), 800);
+      }, 400);
+    }
+  }, 120);
+}
+fakeLoad();
+
+// ─── SKETCH TEXTURE GENERATOR ────────────────────────────────────
+function makeSketchTexture(size, bgColor, drawFn) {
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = size;
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, size, size);
+  drawFn(ctx, size);
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// Pencil stroke helper
+function pencilLine(ctx, x1, y1, x2, y2, width = 2, alpha = 0.8) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1 + (Math.random() - 0.5) * 1.5, y1 + (Math.random() - 0.5) * 1.5);
+  ctx.lineTo(x2 + (Math.random() - 0.5) * 1.5, y2 + (Math.random() - 0.5) * 1.5);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function sketchRect(ctx, x, y, w, h, col = '#1a1a2e', lw = 2) {
+  ctx.save();
+  ctx.strokeStyle = col;
+  ctx.lineWidth = lw;
+  ctx.lineCap = 'round';
+  const jit = () => (Math.random() - 0.5) * 2;
+  ctx.beginPath();
+  ctx.moveTo(x + jit(), y + jit());
+  ctx.lineTo(x + w + jit(), y + jit());
+  ctx.lineTo(x + w + jit(), y + h + jit());
+  ctx.lineTo(x + jit(), y + h + jit());
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─── FLOOR TEXTURE ───────────────────────────────────────────────
+const floorTex = makeSketchTexture(512, '#ede7d9', (ctx, s) => {
+  // Grid lines like graph paper
+  ctx.globalAlpha = 0.15;
+  ctx.strokeStyle = '#4466aa';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < s; i += 24) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(s, i); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // Random doodles on floor
+  const doodles = ['~', '✦', '→', '○', '△', '✱', '∿'];
+  ctx.font = '14px serif';
+  ctx.fillStyle = '#aaa';
+  for (let i = 0; i < 30; i++) {
+    ctx.fillText(doodles[Math.floor(Math.random() * doodles.length)],
+      Math.random() * s, Math.random() * s);
+  }
+});
+floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+floorTex.repeat.set(8, 40);
+
+// ─── WALL TEXTURE ────────────────────────────────────────────────
+const wallTex = makeSketchTexture(512, '#f0ebe0', (ctx, s) => {
+  // Paper texture
+  for (let i = 0; i < 800; i++) {
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
+    ctx.fillRect(Math.random() * s, Math.random() * s, Math.random() * 3 + 1, Math.random() * 3 + 1);
+  }
+  ctx.globalAlpha = 1;
+  // Horizontal pencil lines
+  for (let i = 40; i < s; i += 30) {
+    pencilLine(ctx, 10, i, s - 10, i, 0.8, 0.12);
+  }
+  // Border sketch lines
+  sketchRect(ctx, 8, 8, s - 16, s - 16, '#ccc', 1.5);
+});
+wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
+wallTex.repeat.set(2, 2);
+
+// ─── CEILING TEXTURE ─────────────────────────────────────────────
+const ceilTex = makeSketchTexture(256, '#f8f4ec', (ctx, s) => {
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < s; i += 20) {
+    pencilLine(ctx, 0, i, s, i, 1, 0.3);
+  }
+});
+ceilTex.wrapS = ceilTex.wrapT = THREE.RepeatWrapping;
+ceilTex.repeat.set(3, 15);
+
+// ─── BUILD HALLWAY ────────────────────────────────────────────────
+const HALL_W = 5, HALL_H = 4, HALL_L = 80;
+
+function makePlane(w, h, tex, col = 0xfaf5ec) {
+  const geo = new THREE.PlaneGeometry(w, h, 1, 1);
+  const mat = new THREE.MeshLambertMaterial({ map: tex, color: col });
+  return new THREE.Mesh(geo, mat);
+}
+
+// Floor
+const floor = makePlane(HALL_W, HALL_L, floorTex, 0xede7d9);
+floor.rotation.x = -Math.PI / 2;
+floor.position.set(0, 0, -HALL_L / 2 + 5);
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Ceiling
+const ceil = makePlane(HALL_W, HALL_L, ceilTex, 0xf5f0e8);
+ceil.rotation.x = Math.PI / 2;
+ceil.position.set(0, HALL_H, -HALL_L / 2 + 5);
+scene.add(ceil);
+
+// Left wall
+const wallL = makePlane(HALL_L, HALL_H, wallTex, 0xf0ebe0);
+wallL.rotation.y = Math.PI / 2;
+wallL.position.set(-HALL_W / 2, HALL_H / 2, -HALL_L / 2 + 5);
+scene.add(wallL);
+
+// Right wall
+const wallR = makePlane(HALL_L, HALL_H, wallTex, 0xf0ebe0);
+wallR.rotation.y = -Math.PI / 2;
+wallR.position.set(HALL_W / 2, HALL_H / 2, -HALL_L / 2 + 5);
+scene.add(wallR);
+
+// Back wall (end of hallway)
+const wallBack = makePlane(HALL_W, HALL_H, wallTex, 0xe8e2d8);
+wallBack.position.set(0, HALL_H / 2, -HALL_L + 5);
+scene.add(wallBack);
+
+// ─── LIGHTING ─────────────────────────────────────────────────────
+const ambLight = new THREE.AmbientLight(0xfff5e6, 0.6);
+scene.add(ambLight);
+
+// Warm overhead lights along hallway
+for (let z = 0; z > -HALL_L; z -= 10) {
+  const pt = new THREE.PointLight(0xffe8c0, 0.8, 18);
+  pt.position.set(0, HALL_H - 0.2, z);
+  pt.castShadow = true;
+  scene.add(pt);
+
+  // Light fixture (small box)
+  const fix = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.15, 0.4),
+    new THREE.MeshLambertMaterial({ color: 0x222233 })
+  );
+  fix.position.set(0, HALL_H - 0.05, z);
+  scene.add(fix);
+}
+
+// ─── SKETCH FRAME HELPER ─────────────────────────────────────────
+function makeFrameTex(title, body, accent = '#c94040', bgColor = '#fff9f2') {
+  return makeSketchTexture(512, bgColor, (ctx, s) => {
+    // Background paper feel
+    for (let i = 0; i < 400; i++) {
+      ctx.globalAlpha = 0.025;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(Math.random() * s, Math.random() * s, 1, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    // Double border - sketchy
+    sketchRect(ctx, 12, 12, s - 24, s - 24, '#1a1a2e', 3);
+    sketchRect(ctx, 18, 18, s - 36, s - 36, '#1a1a2e', 1.5);
+
+    // Accent corner marks
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.6;
+    [[12,12],[s-28,12],[12,s-28],[s-28,s-28]].forEach(([x,y]) => {
+      ctx.fillRect(x, y, 16, 16);
+    });
+    ctx.globalAlpha = 1;
+
+    // Title
+    ctx.font = 'bold 38px Permanent Marker, cursive';
+    ctx.fillStyle = '#1a1a2e';
+    ctx.textAlign = 'center';
+    ctx.fillText(title, s / 2, 80);
+
+    // Underline
+    pencilLine(ctx, 60, 92, s - 60, 92, 3, 0.5);
+
+    // Body text lines
+    const lines = body.split('\n');
+    ctx.font = '22px Caveat, cursive';
+    ctx.fillStyle = '#333';
+    lines.forEach((line, i) => {
+      ctx.fillText(line, s / 2, 130 + i * 32);
+    });
+
+    // Doodle corner decorations
+    ctx.font = '28px serif';
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.4;
+    ctx.fillText('✦', 30, 50);
+    ctx.fillText('✦', s - 50, s - 30);
+    ctx.globalAlpha = 1;
+  });
+}
+
+// ─── WALL ARTWORKS (portfolio pieces) ────────────────────────────
+const artworks = [
+  {
+    z: -8, side: 'left',
+    title: '🎨 Design Work',
+    body: 'Brand identities\nUI/UX journeys\nTypography love',
+    accent: '#c94040',
+    bg: '#fff0f0'
+  },
+  {
+    z: -8, side: 'right',
+    title: '💻 Code',
+    body: 'React & Three.js\nGenerative art\nFull-stack apps',
+    accent: '#2a6fdb',
+    bg: '#f0f4ff'
+  },
+  {
+    z: -18, side: 'left',
+    title: '✍️ Writing',
+    body: 'Micro-essays\nTech stories\nPoetry (badly)',
+    accent: '#2d9b5a',
+    bg: '#f0fff5'
+  },
+  {
+    z: -18, side: 'right',
+    title: '📸 Photography',
+    body: 'Street shots\nMicro details\nLight & shadow',
+    accent: '#f4a261',
+    bg: '#fff8f0'
+  },
+  {
+    z: -28, side: 'left',
+    title: '🎵 Music',
+    body: 'Lo-fi beats\nSynth experiments\nField recordings',
+    accent: '#9b2d8a',
+    bg: '#fdf0ff'
+  },
+  {
+    z: -28, side: 'right',
+    title: '🌍 Travel',
+    body: '23 countries\nLocal foods\nSketchbooks full',
+    accent: '#2d8a7a',
+    bg: '#f0fffd'
+  },
+  {
+    z: -38, side: 'left',
+    title: '🧪 Experiments',
+    body: 'What if AI dreamed?\nPhysics toys\nWeird prototypes',
+    accent: '#e8a020',
+    bg: '#fffaf0'
+  },
+  {
+    z: -38, side: 'right',
+    title: '💌 Contact',
+    body: 'hello@creator.com\n@handle\nLet\'s make things!',
+    accent: '#c94040',
+    bg: '#fff0f0'
+  },
+];
+
+const interactables = [];
+
+artworks.forEach(aw => {
+  const tex = makeFrameTex(aw.title, aw.body, aw.accent, aw.bg);
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.8, 1.6),
+    new THREE.MeshLambertMaterial({ map: tex })
+  );
+
+  const x = aw.side === 'left' ? -HALL_W / 2 + 0.06 : HALL_W / 2 - 0.06;
+  const rotY = aw.side === 'left' ? Math.PI / 2 : -Math.PI / 2;
+
+  mesh.position.set(x, 1.8, aw.z);
+  mesh.rotation.y = rotY;
+  mesh.userData = {
+    type: 'artwork',
+    title: aw.title,
+    body: aw.body.replace(/\n/g, ' · ')
+  };
+  scene.add(mesh);
+  interactables.push(mesh);
+
+  // Frame shadow / depth
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.9, 1.7),
+    new THREE.MeshLambertMaterial({ color: 0xccbbaa, transparent: true, opacity: 0.3 })
+  );
+  shadow.position.set(x + (aw.side === 'left' ? -0.04 : 0.04), 1.77, aw.z - 0.01);
+  shadow.rotation.y = rotY;
+  scene.add(shadow);
+});
+
+// ─── EASTER EGGS ─────────────────────────────────────────────────
+const eggs = [
+  { z: -13, x: 1.5, y: 0.3, label: '🥚 Secret stash!', body: 'You found my coffee-stained napkin sketches. These never made it to the portfolio...' },
+  { z: -22, x: -1.8, y: 0.4, label: '🐣 Found one!', body: 'A half-finished comic strip about a robot who learns to cry. Chapter 3 is actually good.' },
+  { z: -33, x: 2.0, y: 0.5, label: '✨ Easter Egg!', body: 'Secret playlist: "songs I listen to at 2am while designing" — 47 songs, all bangers.' },
+  { z: -45, x: -2.0, y: 0.35, label: '🎁 Hidden gem!', body: 'My very first logo. Made in MS Paint, 2009. Please don\'t judge. Actually, please do.' },
+];
+
+eggs.forEach(egg => {
+  const geo = new THREE.SphereGeometry(0.2, 8, 8);
+  const mat = new THREE.MeshLambertMaterial({
+    color: new THREE.Color().setHSL(Math.random(), 0.7, 0.6)
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(egg.x, egg.y, egg.z);
+  mesh.userData = { type: 'egg', title: egg.label, body: egg.body };
+  scene.add(mesh);
+  interactables.push(mesh);
+
+  // Glow ring
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.28, 0.03, 8, 16),
+    new THREE.MeshLambertMaterial({ color: 0xffdd44, transparent: true, opacity: 0.5 })
+  );
+  ring.position.copy(mesh.position);
+  ring.userData = { spin: true };
+  scene.add(ring);
+});
+
+// ─── GUIDE CHARACTER ─────────────────────────────────────────────
+class GuideChar {
+  constructor() {
+    this.group = new THREE.Group();
+    this.time = 0;
+    this.targetZ = -3;
+    this.build();
+  }
+
+  build() {
+    // Body (rounded box)
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.6, 0.3),
+      new THREE.MeshLambertMaterial({ color: 0xc94040 })
+    );
+    body.position.y = 0.3;
+    this.group.add(body);
+
+    // Head
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28, 12, 10),
+      new THREE.MeshLambertMaterial({ color: 0xffd5a8 })
+    );
+    head.position.y = 0.85;
+    this.head = head;
+    this.group.add(head);
+
+    // Eyes
+    [-0.1, 0.1].forEach(x => {
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 8, 8),
+        new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
+      );
+      eye.position.set(x, 0.9, 0.26);
+      this.group.add(eye);
+    });
+
+    // Smile
+    const smileMat = new THREE.LineBasicMaterial({ color: 0x1a1a2e, linewidth: 2 });
+    const smilePts = [];
+    for (let a = -0.6; a <= 0.6; a += 0.15) {
+      smilePts.push(new THREE.Vector3(a * 0.15, 0.78 - a * a * 0.06, 0.27));
+    }
+    const smileGeo = new THREE.BufferGeometry().setFromPoints(smilePts);
+    this.group.add(new THREE.Line(smileGeo, smileMat));
+
+    // Hair tuft
+    for (let i = 0; i < 5; i++) {
+      const hair = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.03, 0.12, 5),
+        new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
+      );
+      hair.position.set((i - 2) * 0.07, 1.12, 0.05);
+      hair.rotation.z = (i - 2) * 0.15;
+      this.group.add(hair);
+    }
+
+    // Arms
+    this.armL = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.05, 0.4, 6),
+      new THREE.MeshLambertMaterial({ color: 0xffd5a8 })
+    );
+    this.armL.position.set(-0.32, 0.38, 0);
+    this.armL.rotation.z = 0.3;
+    this.group.add(this.armL);
+
+    this.armR = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.05, 0.4, 6),
+      new THREE.MeshLambertMaterial({ color: 0xffd5a8 })
+    );
+    this.armR.position.set(0.32, 0.38, 0);
+    this.armR.rotation.z = -0.3;
+    this.group.add(this.armR);
+
+    // Legs
+    [-0.13, 0.13].forEach((x, i) => {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.06, 0.4, 6),
+        new THREE.MeshLambertMaterial({ color: 0x2a4080 })
+      );
+      leg.position.set(x, -0.2, 0);
+      this.group.add(leg);
+    });
+
+    // Pencil in hand
+    const pencil = new THREE.Group();
+    const pBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 0.35, 6),
+      new THREE.MeshLambertMaterial({ color: 0xf4c430 })
+    );
+    const pTip = new THREE.Mesh(
+      new THREE.ConeGeometry(0.025, 0.07, 6),
+      new THREE.MeshLambertMaterial({ color: 0xd4a060 })
+    );
+    pTip.position.y = -0.21;
+    pencil.add(pBody, pTip);
+    pencil.rotation.z = -0.5;
+    pencil.position.set(0.45, 0.32, 0);
+    this.group.add(pencil);
+
+    this.group.position.set(1.2, 0, -2);
+    this.group.rotation.y = -Math.PI / 8;
+    scene.add(this.group);
+  }
+
+  update(dt, camZ) {
+    this.time += dt;
+    // Bob
+    this.group.position.y = Math.sin(this.time * 2.5) * 0.06;
+    // Arm wave
+    this.armL.rotation.z = 0.3 + Math.sin(this.time * 2.5) * 0.25;
+    this.armR.rotation.z = -0.3 - Math.sin(this.time * 2.5 + 1) * 0.18;
+    // Walk ahead of camera
+    this.targetZ = camZ - 3.5;
+    this.group.position.z += (this.targetZ - this.group.position.z) * 0.04;
+    // Look at camera
+    this.group.rotation.y = Math.PI + 0.15 * Math.sin(this.time * 0.7);
+    // Head tilt
+    this.head.rotation.z = Math.sin(this.time * 1.8) * 0.08;
+  }
+}
+
+const guide = new GuideChar();
+
+// ─── FLOOR DOODLES (scattered objects) ───────────────────────────
+function addFloorDoodle(z, x, type) {
+  let mesh;
+  if (type === 'book') {
+    const g = new THREE.Group();
+    const cover = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 0.05, 0.5),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.6, 0.5) })
+    );
+    g.add(cover);
+    g.position.set(x, 0.025, z);
+    g.rotation.y = Math.random() * Math.PI;
+    scene.add(g);
+  } else if (type === 'plant') {
+    const stem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.05, 0.4, 6),
+      new THREE.MeshLambertMaterial({ color: 0x3d8b37 })
+    );
+    stem.position.set(x, 0.2, z);
+    scene.add(stem);
+    for (let i = 0; i < 5; i++) {
+      const leaf = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 6, 5),
+        new THREE.MeshLambertMaterial({ color: 0x4aad3a })
+      );
+      const a = (i / 5) * Math.PI * 2;
+      leaf.position.set(x + Math.cos(a) * 0.14, 0.4 + Math.random() * 0.1, z + Math.sin(a) * 0.14);
+      scene.add(leaf);
+    }
+  } else if (type === 'cup') {
+    const cup = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.08, 0.22, 8),
+      new THREE.MeshLambertMaterial({ color: 0xdda060 })
+    );
+    cup.position.set(x, 0.11, z);
+    scene.add(cup);
+  }
+}
+
+[
+  { z: -5, x: -1.8, t: 'plant' },
+  { z: -12, x: 2.0, t: 'book' },
+  { z: -16, x: -1.9, t: 'cup' },
+  { z: -24, x: 1.8, t: 'plant' },
+  { z: -30, x: -1.7, t: 'book' },
+  { z: -35, x: 2.1, t: 'cup' },
+  { z: -42, x: -1.8, t: 'plant' },
+  { z: -50, x: 1.9, t: 'book' },
+].forEach(d => addFloorDoodle(d.z, d.x, d.t));
+
+// ─── CEILING MOBILES ─────────────────────────────────────────────
+const mobiles = [];
+function addMobile(z) {
+  const g = new THREE.Group();
+  g.position.set(0, HALL_H - 0.15, z);
+
+  const wire = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.01, 0.5, 4),
+    new THREE.MeshLambertMaterial({ color: 0x333 })
+  );
+  wire.position.y = -0.25;
+  g.add(wire);
+
+  const shapes = [
+    new THREE.TetrahedronGeometry(0.18),
+    new THREE.OctahedronGeometry(0.15),
+    new THREE.DodecahedronGeometry(0.14),
+  ];
+  const colors = [0xc94040, 0x2a6fdb, 0x2d9b5a, 0xf4a261];
+
+  const orbs = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const o = new THREE.Mesh(
+      shapes[i % shapes.length],
+      new THREE.MeshLambertMaterial({ color: colors[i % colors.length] })
+    );
+    const a = (i / 3) * Math.PI * 2;
+    o.position.set(Math.cos(a) * 0.4, -0.55 - i * 0.15, Math.sin(a) * 0.4);
+    orbs.add(o);
+  }
+  g.add(orbs);
+  g.userData = { orbs, speed: 0.3 + Math.random() * 0.3 };
+  scene.add(g);
+  mobiles.push(g);
+}
+
+[-5, -15, -25, -35, -45].forEach(z => addMobile(z));
+
+// ─── CONTROLS ─────────────────────────────────────────────────────
+const keys = {};
+let yaw = 0, pitch = 0;
+let isPointerLocked = false;
+let gameMode = false;
+
+document.addEventListener('keydown', e => keys[e.code] = true);
+document.addEventListener('keyup', e => keys[e.code] = false);
+
+document.addEventListener('mousemove', e => {
+  if (!isPointerLocked) return;
+  yaw -= e.movementX * 0.002;
+  pitch -= e.movementY * 0.002;
+  pitch = Math.max(-0.6, Math.min(0.6, pitch));
+});
+
+renderer.domElement.addEventListener('click', e => {
+  if (!gameMode) return;
+  if (!isPointerLocked) {
+    renderer.domElement.requestPointerLock();
+  } else {
+    checkInteraction();
+  }
+});
+
+document.addEventListener('pointerlockchange', () => {
+  isPointerLocked = document.pointerLockElement === renderer.domElement;
+});
+
+function enterGame() {
+  gameMode = true;
+  document.getElementById('title-card').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('title-card').style.display = 'none';
+    document.getElementById('nav-hints').classList.add('visible');
+    document.getElementById('info-panel').classList.add('visible');
+    document.getElementById('crosshair').classList.add('visible');
+    document.getElementById('minimap').classList.add('visible');
+  }, 600);
+  renderer.domElement.requestPointerLock();
+}
+
+document.getElementById('enter-btn').addEventListener('click', enterGame);
+
+document.getElementById('close-popup').addEventListener('click', () => {
+  document.getElementById('section-popup').classList.remove('visible');
+  if (!isPointerLocked) renderer.domElement.requestPointerLock();
+});
+
+// ─── INTERACTION ─────────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+const center = new THREE.Vector2(0, 0);
+let lastPopupTime = 0;
+
+function checkInteraction() {
+  raycaster.setFromCamera(center, camera);
+  const hits = raycaster.intersectObjects(interactables);
+  if (hits.length > 0 && hits[0].distance < 6) {
+    const obj = hits[0].object;
+    const ud = obj.userData;
+    if (ud.title) {
+      showPopup(ud.title, ud.body || '');
+    }
+  }
+}
+
+function showPopup(title, body) {
+  document.getElementById('popup-title').textContent = title;
+  document.getElementById('popup-body').textContent = body;
+  document.getElementById('section-popup').classList.add('visible');
+  if (isPointerLocked) document.exitPointerLock();
+}
+
+// ─── ZONE INFO ───────────────────────────────────────────────────
+const zones = [
+  { z: 0, label: 'The Entrance Hall', desc: 'Where all adventures begin...' },
+  { z: -8, label: 'Gallery I — Creative Work', desc: 'Designs and code side by side.' },
+  { z: -18, label: 'Gallery II — Words & Lens', desc: 'Stories told in text and image.' },
+  { z: -28, label: 'Gallery III — Sound & Travel', desc: 'The wandering & wondering.' },
+  { z: -38, label: 'Gallery IV — Experiments', desc: 'The lab of half-finished ideas.' },
+  { z: -50, label: 'The Deep End', desc: 'You went further than most.' },
+];
+
+function getZoneInfo(z) {
+  for (let i = zones.length - 1; i >= 0; i--) {
+    if (z <= zones[i].z + 2) return zones[i];
+  }
+  return zones[0];
+}
+
+// ─── MINIMAP ─────────────────────────────────────────────────────
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+mmCanvas.width = 120; mmCanvas.height = 80;
+
+function drawMinimap(camZ) {
+  mmCtx.clearRect(0, 0, 120, 80);
+  mmCtx.fillStyle = '#ede7d9';
+  mmCtx.fillRect(0, 0, 120, 80);
+
+  // Hallway
+  mmCtx.fillStyle = '#d4cdc0';
+  mmCtx.fillRect(45, 0, 30, 80);
+
+  // Camera dot
+  const cy = 80 - ((camZ + 5) / -HALL_L * 80);
+  mmCtx.fillStyle = '#c94040';
+  mmCtx.beginPath();
+  mmCtx.arc(60, Math.max(4, Math.min(76, cy)), 4, 0, Math.PI * 2);
+  mmCtx.fill();
+
+  // Artwork dots
+  artworks.forEach(aw => {
+    const ay = 80 - ((aw.z + 5) / -HALL_L * 80);
+    mmCtx.fillStyle = '#2a6fdb';
+    mmCtx.fillRect(aw.side === 'left' ? 40 : 73, Math.max(2, Math.min(78, ay)) - 3, 6, 6);
+  });
+
+  // Label
+  mmCtx.fillStyle = '#1a1a2e';
+  mmCtx.font = '8px Caveat, cursive';
+  mmCtx.fillText('You', 65, Math.max(10, Math.min(76, cy)));
+}
+
+// ─── MAIN LOOP ────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+let prevTime = performance.now();
+
+// Tooltip on hover
+const tooltip = document.getElementById('tooltip');
+const hoverRaycaster = new THREE.Raycaster();
+let hoverFrame = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const now = performance.now();
+
+  // Movement
+  if (gameMode) {
+    const speed = 4;
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    dir.y = 0;
+    dir.normalize();
+
+    const right = new THREE.Vector3();
+    right.crossVectors(dir, camera.up).normalize();
+
+    if (keys['KeyW'] || keys['ArrowUp']) camera.position.addScaledVector(dir, speed * dt);
+    if (keys['KeyS'] || keys['ArrowDown']) camera.position.addScaledVector(dir, -speed * dt);
+    if (keys['KeyA'] || keys['ArrowLeft']) {
+      yaw += dt * 1.2;
+    }
+    if (keys['KeyD'] || keys['ArrowRight']) {
+      yaw -= dt * 1.2;
+    }
+
+    // Clamp to hallway
+    camera.position.x = Math.max(-HALL_W / 2 + 0.4, Math.min(HALL_W / 2 - 0.4, camera.position.x));
+    camera.position.z = Math.max(-HALL_L + 6, Math.min(4.5, camera.position.z));
+    camera.position.y = 1.6;
+
+    // Apply rotation
+    const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitch);
+    camera.quaternion.copy(qY).multiply(qX);
+
+    // Guide
+    guide.update(dt, camera.position.z);
+
+    // Zone info
+    const zone = getZoneInfo(camera.position.z);
+    document.getElementById('info-text').textContent = zone.desc;
+
+    // Minimap
+    drawMinimap(camera.position.z);
+
+    // Hover tooltip every 10 frames
+    hoverFrame++;
+    if (hoverFrame % 10 === 0) {
+      hoverRaycaster.setFromCamera(center, camera);
+      const hits = hoverRaycaster.intersectObjects(interactables);
+      if (hits.length > 0 && hits[0].distance < 6) {
+        const ud = hits[0].object.userData;
+        tooltip.textContent = ud.title || '';
+        tooltip.style.left = '50%';
+        tooltip.style.top = 'calc(50% - 30px)';
+        tooltip.classList.add('visible');
+      } else {
+        tooltip.classList.remove('visible');
+      }
+    }
+  }
+
+  // Mobiles spin
+  mobiles.forEach(m => {
+    m.userData.orbs.rotation.y += dt * m.userData.speed;
+  });
+
+  // Easter eggs float
+  scene.children.forEach(c => {
+    if (c.userData.spin) {
+      c.rotation.x += dt * 0.8;
+      c.rotation.y += dt * 1.1;
+      c.position.y += Math.sin(now * 0.002 + c.position.z) * 0.001;
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ─── RESIZE ───────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
