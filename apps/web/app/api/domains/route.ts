@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { creditService } from "@/services/billing/creditService";
+import { planLimitService } from "@/services/billing/planLimitService";
 import { domainService } from "@/services/domains/domainService";
 
 export async function GET() {
@@ -48,6 +50,16 @@ export async function POST(request: Request) {
     if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to connect domains." }, { status: 401 });
+    }
+
+    const subscription = await creditService.ensureSubscription(supabase, user.id);
+    try {
+      planLimitService.assertPlanFeature(subscription, "custom_domain");
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Custom domains are not available on your plan." },
+        { status: 402 },
+      );
     }
 
     const customDomain = await domainService.createDomain(supabase, {

@@ -13,8 +13,8 @@ import {
 export function DomainsPage({ data }: { data: DashboardDataContext }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const canConnectDomains =
-    (data.billingSummary?.plan.siteLimit ?? 1) > 1 ||
-    data.billingSummary?.plan.id !== "free_trial";
+    data.billingSummary?.plan.id !== "free_trial" &&
+    data.billingSummary?.subscription.status !== "pending";
 
   const scrollToAdd = () => {
     document.getElementById("da-add-domain")?.scrollIntoView({ behavior: "smooth" });

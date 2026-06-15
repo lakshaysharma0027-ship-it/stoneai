@@ -119,6 +119,21 @@ export function OverviewPage({
         </div>
       ) : null}
 
+      {data.billingSummary?.subscription.status === "pending" ? (
+        <div className="import-banner">
+          <span className="import-banner-text">
+            <strong>Activate your free trial</strong> — Add a payment method to unlock credits and start building.
+          </span>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => void data.handleCheckout("free_trial")}
+          >
+            Start trial
+          </button>
+        </div>
+      ) : null}
+
       <div className="stat-grid">
         <div className="stat-card">
           <span className="stat-card-icon">
@@ -307,6 +322,29 @@ export function OverviewPage({
                 <span>{data.creditsUsed} used</span>
                 <span>{data.creditsRemaining} free</span>
               </div>
+              {data.billingSummary?.usage ? (
+                <div className="usage-breakdown" style={{ marginTop: 16 }}>
+                  {(
+                    [
+                      ["websites", "Websites"],
+                      ["images", "Images"],
+                      ["videos", "Videos"],
+                      ["aiEdits", "AI edits"],
+                    ] as const
+                  ).map(([key, label]) => {
+                    const used = data.billingSummary!.usage[key];
+                    const limit = data.billingSummary!.usage.limits[key];
+                    return (
+                      <div key={key} className="gen-row" style={{ padding: "8px 0" }}>
+                        <div className="gen-row-title">{label}</div>
+                        <div className="gen-row-meta">
+                          {used} / {limit > 0 ? limit : "—"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="btn btn-full credits-upgrade-btn"

@@ -1,6 +1,11 @@
 import type { BillingPlanId } from "./plans";
 
-export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled";
+export type SubscriptionStatus =
+  | "pending"
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled";
 
 export type CustomerSubscription = {
   id: string;
@@ -13,10 +18,26 @@ export type CustomerSubscription = {
   subscriptionId: string | null;
   productId: string | null;
   renewalDate: string | null;
+  currentPeriodStart: string | null;
   billingCycle: "monthly" | "yearly";
   cancelAtPeriodEnd: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type PlanUsageSummary = {
+  websites: number;
+  images: number;
+  videos: number;
+  aiEdits: number;
+  limits: {
+    websites: number;
+    images: number;
+    videos: number;
+    aiEdits: number;
+  };
+  creditsUsed: number;
+  creditsRemaining: number;
 };
 
 export type CheckoutRequest = {

@@ -1,3 +1,5 @@
+import { calculatePlanMonthlyCredits } from "./planLimits";
+
 export type BillingPlanId = "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
 
 export type BillingPlan = {
@@ -8,41 +10,25 @@ export type BillingPlan = {
   dodoProductEnv?: string;
 };
 
+const buildPlan = (
+  id: BillingPlanId,
+  name: string,
+  siteLimit: number,
+  dodoProductEnv?: string,
+): BillingPlan => ({
+  id,
+  name,
+  monthlyCredits: calculatePlanMonthlyCredits(id),
+  siteLimit,
+  dodoProductEnv,
+});
+
 export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
-  free_trial: {
-    id: "free_trial",
-    name: "Free Trial",
-    monthlyCredits: 100,
-    siteLimit: 1,
-  },
-  basic: {
-    id: "basic",
-    name: "Basic",
-    monthlyCredits: 1500,
-    siteLimit: 1,
-    dodoProductEnv: "DODO_PRODUCT_BASIC",
-  },
-  basic_plus: {
-    id: "basic_plus",
-    name: "Basic Plus",
-    monthlyCredits: 2500,
-    siteLimit: 2,
-    dodoProductEnv: "DODO_PRODUCT_BASIC_PLUS",
-  },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    monthlyCredits: 6000,
-    siteLimit: 5,
-    dodoProductEnv: "DODO_PRODUCT_PRO",
-  },
-  premium: {
-    id: "premium",
-    name: "Premium",
-    monthlyCredits: 25000,
-    siteLimit: 30,
-    dodoProductEnv: "DODO_PRODUCT_PREMIUM",
-  },
+  free_trial: buildPlan("free_trial", "Free Trial", 1, "DODO_PRODUCT_FREE_TRIAL"),
+  basic: buildPlan("basic", "Basic", 1, "DODO_PRODUCT_BASIC"),
+  basic_plus: buildPlan("basic_plus", "Basic Plus", 2, "DODO_PRODUCT_BASIC_PLUS"),
+  pro: buildPlan("pro", "Pro", 4, "DODO_PRODUCT_PRO"),
+  premium: buildPlan("premium", "Premium", 10, "DODO_PRODUCT_PREMIUM"),
 };
 
 export const PAID_BILLING_PLANS = Object.values(BILLING_PLANS).filter(
@@ -65,4 +51,5 @@ export const getDodoProductIdForPlan = (planId: BillingPlanId) => {
 };
 
 export const getBillingPlanFromDodoProductId = (productId: string | null | undefined) =>
-  PAID_BILLING_PLANS.find((plan) => getDodoProductIdForPlan(plan.id) === productId)?.id;
+  PAID_BILLING_PLANS.find((plan) => getDodoProductIdForPlan(plan.id) === productId)?.id ??
+  (getDodoProductIdForPlan("free_trial") === productId ? "free_trial" : undefined);

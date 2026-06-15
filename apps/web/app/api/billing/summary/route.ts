@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getBillingPlan } from "@/lib/billing/plans";
 import { creditService } from "@/services/billing/creditService";
+import { usageService } from "@/services/billing/usageService";
 
 export async function GET() {
   try {
@@ -18,10 +19,12 @@ export async function GET() {
 
     const subscription = await creditService.ensureSubscription(supabase, user.id);
     const plan = getBillingPlan(subscription.plan);
+    const usage = await usageService.getSummary(supabase, user.id, subscription);
 
     return NextResponse.json({
       subscription,
       plan,
+      usage,
     });
   } catch (error) {
     console.error("[StoneAI billing summary] failed", error);

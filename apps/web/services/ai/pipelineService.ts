@@ -3,7 +3,6 @@ import { bedrockProvider } from "@/lib/ai/providers/bedrock";
 import { getCreditCost } from "@/lib/billing/credits";
 import {
   planHasFeature,
-  PREMIUM_AI_EDITS_PER_WEBSITE,
 } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import { nanoBananaGallery } from "@/lib/template-catalog";
@@ -54,6 +53,12 @@ export const pipelineService = {
       throw new Error("Your plan does not include website generation.");
     }
 
+    await planLimitService.assertWithinActionLimit(supabase, {
+      userId,
+      subscription,
+      action: "websites",
+    });
+
     let heroImageUrl: string | undefined;
     let lastFrameImageUrl: string | undefined;
     let motionVideoUrl: string | undefined;
@@ -73,6 +78,11 @@ export const pipelineService = {
     planLimitService.assertHasCredits(subscription, totalCredits, "run the generation pipeline");
 
     if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
+      await planLimitService.assertWithinActionLimit(supabase, {
+        userId,
+        subscription,
+        action: "images",
+      });
       const imageResult = await googleMediaProvider.generateImage({
         prompt: input.firstImagePrompt.trim(),
         capability: "hero_image",
@@ -92,6 +102,11 @@ export const pipelineService = {
     completedStages.push("image_generation");
 
     if (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()) {
+      await planLimitService.assertWithinActionLimit(supabase, {
+        userId,
+        subscription,
+        action: "images",
+      });
       const lastFrame = await googleMediaProvider.generateImage({
         prompt: input.lastImagePrompt.trim(),
         capability: "hero_image",
@@ -110,6 +125,11 @@ export const pipelineService = {
       input.veoPrompt?.trim() &&
       heroImageUrl
     ) {
+      await planLimitService.assertWithinActionLimit(supabase, {
+        userId,
+        subscription,
+        action: "videos",
+      });
       const heroBase64 = heroImageUrl.startsWith("data:")
         ? heroImageUrl.split(",")[1]
         : undefined;
@@ -235,8 +255,14 @@ export const pipelineService = {
     const planId = normalizeBillingPlanId(subscription.plan);
 
     if (!planHasFeature(planId, "ai_website_edit")) {
-      throw new Error("AI website edits are available on Premium only.");
+      throw new Error("AI website edits are not included on your current plan.");
     }
+
+    await planLimitService.assertWithinActionLimit(supabase, {
+      userId,
+      subscription,
+      action: "aiEdits",
+    });
 
     const { data: project, error: projectError } = await supabase
       .from("projects")
@@ -251,12 +277,7 @@ export const pipelineService = {
 
     const metadata = ((project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata ??
       {}) as PipelineMetadata;
-    const remaining = metadata.aiEditsRemaining ?? PREMIUM_AI_EDITS_PER_WEBSITE;
     const used = metadata.aiEditsUsed ?? 0;
-
-    if (remaining <= 0) {
-      throw new Error("No AI edits remaining for this website.");
-    }
 
     const creditCost = getCreditCost("ai_edit");
     planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
@@ -282,7 +303,6 @@ export const pipelineService = {
 
     const nextMetadata: PipelineMetadata = {
       ...metadata,
-      aiEditsRemaining: remaining - 1,
       aiEditsUsed: used + 1,
     };
 
@@ -313,7 +333,6 @@ export const pipelineService = {
     return {
       websiteSchema: edited.data.websiteSchema,
       pipelineMetadata: nextMetadata,
-      aiEditsRemaining: nextMetadata.aiEditsRemaining,
     };
   },
 };

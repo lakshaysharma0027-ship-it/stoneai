@@ -9,6 +9,7 @@ import { hashToView } from "../utils";
 const VALID_VIEWS: DashboardView[] = [
   "overview",
   "projects",
+  "templates",
   "generate-website",
   "website-ready",
   "domains",
@@ -23,7 +24,7 @@ const VALID_VIEWS: DashboardView[] = [
 const isDashboardView = (value: string | null): value is DashboardView =>
   value !== null && VALID_VIEWS.includes(value as DashboardView);
 
-export function useDashboardNavigation(onTemplates?: () => void) {
+export function useDashboardNavigation() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramView = searchParams.get("view");
@@ -49,16 +50,11 @@ export function useDashboardNavigation(onTemplates?: () => void) {
 
   const navigate = useCallback(
     (next: DashboardView) => {
-      if (next === "templates") {
-        onTemplates?.();
-        router.push("/templates");
-        return;
-      }
       const normalized = normalizeView(next);
       setViewState(normalized);
       router.replace(`/dashboard?view=${normalized}`, { scroll: false });
     },
-    [router, onTemplates],
+    [router],
   );
 
   return { view, navigate };

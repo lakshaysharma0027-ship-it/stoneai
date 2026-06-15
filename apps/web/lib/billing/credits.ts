@@ -9,11 +9,11 @@ export type CreditEventType =
   | "future_ai_feature";
 
 export const CREDIT_COSTS: Record<CreditEventType, number> = {
-  generate_website: 25,
-  ai_edit: 10,
-  media_image_generate: 20,
+  generate_website: 100,
+  ai_edit: 50,
+  media_image_generate: 25,
   media_image_edit: 25,
-  media_video_generate: 250,
+  media_video_generate: 50,
   subscription_monthly_grant: 0,
   subscription_plan_change: 0,
   future_ai_feature: 1,

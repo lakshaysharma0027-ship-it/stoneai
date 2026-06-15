@@ -55,6 +55,12 @@ export async function POST(request: Request) {
     const creditCost = getCreditCost("generate_website");
     const subscription = await creditService.ensureSubscription(supabase, user.id);
     try {
+      planLimitService.assertSubscriptionActive(subscription);
+      await planLimitService.assertWithinActionLimit(supabase, {
+        userId: user.id,
+        subscription,
+        action: "websites",
+      });
       planLimitService.assertHasCredits(subscription, creditCost, "generate websites");
     } catch (error) {
       return NextResponse.json(

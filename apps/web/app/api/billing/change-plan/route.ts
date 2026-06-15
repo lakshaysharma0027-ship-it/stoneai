@@ -28,14 +28,9 @@ export async function POST(request: Request) {
       immediate: payload.immediate ?? true,
     });
 
-    const updated = await creditService.allocateMonthlyCredits(supabase, {
-      userId: user.id,
-      plan,
-      eventType: "subscription_plan_change",
-      description: `Plan changed to ${plan}`,
+    return NextResponse.json({
+      message: "Plan change submitted. Your subscription will update after Dodo confirms the change.",
     });
-
-    return NextResponse.json({ subscription: updated });
   } catch (error) {
     console.error("[StoneAI Dodo change plan] failed", error);
     return NextResponse.json(

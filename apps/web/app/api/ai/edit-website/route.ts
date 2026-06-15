@@ -4,7 +4,7 @@ import { bedrockProvider } from "@/lib/ai/providers/bedrock";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { getCreditCost } from "@/lib/billing/credits";
-import { planHasFeature, PREMIUM_AI_EDITS_PER_WEBSITE } from "@/lib/billing/planFeatures";
+import { planHasFeature } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
 import { creditService } from "@/services/billing/creditService";
@@ -41,13 +41,24 @@ export async function POST(request: Request) {
 
     if (!planHasFeature(planId, "ai_website_edit")) {
       return NextResponse.json(
-        { error: "AI website edits are available on Premium only." },
+        { error: "AI website edits are not included on your current plan." },
         { status: 403 },
       );
     }
 
-    const creditCost = getCreditCost("ai_edit");
-    planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
+    try {
+      await planLimitService.assertWithinActionLimit(supabase, {
+        userId: user.id,
+        subscription,
+        action: "aiEdits",
+      });
+      planLimitService.assertHasCredits(subscription, getCreditCost("ai_edit"), "edit with AI");
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Plan limit reached." },
+        { status: 402 },
+      );
+    }
 
     const { data: project, error: projectError } = await supabase
       .from("projects")
@@ -62,14 +73,6 @@ export async function POST(request: Request) {
 
     const metadata = ((project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata ??
       {}) as PipelineMetadata;
-    const remaining = metadata.aiEditsRemaining ?? PREMIUM_AI_EDITS_PER_WEBSITE;
-
-    if (remaining <= 0) {
-      return NextResponse.json(
-        { error: "No AI edits remaining for this website." },
-        { status: 403 },
-      );
-    }
 
     const edited = await bedrockProvider.editWebsite({
       website: {
@@ -87,12 +90,11 @@ export async function POST(request: Request) {
     await creditService.consumeCredits(supabase, {
       userId: user.id,
       eventType: "ai_edit",
-      description: "Premium AI website edit",
+      description: "AI website edit",
     });
 
     const nextMetadata: PipelineMetadata = {
       ...metadata,
-      aiEditsRemaining: remaining - 1,
       aiEditsUsed: (metadata.aiEditsUsed ?? 0) + 1,
     };
 
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ...edited.data,
-      aiEditsRemaining: nextMetadata.aiEditsRemaining,
+      aiEditsUsed: nextMetadata.aiEditsUsed,
     });
   } catch (error) {
     console.error("[StoneAI Bedrock edit] failed", error);

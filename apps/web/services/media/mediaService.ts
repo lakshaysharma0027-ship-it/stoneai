@@ -28,6 +28,11 @@ export const mediaService = {
     const credits = getCreditCost(input.capability === "prompt" ? "media_image_generate" : "media_image_edit");
     const subscription = await creditService.ensureSubscription(supabase, userId);
     planLimitService.assertPlanFeature(subscription, "nano_banana");
+    await planLimitService.assertWithinActionLimit(supabase, {
+      userId,
+      subscription,
+      action: "images",
+    });
     planLimitService.assertHasCredits(subscription, credits, "generate images");
 
     const model = process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image-preview";
@@ -91,6 +96,11 @@ export const mediaService = {
     const credits = getCreditCost("media_video_generate");
     const subscription = await creditService.ensureSubscription(supabase, userId);
     planLimitService.assertPlanFeature(subscription, "veo");
+    await planLimitService.assertWithinActionLimit(supabase, {
+      userId,
+      subscription,
+      action: "videos",
+    });
     planLimitService.assertHasCredits(subscription, credits, "generate videos");
 
     const model = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-generate-preview";

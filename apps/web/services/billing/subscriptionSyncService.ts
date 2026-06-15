@@ -34,7 +34,7 @@ export type BillingEventInput = {
 const statusMap: Record<string, SubscriptionStatus> = {
   active: "active",
   trialing: "trialing",
-  pending: "trialing",
+  pending: "pending",
   on_hold: "past_due",
   failed: "past_due",
   past_due: "past_due",
@@ -139,18 +139,25 @@ export const subscriptionSyncService = {
       updates.cancel_at_period_end = data.cancel_at_next_billing_date;
     }
 
-    await supabase.from("subscriptions").upsert(
-      {
-        user_id: userId,
-        credits_remaining: plan ? BILLING_PLANS[plan].monthlyCredits : 100,
-        monthly_credits: plan ? BILLING_PLANS[plan].monthlyCredits : 100,
-        billing_cycle: "monthly",
-        ...updates,
-      },
-      { onConflict: "user_id" },
-    );
+    const subscriptionRow: Record<string, string | number | boolean | null> = {
+      user_id: userId,
+      billing_cycle: "monthly",
+      ...updates,
+    };
+
+    if (plan) {
+      subscriptionRow.monthly_credits = BILLING_PLANS[plan].monthlyCredits;
+    }
+
+    await supabase.from("subscriptions").upsert(subscriptionRow, { onConflict: "user_id" });
 
     if (plan && grantEvents.has(input.eventType)) {
+      updates.current_period_start = new Date().toISOString();
+      if (plan === "free_trial") {
+        updates.status = "trialing";
+      } else if (!status || status === "trialing") {
+        updates.status = "active";
+      }
       await creditService.allocateMonthlyCredits(supabase, {
         userId,
         plan,

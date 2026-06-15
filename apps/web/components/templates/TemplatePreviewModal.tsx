@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Template } from "@/app/templates/lib/templates";
 
@@ -8,6 +9,7 @@ type TemplatePreviewModalProps = {
   onClose: () => void;
   onUseTemplate?: (template: Template) => void;
   isCreating?: boolean;
+  publicMode?: boolean;
 };
 
 function PreviewImage({
@@ -57,6 +59,7 @@ export default function TemplatePreviewModal({
   onClose,
   onUseTemplate,
   isCreating = false,
+  publicMode = false,
 }: TemplatePreviewModalProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -280,24 +283,61 @@ export default function TemplatePreviewModal({
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              onClick={() => onUseTemplate?.(template)}
-              disabled={isCreating}
-              style={{
-                background: "#fff",
-                border: "none",
-                borderRadius: 8,
-                color: "#000",
-                cursor: isCreating ? "wait" : "pointer",
-                flex: 1,
-                fontSize: 13,
-                fontWeight: 500,
-                padding: "12px 24px",
-              }}
-            >
-              {isCreating ? "Creating Project..." : "Use Template"}
-            </button>
+            {publicMode ? (
+              <>
+                <Link
+                  href="/signup"
+                  style={{
+                    background: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    color: "#000",
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: "12px 24px",
+                    textAlign: "center",
+                    textDecoration: "none",
+                  }}
+                >
+                  Sign Up
+                </Link>
+                <Link
+                  href="/login"
+                  style={{
+                    background: "transparent",
+                    border: "0.5px solid #242424",
+                    borderRadius: 8,
+                    color: "#fafafa",
+                    fontSize: 13,
+                    padding: "12px 20px",
+                    textAlign: "center",
+                    textDecoration: "none",
+                  }}
+                >
+                  Login
+                </Link>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onUseTemplate?.(template)}
+                disabled={isCreating}
+                style={{
+                  background: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  color: "#000",
+                  cursor: isCreating ? "wait" : "pointer",
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: "12px 24px",
+                }}
+              >
+                {isCreating ? "Creating Project..." : "Use Template"}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

@@ -15,6 +15,7 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { WebsiteGenerationPage } from "./pages/WebsiteGenerationPage";
 import { WebsiteReadyPage } from "./pages/WebsiteReadyPage";
+import { DashboardTemplatesPage } from "./pages/DashboardTemplatesPage";
 import { DashboardSkeleton } from "./ui/Skeleton";
 import { normalizeView } from "./types";
 import "./dashboard.css";
@@ -50,6 +51,8 @@ export function DashboardApp() {
             onNavigate={navigate}
           />
         );
+      case "templates":
+        return <DashboardTemplatesPage data={data} />;
       case "domains":
         return <DomainsPage data={data} />;
       case "analytics":

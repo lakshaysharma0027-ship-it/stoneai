@@ -15,6 +15,7 @@ type SubscriptionRow = {
   subscription_id: string | null;
   product_id: string | null;
   renewal_date: string | null;
+  current_period_start: string | null;
   billing_cycle: "monthly" | "yearly";
   cancel_at_period_end: boolean;
   created_at: string;
@@ -32,6 +33,7 @@ const toSubscription = (row: SubscriptionRow): CustomerSubscription => ({
   subscriptionId: row.subscription_id,
   productId: row.product_id,
   renewalDate: row.renewal_date,
+  currentPeriodStart: row.current_period_start,
   billingCycle: row.billing_cycle,
   cancelAtPeriodEnd: row.cancel_at_period_end,
   createdAt: row.created_at,

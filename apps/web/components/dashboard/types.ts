@@ -35,18 +35,12 @@ export type PublishedSiteRow = {
   }>;
 };
 
+import type { PlanUsageSummary, CustomerSubscription } from "@/lib/billing/types";
+
 export type BillingSummary = {
-  subscription: {
-    plan: BillingPlanId;
-    creditsRemaining: number;
-    monthlyCredits: number;
-    status: "active" | "trialing" | "past_due" | "canceled";
-    subscriptionId: string | null;
-    renewalDate: string | null;
-    billingCycle: "monthly" | "yearly";
-    cancelAtPeriodEnd: boolean;
-  };
+  subscription: CustomerSubscription;
   plan: { id: BillingPlanId; name: string; monthlyCredits: number; siteLimit: number };
+  usage: PlanUsageSummary;
 };
 
 export type MediaGenerationRow = {
@@ -114,12 +108,14 @@ export type PipelineFormState = {
   presetHeroImageId: string;
 };
 
+import { calculatePlanMonthlyCredits, PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
+
 export const PLAN_CARDS = [
-  { id: "free_trial" as const, name: "Free Trial", credits: 100, sites: 1 },
-  { id: "basic" as const, name: "Basic", credits: 1500, sites: 1 },
-  { id: "basic_plus" as const, name: "Basic Plus", credits: 2500, sites: 2 },
-  { id: "pro" as const, name: "Pro", credits: 6000, sites: 5 },
-  { id: "premium" as const, name: "Premium", credits: 25000, sites: 30 },
+  { id: "free_trial" as const, name: "Free Trial", credits: calculatePlanMonthlyCredits("free_trial"), sites: PLAN_ACTION_LIMITS.free_trial.websites },
+  { id: "basic" as const, name: "Basic", credits: calculatePlanMonthlyCredits("basic"), sites: PLAN_ACTION_LIMITS.basic.websites },
+  { id: "basic_plus" as const, name: "Basic Plus", credits: calculatePlanMonthlyCredits("basic_plus"), sites: PLAN_ACTION_LIMITS.basic_plus.websites },
+  { id: "pro" as const, name: "Pro", credits: calculatePlanMonthlyCredits("pro"), sites: PLAN_ACTION_LIMITS.pro.websites },
+  { id: "premium" as const, name: "Premium", credits: calculatePlanMonthlyCredits("premium"), sites: PLAN_ACTION_LIMITS.premium.websites },
 ];
 
 export const normalizeView = (view: DashboardView): DashboardView => {

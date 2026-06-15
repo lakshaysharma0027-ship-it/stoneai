@@ -40,9 +40,10 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
   const allTransactions = data.creditTransactions.slice(0, 20);
 
   const handleUpgrade = (planId: BillingPlanId) => {
-    if (planId === "free_trial") return;
     void data.handleCheckout(planId);
   };
+
+  const needsTrialActivation = subscriptionStatus === "pending";
 
   const renderFeatureCell = (value: string | boolean) => {
     if (value === true) {
@@ -60,6 +61,17 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
         <h1>Billing</h1>
         <p>Plan, credits, and payment history</p>
       </header>
+
+      {needsTrialActivation ? (
+        <div className="import-banner" style={{ marginBottom: 20 }}>
+          <span className="import-banner-text">
+            <strong>Start your 3-day free trial</strong> — Add a payment method to unlock 100 credits and begin building.
+          </span>
+          <button type="button" className="btn btn-sm btn-primary" onClick={() => handleUpgrade("free_trial")}>
+            Add payment method
+          </button>
+        </div>
+      ) : null}
 
       <div className="billing-layout">
         <div>
@@ -253,12 +265,16 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
                       className="plan-upgrade-btn"
                       onClick={() => handleUpgrade(plan.id)}
                       disabled={
-                        plan.id === "free_trial" ||
+                        (plan.id === "free_trial" && !needsTrialActivation) ||
                         data.billingAction === plan.id ||
                         current
                       }
                     >
-                      {data.billingAction === plan.id ? "Starting…" : "Upgrade"}
+                      {data.billingAction === plan.id
+                        ? "Starting…"
+                        : plan.id === "free_trial"
+                          ? "Start trial"
+                          : "Upgrade"}
                     </button>
                   </>
                 ) : (

@@ -10,18 +10,22 @@ export type PlanFeature =
   | "last_image_prompt"
   | "veo"
   | "ai_website_edit"
+  | "custom_domain"
+  | "free_hosting"
   | "priority_queue";
 
-export const PREMIUM_AI_EDITS_PER_WEBSITE = 2;
-
 const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
-  free_trial: new Set(["template_selection", "website_prompt", "preset_gallery"]),
+  free_trial: new Set(["template_selection", "website_prompt", "preset_gallery", "free_hosting"]),
   basic: new Set([
     "template_selection",
     "website_prompt",
     "nano_banana",
     "first_image_prompt",
     "last_image_prompt",
+    "veo",
+    "ai_website_edit",
+    "custom_domain",
+    "free_hosting",
   ]),
   basic_plus: new Set([
     "template_selection",
@@ -30,6 +34,9 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
     "first_image_prompt",
     "last_image_prompt",
     "veo",
+    "ai_website_edit",
+    "custom_domain",
+    "free_hosting",
   ]),
   pro: new Set([
     "template_selection",
@@ -38,6 +45,9 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
     "first_image_prompt",
     "last_image_prompt",
     "veo",
+    "ai_website_edit",
+    "custom_domain",
+    "free_hosting",
     "priority_queue",
   ]),
   premium: new Set([
@@ -48,6 +58,8 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
     "last_image_prompt",
     "veo",
     "ai_website_edit",
+    "custom_domain",
+    "free_hosting",
     "priority_queue",
   ]),
 };
@@ -56,8 +68,9 @@ const UPGRADE_HINTS: Partial<Record<PlanFeature, { plan: BillingPlanId; label: s
   nano_banana: { plan: "basic", label: "Upgrade to Basic" },
   first_image_prompt: { plan: "basic", label: "Upgrade to Basic" },
   last_image_prompt: { plan: "basic", label: "Upgrade to Basic" },
-  veo: { plan: "basic_plus", label: "Upgrade to Basic Plus" },
-  ai_website_edit: { plan: "premium", label: "Upgrade to Premium" },
+  veo: { plan: "basic", label: "Upgrade to Basic" },
+  ai_website_edit: { plan: "basic", label: "Upgrade to Basic" },
+  custom_domain: { plan: "basic", label: "Upgrade to Basic" },
 };
 
 export const planHasFeature = (

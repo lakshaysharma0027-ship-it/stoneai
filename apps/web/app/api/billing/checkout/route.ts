@@ -12,9 +12,6 @@ export async function POST(request: Request) {
 
     const payload = (await request.json()) as { plan?: string };
     const plan = normalizeBillingPlanId(payload.plan);
-    if (plan === "free_trial") {
-      return NextResponse.json({ error: "Free Trial does not require checkout." }, { status: 400 });
-    }
 
     const origin = new URL(request.url).origin;
     const checkout = await billingService.createCheckout({
@@ -22,8 +19,8 @@ export async function POST(request: Request) {
       email: user.email ?? undefined,
       name: user.user_metadata.full_name,
       plan,
-      successUrl: `${origin}/?billing=success&plan=${plan}`,
-      cancelUrl: `${origin}/?billing=cancelled&plan=${plan}`,
+      successUrl: `${origin}/dashboard?billing=success&plan=${plan}`,
+      cancelUrl: `${origin}/dashboard?billing=cancelled&plan=${plan}`,
     });
 
     await supabase.from("billing_events").insert({
