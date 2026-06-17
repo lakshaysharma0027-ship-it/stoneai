@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { STONEAI_DEFAULT_DESCRIPTION } from "@/lib/site";
+import "./pricing.css";
 
 export const metadata: Metadata = {
   title: "Pricing",

@@ -19,6 +19,7 @@ export type CustomerSubscription = {
   productId: string | null;
   renewalDate: string | null;
   currentPeriodStart: string | null;
+  trialEndsAt: string | null;
   billingCycle: "monthly" | "yearly";
   cancelAtPeriodEnd: boolean;
   createdAt: string;
@@ -54,8 +55,16 @@ export type CheckoutSession = {
   url: string;
 };
 
+export type CustomerPortalSession = {
+  url: string;
+};
+
 export type BillingProvider = {
   createCheckout: (request: CheckoutRequest) => Promise<CheckoutSession>;
+  createCustomerPortal: (input: {
+    customerId: string;
+    returnUrl: string;
+  }) => Promise<CustomerPortalSession>;
   createSubscription: (input: {
     userId: string;
     plan: BillingPlanId;

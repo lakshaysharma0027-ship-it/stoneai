@@ -4,4 +4,4 @@
  */
 export { googleMediaProvider as veoProvider } from "@/services/media/providers/google";
 
-export const VEO_MODEL = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-generate-preview";
+export const VEO_MODEL = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";

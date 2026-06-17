@@ -7,8 +7,31 @@ const getGoogleClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const imageModel = () => process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image-preview";
-const videoModel = () => process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-generate-preview";
+const imageModel = () => process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-3.1-flash-image";
+const videoModel = () => process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";
+
+const materializeVideoUrl = async (
+  video: { uri?: string; videoBytes?: string; mimeType?: string } | undefined,
+): Promise<string | undefined> => {
+  if (!video) return undefined;
+  if (video.videoBytes) {
+    return `data:${video.mimeType ?? "video/mp4"};base64,${video.videoBytes}`;
+  }
+  if (!video.uri) return undefined;
+
+  const apiKey = process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+  if (!apiKey) return video.uri;
+
+  const response = await fetch(video.uri, {
+    headers: { "x-goog-api-key": apiKey },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to download generated video (${response.status}).`);
+  }
+  const mimeType = response.headers.get("content-type")?.split(";")[0]?.trim() ?? "video/mp4";
+  const videoBytes = Buffer.from(await response.arrayBuffer()).toString("base64");
+  return `data:${mimeType};base64,${videoBytes}`;
+};
 
 const toDataUrl = (mimeType: string | undefined, bytes: string) =>
   `data:${mimeType ?? "image/png"};base64,${bytes}`;
@@ -93,22 +116,54 @@ export const googleMediaProvider: MediaProvider = {
         : {}),
     };
 
-    const operation = await ai.models.generateVideos({
+    const config: Record<string, unknown> = {
+      numberOfVideos: 1,
+      aspectRatio: input.aspectRatio ?? "16:9",
+      durationSeconds: input.durationSeconds ?? 8,
+      enhancePrompt: false,
+      generateAudio: false,
+    };
+
+    if (input.lastFrameImageBase64) {
+      config.lastFrame = {
+        imageBytes: input.lastFrameImageBase64,
+        mimeType: input.lastFrameMimeType ?? "image/png",
+      };
+    }
+
+    let operation = await ai.models.generateVideos({
       model: videoModel(),
       source,
-      config: {
-        numberOfVideos: 1,
-        aspectRatio: input.aspectRatio ?? "16:9",
-        durationSeconds: input.durationSeconds ?? 8,
-        enhancePrompt: true,
-      },
+      config,
     });
 
+    const startedAt = Date.now();
+    while (!operation.done) {
+      if (Date.now() - startedAt > 8 * 60 * 1000) {
+        throw new Error("Video generation timed out after 8 minutes.");
+      }
+      await new Promise((resolve) => setTimeout(resolve, 8000));
+      operation = await ai.operations.get({ operation });
+    }
+
+    if (operation.error) {
+      throw new Error(
+        typeof operation.error === "object" && operation.error && "message" in operation.error
+          ? String((operation.error as { message?: string }).message)
+          : "Video generation failed.",
+      );
+    }
+
     return {
-      status: operation.done ? "completed" : "processing",
+      status: "completed" as const,
       operationId: operation.name,
-      assetUrl: operation.response?.generatedVideos?.[0]?.video?.uri,
-      metadata: { model: videoModel(), capability: input.capability, operation },
+      assetUrl: await materializeVideoUrl(operation.response?.generatedVideos?.[0]?.video),
+      metadata: {
+        model: videoModel(),
+        capability: input.capability,
+        operation,
+        usedLastFrame: Boolean(input.lastFrameImageBase64),
+      },
     };
   },
 };

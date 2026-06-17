@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TemplateSchema } from "@/lib/templateSchemas";
-import type { OpenAIUsage } from "@/lib/ai/providers/openai";
+import type { AIUsage } from "@/lib/ai/types";
 
 export const aiPersistenceService = {
   async recordHistory(
@@ -30,13 +30,13 @@ export const aiPersistenceService = {
       userId: string;
       projectId?: string | null;
       requestType: "generate" | "edit" | "content" | "translate";
-      usage: OpenAIUsage;
+      usage: AIUsage;
     },
   ) {
     const { error } = await supabase.from("ai_usage_events").insert({
       user_id: input.userId,
       project_id: input.projectId ?? null,
-      provider: "openai",
+      provider: "bedrock",
       model: input.usage.model,
       request_type: input.requestType,
       input_tokens: input.usage.inputTokens,

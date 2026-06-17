@@ -4,6 +4,7 @@ import type {
   BillingProvider,
   CheckoutRequest,
   CheckoutSession,
+  CustomerPortalSession,
   CustomerSubscription,
 } from "@/lib/billing/types";
 
@@ -54,6 +55,18 @@ export const dodoBillingProvider: BillingProvider = {
       id: response.session_id,
       url: response.checkout_url,
     };
+  },
+
+  async createCustomerPortal(input): Promise<CustomerPortalSession> {
+    const response = await getDodoClient().customers.customerPortal.create(input.customerId, {
+      return_url: input.returnUrl,
+    });
+
+    if (!response.link) {
+      throw new Error("Dodo did not return a customer portal URL.");
+    }
+
+    return { url: response.link };
   },
 
   async createSubscription(): Promise<CustomerSubscription> {

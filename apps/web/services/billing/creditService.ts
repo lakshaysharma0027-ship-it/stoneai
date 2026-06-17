@@ -16,6 +16,7 @@ type SubscriptionRow = {
   product_id: string | null;
   renewal_date: string | null;
   current_period_start: string | null;
+  trial_ends_at: string | null;
   billing_cycle: "monthly" | "yearly";
   cancel_at_period_end: boolean;
   created_at: string;
@@ -34,6 +35,7 @@ const toSubscription = (row: SubscriptionRow): CustomerSubscription => ({
   productId: row.product_id,
   renewalDate: row.renewal_date,
   currentPeriodStart: row.current_period_start,
+  trialEndsAt: row.trial_ends_at,
   billingCycle: row.billing_cycle,
   cancelAtPeriodEnd: row.cancel_at_period_end,
   createdAt: row.created_at,
@@ -83,6 +85,26 @@ export const creditService = {
   ): Promise<CustomerSubscription> {
     const credits = getCreditCost(input.eventType);
     const { data, error } = await supabase.rpc("consume_user_credits", {
+      target_user_id: input.userId,
+      credits,
+      event_type: input.eventType,
+      description: input.description,
+    });
+
+    if (error) throw error;
+    return toSubscription(data as SubscriptionRow);
+  },
+
+  async refundCredits(
+    supabase: SupabaseClient,
+    input: {
+      userId: string;
+      eventType: CreditEventType;
+      description: string;
+    },
+  ): Promise<CustomerSubscription> {
+    const credits = getCreditCost(input.eventType);
+    const { data, error } = await supabase.rpc("refund_user_credits", {
       target_user_id: input.userId,
       credits,
       event_type: input.eventType,

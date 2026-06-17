@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bedrockProvider } from "@/lib/ai/providers/bedrock";
-import type { OpenAIWebsiteGenerationInput } from "@/lib/ai/providers/openai";
+import type { WebsiteGenerationInput } from "@/lib/ai/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import type { StoredProject } from "@/lib/projects";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
@@ -29,7 +29,7 @@ const toStoredProject = (project: ProjectRow): StoredProject => ({
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json()) as Partial<OpenAIWebsiteGenerationInput>;
+    const payload = (await request.json()) as Partial<WebsiteGenerationInput>;
     const prompt = payload.prompt?.trim();
     const businessName = payload.businessName?.trim();
     const description = payload.description?.trim();

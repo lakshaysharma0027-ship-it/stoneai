@@ -14,11 +14,11 @@ import {
   websiteEditingSystemPrompt,
   websiteGenerationSystemPrompt,
 } from "@/lib/ai/prompts/systemPrompts";
-import type { OpenAIWebsiteGenerationInput, OpenAIUsage } from "./openai";
+import type { AIUsage, WebsiteGenerationInput } from "@/lib/ai/types";
 
 export type BedrockProviderResult<T> = {
   data: T;
-  usage: OpenAIUsage;
+  usage: AIUsage;
 };
 
 const modelId =
@@ -102,7 +102,7 @@ const converseJson = async <T>(
 };
 
 const generationInput = (
-  request: OpenAIWebsiteGenerationInput & {
+  request: WebsiteGenerationInput & {
     heroImageUrl?: string;
     lastFrameImageUrl?: string;
     motionVideoUrl?: string;
@@ -127,7 +127,7 @@ When hero image URL is provided, use it in the hero section image field.
 
 export const bedrockProvider = {
   async generateWebsite(
-    request: OpenAIWebsiteGenerationInput & {
+    request: WebsiteGenerationInput & {
       heroImageUrl?: string;
       lastFrameImageUrl?: string;
       motionVideoUrl?: string;

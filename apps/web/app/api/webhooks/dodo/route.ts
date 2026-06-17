@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Webhook } from "standardwebhooks";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { subscriptionSyncService } from "@/services/billing/subscriptionSyncService";
+import { webhookFailureService } from "@/services/billing/webhookFailureService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,10 +61,12 @@ const syncWithRpcFallback = async (
       : statusValue === "cancelled" || statusValue === "expired"
         ? "canceled"
         : statusValue === "pending"
-          ? "trialing"
-          : statusValue === "active"
-            ? "active"
-            : undefined;
+          ? "pending"
+          : statusValue === "trialing"
+            ? "trialing"
+            : statusValue === "active"
+              ? "active"
+              : undefined;
 
   if (!userId) return { synced: false, reason: "missing_user_id" };
 
@@ -73,7 +76,7 @@ const syncWithRpcFallback = async (
     target_event_type: eventType,
     target_user_id: userId,
     target_plan: plan ?? "free_trial",
-    target_status: status ?? "active",
+    target_status: status ?? "pending",
     external_customer_id: getString(data.customer_id) ?? getString((data.customer as Record<string, unknown> | undefined)?.customer_id) ?? null,
     external_subscription_id: getString(data.subscription_id) ?? null,
     external_product_id: getString(data.product_id) ?? null,
@@ -90,6 +93,27 @@ const syncWithRpcFallback = async (
 
   if (error) throw error;
   return { synced: true, result };
+};
+
+const processWebhook = async (
+  payload: DodoWebhookPayload,
+  eventId: string,
+  eventType: string,
+) => {
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createSupabaseAdminClient()
+    : getAnonClient();
+
+  const result = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? await subscriptionSyncService.syncFromPayload(supabase, {
+        eventId,
+        eventType,
+        payload: payload as Record<string, unknown>,
+      })
+    : await syncWithRpcFallback(payload, eventId, eventType);
+
+  await webhookFailureService.markResolved(supabase, eventId);
+  return result;
 };
 
 export async function POST(request: Request) {
@@ -111,27 +135,43 @@ export async function POST(request: Request) {
 
   const rawPayload = await request.text();
 
+  let payload: DodoWebhookPayload;
   try {
-    const payload = new Webhook(secret).verify(rawPayload, webhookHeaders) as DodoWebhookPayload;
-    const eventType = payload.type ?? payload.event_type ?? "unknown";
-    const eventId = payload.id ?? webhookHeaders["webhook-id"];
+    payload = new Webhook(secret).verify(rawPayload, webhookHeaders) as DodoWebhookPayload;
+  } catch (error) {
+    console.error("[StoneAI Dodo webhook] verification failed", error);
+    return NextResponse.json({ error: "Invalid Dodo webhook signature." }, { status: 401 });
+  }
 
-    if (!implementedEvents.has(eventType)) {
-      console.info("[StoneAI Dodo webhook] ignored verified event", { eventType });
-      return NextResponse.json({ received: true, ignored: true });
-    }
+  const eventType = payload.type ?? payload.event_type ?? "unknown";
+  const eventId = payload.id ?? webhookHeaders["webhook-id"];
 
-    const result = process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? await subscriptionSyncService.syncFromPayload(createSupabaseAdminClient(), {
-          eventId,
-          eventType,
-          payload: payload as Record<string, unknown>,
-        })
-      : await syncWithRpcFallback(payload, eventId, eventType);
+  if (!implementedEvents.has(eventType)) {
+    console.info("[StoneAI Dodo webhook] ignored verified event", { eventType });
+    return NextResponse.json({ received: true, ignored: true });
+  }
 
+  try {
+    const result = await processWebhook(payload, eventId, eventType);
     return NextResponse.json({ received: true, result });
   } catch (error) {
-    console.error("[StoneAI Dodo webhook] verification or processing failed", error);
-    return NextResponse.json({ error: "Invalid Dodo webhook." }, { status: 401 });
+    const message = error instanceof Error ? error.message : "Webhook processing failed.";
+    console.error("[StoneAI Dodo webhook] processing failed", { eventId, eventType, message });
+
+    try {
+      const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? createSupabaseAdminClient()
+        : getAnonClient();
+      await webhookFailureService.record(supabase, {
+        eventId,
+        eventType,
+        payload: payload as Record<string, unknown>,
+        errorMessage: message,
+      });
+    } catch (recordError) {
+      console.error("[StoneAI Dodo webhook] failed to record dead-letter", recordError);
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

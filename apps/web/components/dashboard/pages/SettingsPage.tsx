@@ -167,12 +167,11 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
           </div>
           <div className="settings-section-body">
             {[
-              { name: "OpenAI", status: "Connected", connected: true },
+              { name: "Claude Opus (Bedrock)", status: "Connected", connected: true },
               { name: "Supabase", status: "Connected", connected: true },
               { name: "Resend", status: "Platform", connected: true },
               { name: "Dodo Payments", status: "Connected", connected: true },
-              { name: "Claude", status: "Coming soon", connected: false },
-              { name: "Veo", status: "Connected", connected: true },
+              { name: "Veo 3.1 Lite", status: "Connected", connected: true },
               { name: "Nano Banana", status: "Connected", connected: true },
             ].map((item) => (
               <div key={item.name} className="integration-row">

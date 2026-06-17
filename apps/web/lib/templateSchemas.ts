@@ -19,6 +19,7 @@ export type TemplateSectionSchema = {
     logoImage?: string;
     image?: string;
     backgroundImage?: string;
+    video?: string;
     gallery?: Array<{ id: string; src: string; alt: string }>;
     features?: TemplateFeature[];
     pricing?: Array<{

@@ -35,6 +35,9 @@ const defaultPipelineForm = (): PipelineFormState => ({
   lastImagePrompt: "",
   veoPrompt: "",
   presetHeroImageId: "product-lifestyle",
+  heroImageUpload: "",
+  lastFrameImageUpload: "",
+  motionVideoUpload: "",
 });
 
 export function useDashboardData() {
@@ -217,6 +220,22 @@ export function useDashboardData() {
     }
   };
 
+  const handleBillingPortal = async () => {
+    setBillingAction("portal");
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/billing/portal", { method: "POST" });
+      const payload = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error ?? "Could not open billing portal.");
+      }
+      window.location.href = payload.url;
+    } catch (error) {
+      setBillingError(error instanceof Error ? error.message : "Could not open billing portal.");
+      setBillingAction(null);
+    }
+  };
+
   const handleGenerateMedia = async (
     mode?: "image" | "video",
     options?: { aspectRatio?: string; durationSeconds?: number; prompt?: string },
@@ -361,6 +380,17 @@ export function useDashboardData() {
       setGenerateError("Enter a business name and website prompt first.");
       return;
     }
+    const wantsVeo =
+      pipelineForm.veoPrompt.trim().length > 0 && !pipelineForm.motionVideoUpload.trim();
+    const hasLastFrame =
+      pipelineForm.lastFrameImageUpload.trim().length > 0 ||
+      pipelineForm.lastImagePrompt.trim().length > 0;
+    if (wantsVeo && !hasLastFrame) {
+      setGenerateError(
+        "Veo video needs a last-frame image. Upload one or add a last-image prompt in step 3.",
+      );
+      return;
+    }
     if (creditsRemaining <= 0) {
       setGenerateError("You are out of credits. Upgrade your plan to generate more websites.");
       return;
@@ -380,6 +410,9 @@ export function useDashboardData() {
           lastImagePrompt: pipelineForm.lastImagePrompt.trim() || undefined,
           veoPrompt: pipelineForm.veoPrompt.trim() || undefined,
           presetHeroImageId: pipelineForm.presetHeroImageId,
+          heroImageUpload: pipelineForm.heroImageUpload.trim() || undefined,
+          lastFrameImageUpload: pipelineForm.lastFrameImageUpload.trim() || undefined,
+          motionVideoUpload: pipelineForm.motionVideoUpload.trim() || undefined,
         }),
       });
       const payload = (await response.json()) as {
@@ -422,18 +455,26 @@ export function useDashboardData() {
       generate_website: 0,
       media_image_generate: 0,
       media_video_generate: 0,
+      ai_edit: 0,
       other: 0,
     };
 
     for (const txn of creditTransactions) {
       if (txn.amount >= 0) continue;
       const spent = Math.abs(txn.amount);
-      if (txn.type === "generate_website") {
+      const description = txn.description ?? "";
+      if (description.includes("Generate Website") || description.includes("website build")) {
         usage.generate_website = (usage.generate_website ?? 0) + spent;
-      } else if (txn.type === "media_image_generate" || txn.type === "media_image_edit") {
+      } else if (
+        description.includes("Image") ||
+        description.includes("Nano Banana") ||
+        description.includes("hero image")
+      ) {
         usage.media_image_generate = (usage.media_image_generate ?? 0) + spent;
-      } else if (txn.type === "media_video_generate") {
+      } else if (description.includes("Video") || description.includes("Veo") || description.includes("motion")) {
         usage.media_video_generate = (usage.media_video_generate ?? 0) + spent;
+      } else if (description.includes("edit") || description.includes("AI website edit")) {
+        usage.ai_edit = (usage.ai_edit ?? 0) + spent;
       } else {
         usage.other = (usage.other ?? 0) + spent;
       }
@@ -495,6 +536,7 @@ export function useDashboardData() {
     handleImportLocalProjects,
     handleCheckout,
     handleCancelBilling,
+    handleBillingPortal,
     handleGenerateMedia,
     handleConnectDomain,
     handleVerifyDomain,
@@ -505,6 +547,7 @@ export function useDashboardData() {
     handleGenerateProject,
     handlePipelineGenerate,
     refreshProjects,
+    refreshSites,
     router,
   };
 }

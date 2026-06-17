@@ -6,9 +6,11 @@ import {
   Globe,
   Link2,
   RefreshCw,
+  Rocket,
   Sparkles,
   Wand2,
 } from "lucide-react";
+import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import { planHasFeature } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
@@ -29,6 +31,8 @@ export function WebsiteReadyPage({
   const [editPrompt, setEditPrompt] = useState("");
   const [editing, setEditing] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [schema, setSchema] = useState<TemplateSchema | null>(project?.websiteSchema ?? null);
   const [metadata, setMetadata] = useState<PipelineMetadata | null>(
     (project as { pipelineMetadata?: PipelineMetadata } | undefined)?.pipelineMetadata ?? null,
@@ -38,6 +42,27 @@ export function WebsiteReadyPage({
   const canEdit = planHasFeature(planId, "ai_website_edit");
   const editsRemaining = metadata?.aiEditsRemaining ?? 0;
   const site = data.publishedSites.find((item) => item.project_id === projectId);
+
+  const handlePublish = async () => {
+    if (!schema) return;
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const website = templateSchemaToWebsite(projectId, project?.name ?? "Generated Website", schema);
+      const response = await fetch("/api/sites/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website }),
+      });
+      const payload = (await response.json()) as { error?: string; publicUrl?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not publish website.");
+      await data.refreshSites?.();
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : "Could not publish website.");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const handleAiEdit = async () => {
     if (!schema || !editPrompt.trim()) return;
@@ -97,6 +122,10 @@ export function WebsiteReadyPage({
             <ExternalLink size={14} />
             Live Preview
           </a>
+          <button type="button" className="btn btn-primary" disabled={publishing || !schema} onClick={() => void handlePublish()}>
+            <Rocket size={14} />
+            {publishing ? "Publishing…" : site?.status === "published" ? "Republish" : "Publish"}
+          </button>
           <button type="button" className="btn" onClick={() => onNavigate("domains")}>
             <Link2 size={14} />
             Connect Domain
@@ -106,6 +135,7 @@ export function WebsiteReadyPage({
             Regenerate Website
           </button>
         </div>
+        {publishError ? <p className="gen-error">{publishError}</p> : null}
       </div>
 
       <div className="website-ready-grid">
@@ -162,10 +192,10 @@ export function WebsiteReadyPage({
               <div className="pipeline-locked">
                 <Sparkles size={16} />
                 <div>
-                  <strong>AI edits are Premium only</strong>
-                  <p>Premium includes 2 prompt-based AI edits per website. No visual editor required.</p>
+                  <strong>AI edits require Basic or above</strong>
+                  <p>Upgrade to edit your generated website with prompt-based AI changes.</p>
                   <button type="button" className="pipeline-upgrade" onClick={() => onNavigate("billing")}>
-                    Upgrade to Premium
+                    Upgrade plan
                   </button>
                 </div>
               </div>

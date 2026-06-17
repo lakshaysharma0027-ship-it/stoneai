@@ -120,11 +120,37 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
               </div>
             </div>
 
+          {data.billingSummary?.usage ? (
+            <div className="usage-rows" style={{ marginTop: 16, borderTop: "0.5px solid #1a1a1a", paddingTop: 16 }}>
+              <div className="credit-section-label">Plan usage this period</div>
+              {(
+                [
+                  ["websites", "Websites generated"],
+                  ["images", "Images generated"],
+                  ["videos", "Videos generated"],
+                  ["aiEdits", "AI edits used"],
+                ] as const
+              ).map(([key, label]) => {
+                const used = data.billingSummary!.usage[key];
+                const limit = data.billingSummary!.usage.limits[key];
+                return (
+                  <div key={key} className="usage-row">
+                    <span className="usage-name">{label}</span>
+                    <span className="usage-val">
+                      {used} / {limit > 0 ? limit : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
             <div className="usage-rows">
               {[
                 ["Website generation", data.creditUsageByType.generate_website],
                 ["Image generation", data.creditUsageByType.media_image_generate],
                 ["Video generation", data.creditUsageByType.media_video_generate],
+                ["AI edits", data.creditUsageByType.ai_edit],
                 ["Other", data.creditUsageByType.other],
               ].map(([label, amount]) => (
                 <div key={label as string} className="usage-row">
@@ -212,16 +238,28 @@ export function BillingPage({ data }: { data: DashboardDataContext }) {
               ) : (
                 <p>Add a payment method when you upgrade to a paid plan.</p>
               )}
-              <button
-                type="button"
-                className="plan-upgrade-btn"
-                onClick={() => handleUpgrade("basic")}
-                disabled={Boolean(data.billingSummary?.subscription.subscriptionId)}
-              >
-                {data.billingSummary?.subscription.subscriptionId
-                  ? "Managed via Dodo"
-                  : "Add payment method"}
-              </button>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+                {data.billingSummary?.subscription.customerId ? (
+                  <button
+                    type="button"
+                    className="plan-upgrade-btn"
+                    onClick={() => void data.handleBillingPortal()}
+                    disabled={data.billingAction === "portal"}
+                  >
+                    {data.billingAction === "portal" ? "Opening…" : "Manage billing"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="plan-upgrade-btn"
+                  onClick={() => handleUpgrade("basic")}
+                  disabled={Boolean(data.billingSummary?.subscription.subscriptionId)}
+                >
+                  {data.billingSummary?.subscription.subscriptionId
+                    ? "Managed via Dodo"
+                    : "Add payment method"}
+                </button>
+              </div>
             </div>
           </div>
 

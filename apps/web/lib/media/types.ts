@@ -38,6 +38,8 @@ export type GenerateVideoInput = {
   capability: VideoCapability;
   inputImageBase64?: string;
   inputMimeType?: string;
+  lastFrameImageBase64?: string;
+  lastFrameMimeType?: string;
   aspectRatio?: string;
   durationSeconds?: number;
 };

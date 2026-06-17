@@ -6,6 +6,8 @@ import {
   type BillingPlanId,
 } from "@/lib/billing/plans";
 import type { SubscriptionStatus } from "@/lib/billing/types";
+import { shouldGrantCreditsForEvent } from "@/lib/billing/grantEvents";
+import { FREE_TRIAL_DAYS } from "@/lib/billing/planLimits";
 import { creditService } from "@/services/billing/creditService";
 
 type DodoLikeSubscription = {
@@ -43,14 +45,6 @@ const statusMap: Record<string, SubscriptionStatus> = {
   expired: "canceled",
 };
 
-const grantEvents = new Set([
-  "checkout.completed",
-  "payment.succeeded",
-  "subscription.created",
-  "subscription.active",
-  "subscription.renewed",
-  "subscription.plan_changed",
-]);
 
 const getString = (value: unknown) => (typeof value === "string" ? value : undefined);
 
@@ -122,7 +116,10 @@ export const subscriptionSyncService = {
       updates.monthly_credits = BILLING_PLANS[plan].monthlyCredits;
     }
 
-    if (status) updates.status = status;
+    const grantEvent = shouldGrantCreditsForEvent(input.eventType);
+    if (status && (grantEvent || status === "past_due" || status === "canceled")) {
+      updates.status = status;
+    }
     if (data.customer_id ?? data.customer?.customer_id) updates.customer_id = data.customer_id ?? data.customer?.customer_id ?? null;
     if (data.subscription_id) updates.subscription_id = data.subscription_id;
     if (data.product_id) updates.product_id = data.product_id;
@@ -151,10 +148,13 @@ export const subscriptionSyncService = {
 
     await supabase.from("subscriptions").upsert(subscriptionRow, { onConflict: "user_id" });
 
-    if (plan && grantEvents.has(input.eventType)) {
+    if (plan && shouldGrantCreditsForEvent(input.eventType)) {
       updates.current_period_start = new Date().toISOString();
       if (plan === "free_trial") {
         updates.status = "trialing";
+        updates.trial_ends_at = new Date(
+          Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000,
+        ).toISOString();
       } else if (!status || status === "trialing") {
         updates.status = "active";
       }

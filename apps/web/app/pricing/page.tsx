@@ -5,7 +5,8 @@ import { useState } from "react";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { STONEAI_CONTACT_EMAIL } from "@/lib/site";
-import { calculatePlanMonthlyCredits, FREE_TRIAL_DAYS, PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
+import { calculatePlanMonthlyCredits, FREE_TRIAL_DAYS, PLAN_ACTION_LIMITS, PLAN_MONTHLY_PRICES } from "@/lib/billing/planLimits";
+import { ANNUAL_MONTHLY_PRICES } from "@/lib/billing/planDisplay";
 
 type Plan = {
   id: "free_trial" | "basic" | "basic_plus" | "pro" | "premium";
@@ -40,15 +41,15 @@ const plans: Plan[] = [
     cardFeatures: [
       "100 credits",
       "1 website",
-      "Preset gallery only",
+      "Preset gallery or upload your own image",
       "Free hosting",
     ],
   },
   {
     id: "basic",
     name: "Basic",
-    monthlyPrice: 15,
-    annualPrice: 12,
+    monthlyPrice: PLAN_MONTHLY_PRICES.basic,
+    annualPrice: ANNUAL_MONTHLY_PRICES.basic,
     credits: calculatePlanMonthlyCredits("basic"),
     websites: PLAN_ACTION_LIMITS.basic.websites,
     cta: "Get Basic",
@@ -61,8 +62,8 @@ const plans: Plan[] = [
   {
     id: "basic_plus",
     name: "Basic Plus",
-    monthlyPrice: 25,
-    annualPrice: 20,
+    monthlyPrice: PLAN_MONTHLY_PRICES.basic_plus,
+    annualPrice: ANNUAL_MONTHLY_PRICES.basic_plus,
     credits: calculatePlanMonthlyCredits("basic_plus"),
     websites: PLAN_ACTION_LIMITS.basic_plus.websites,
     badge: "Most Popular",
@@ -77,8 +78,8 @@ const plans: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    monthlyPrice: 50,
-    annualPrice: 40,
+    monthlyPrice: PLAN_MONTHLY_PRICES.pro,
+    annualPrice: ANNUAL_MONTHLY_PRICES.pro,
     credits: calculatePlanMonthlyCredits("pro"),
     websites: PLAN_ACTION_LIMITS.pro.websites,
     cta: "Get Pro",
@@ -91,8 +92,8 @@ const plans: Plan[] = [
   {
     id: "premium",
     name: "Premium",
-    monthlyPrice: 100,
-    annualPrice: 80,
+    monthlyPrice: PLAN_MONTHLY_PRICES.premium,
+    annualPrice: ANNUAL_MONTHLY_PRICES.premium,
     credits: calculatePlanMonthlyCredits("premium"),
     websites: PLAN_ACTION_LIMITS.premium.websites,
     badge: "Best Value",
@@ -201,7 +202,7 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
 
   return (
-    <main className="marketing-page pricing-page">
+    <main className="pricing-page">
       <MarketingNav />
       <section className="section pricing-hero">
         <div className="container narrow">

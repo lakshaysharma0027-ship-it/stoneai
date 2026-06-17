@@ -1,11 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getCreditCost } from "@/lib/billing/credits";
+import { getCreditCost, type CreditEventType } from "@/lib/billing/credits";
+import { assertGeminiGenerationAllowed } from "@/lib/media/geminiGate";
 import type { GenerateImageInput, GenerateVideoInput } from "@/lib/media/types";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 import { googleMediaProvider } from "@/services/media/providers/google";
 
 const provider = googleMediaProvider;
+
+const imageEventType = (capability: GenerateImageInput["capability"]): CreditEventType =>
+  capability === "prompt" ? "media_image_generate" : "media_image_edit";
 
 export const mediaService = {
   async listHistory(supabase: SupabaseClient, userId: string) {
@@ -25,9 +29,13 @@ export const mediaService = {
     userId: string,
     input: GenerateImageInput,
   ) {
-    const credits = getCreditCost(input.capability === "prompt" ? "media_image_generate" : "media_image_edit");
+    const { generationLocks } = await import("@/services/ai/generationLocks");
+    generationLocks.acquireMedia(userId);
+    try {
+    const eventType = imageEventType(input.capability);
+    const credits = getCreditCost(eventType);
     const subscription = await creditService.ensureSubscription(supabase, userId);
-    planLimitService.assertPlanFeature(subscription, "nano_banana");
+    assertGeminiGenerationAllowed(subscription, "nano_banana");
     await planLimitService.assertWithinActionLimit(supabase, {
       userId,
       subscription,
@@ -35,7 +43,7 @@ export const mediaService = {
     });
     planLimitService.assertHasCredits(subscription, credits, "generate images");
 
-    const model = process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image-preview";
+    const model = process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-3.1-flash-image";
     const { data: row, error } = await supabase
       .from("media_generations")
       .insert({
@@ -55,12 +63,12 @@ export const mediaService = {
     const generationId = (row as { id: string }).id;
 
     try {
+      const result = await provider.generateImage(input);
       await creditService.consumeCredits(supabase, {
         userId,
-        eventType: input.capability === "prompt" ? "media_image_generate" : "media_image_edit",
+        eventType,
         description: `Image generation: ${input.capability}`,
       });
-      const result = await provider.generateImage(input);
       const { data, error: updateError } = await supabase
         .from("media_generations")
         .update({
@@ -86,6 +94,9 @@ export const mediaService = {
         .eq("id", generationId);
       throw error;
     }
+    } finally {
+      generationLocks.releaseMedia(userId);
+    }
   },
 
   async generateVideo(
@@ -93,9 +104,13 @@ export const mediaService = {
     userId: string,
     input: GenerateVideoInput,
   ) {
-    const credits = getCreditCost("media_video_generate");
+    const { generationLocks } = await import("@/services/ai/generationLocks");
+    generationLocks.acquireMedia(userId);
+    try {
+    const eventType: CreditEventType = "media_video_generate";
+    const credits = getCreditCost(eventType);
     const subscription = await creditService.ensureSubscription(supabase, userId);
-    planLimitService.assertPlanFeature(subscription, "veo");
+    assertGeminiGenerationAllowed(subscription, "veo");
     await planLimitService.assertWithinActionLimit(supabase, {
       userId,
       subscription,
@@ -103,7 +118,7 @@ export const mediaService = {
     });
     planLimitService.assertHasCredits(subscription, credits, "generate videos");
 
-    const model = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-generate-preview";
+    const model = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";
     const { data: row, error } = await supabase
       .from("media_generations")
       .insert({
@@ -124,12 +139,12 @@ export const mediaService = {
     const generationId = (row as { id: string }).id;
 
     try {
+      const result = await provider.generateVideo(input);
       await creditService.consumeCredits(supabase, {
         userId,
-        eventType: "media_video_generate",
+        eventType,
         description: `Video generation: ${input.capability}`,
       });
-      const result = await provider.generateVideo(input);
       const { data, error: updateError } = await supabase
         .from("media_generations")
         .update({
@@ -154,5 +169,72 @@ export const mediaService = {
         .eq("id", generationId);
       throw error;
     }
+    } finally {
+      generationLocks.releaseMedia(userId);
+    }
+  },
+
+  async pollVideoStatus(
+    supabase: SupabaseClient,
+    userId: string,
+    generationId: string,
+  ) {
+    const { data: row, error } = await supabase
+      .from("media_generations")
+      .select("*")
+      .eq("id", generationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !row) throw new Error("Video generation not found.");
+
+    const record = row as {
+      id: string;
+      status: string;
+      operation_id: string | null;
+      asset_url: string | null;
+      metadata: Record<string, unknown>;
+    };
+
+    if (record.status === "completed" || record.status === "failed" || !record.operation_id) {
+      return row;
+    }
+
+    const { GoogleGenAI } = await import("@google/genai");
+    const apiKey = process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("Missing GOOGLE_API_KEY.");
+
+    const ai = new GoogleGenAI({ apiKey });
+    const storedOperation = record.metadata?.operation as { name?: string } | undefined;
+    const operation = await ai.operations.get({
+      operation: (storedOperation?.name
+        ? storedOperation
+        : { name: record.operation_id }) as Parameters<typeof ai.operations.get>[0]["operation"],
+    });
+
+    if (!operation.done) {
+      return row;
+    }
+
+    const videoResponse = operation.response as
+      | { generatedVideos?: Array<{ video?: { uri?: string } }> }
+      | undefined;
+    const assetUrl = videoResponse?.generatedVideos?.[0]?.video?.uri ?? null;
+    const status = assetUrl ? "completed" : "failed";
+
+    const { data: updated, error: updateError } = await supabase
+      .from("media_generations")
+      .update({
+        status,
+        asset_url: assetUrl,
+        metadata: { ...record.metadata, operation },
+        error_message: assetUrl ? null : "Video generation completed without output.",
+      })
+      .eq("id", generationId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return updated;
   },
 };

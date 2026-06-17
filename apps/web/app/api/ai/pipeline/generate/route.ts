@@ -32,7 +32,16 @@ export async function POST(request: Request) {
     console.error("[StoneAI pipeline generate] failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not complete generation pipeline." },
-      { status: error instanceof Error && error.message.includes("credits") ? 402 : 500 },
+      {
+        status:
+          error instanceof Error &&
+          (error.message.includes("credits") ||
+            error.message.includes("payment method") ||
+            error.message.includes("trial") ||
+            error.message.includes("subscription"))
+            ? 402
+            : 500,
+      },
     );
   }
 }

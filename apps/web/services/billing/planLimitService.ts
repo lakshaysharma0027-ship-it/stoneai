@@ -44,6 +44,15 @@ export const planLimitService = {
         "Add a payment method to start your free trial before using StoneAI.",
       );
     }
+    if (
+      subscription.status === "trialing" &&
+      subscription.trialEndsAt &&
+      new Date(subscription.trialEndsAt).getTime() < Date.now()
+    ) {
+      throw new Error(
+        "Your free trial has ended. Upgrade to a paid plan to continue using StoneAI.",
+      );
+    }
     if (!["active", "trialing"].includes(subscription.status)) {
       throw new Error("Your subscription is not active. Update billing to continue.");
     }

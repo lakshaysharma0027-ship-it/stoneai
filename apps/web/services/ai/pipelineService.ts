@@ -6,6 +6,7 @@ import {
 } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import { PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
+import { assertGeminiGenerationAllowed } from "@/lib/media/geminiGate";
 import { nanoBananaGallery } from "@/lib/template-catalog";
 import type {
   PipelineEditRequest,
@@ -16,10 +17,13 @@ import type {
 } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import { getProjectTemplateById } from "@/lib/templates";
+import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
+import { generationLocks } from "@/services/ai/generationLocks";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 import { googleMediaProvider } from "@/services/media/providers/google";
+import { resolveInlineImage } from "@/lib/media/inlineImage";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
@@ -29,6 +33,14 @@ const injectHeroImage = (schema: TemplateSchema, heroImageUrl: string) => {
   if (hero?.content) {
     hero.content.image = heroImageUrl;
     hero.content.backgroundImage = heroImageUrl;
+  }
+  return schema;
+};
+
+const injectMotionVideo = (schema: TemplateSchema, motionVideoUrl: string) => {
+  const hero = schema.sections.find((section) => section.type === "hero");
+  if (hero?.content) {
+    hero.content.video = motionVideoUrl;
   }
   return schema;
 };
@@ -50,6 +62,8 @@ export const pipelineService = {
     const planId = normalizeBillingPlanId(subscription.plan);
     const completedStages: PipelineStageId[] = ["prompt_input"];
 
+    planLimitService.assertSubscriptionActive(subscription);
+
     if (!planHasFeature(planId, "website_prompt")) {
       throw new Error("Your plan does not include website generation.");
     }
@@ -66,19 +80,30 @@ export const pipelineService = {
 
     const totalCredits =
       getCreditCost("generate_website") +
-      (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()
+      (planHasFeature(planId, "first_image_prompt") &&
+      input.firstImagePrompt?.trim() &&
+      !input.heroImageUpload?.trim()
         ? getCreditCost("media_image_generate")
         : 0) +
-      (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()
+      (planHasFeature(planId, "last_image_prompt") &&
+      input.lastImagePrompt?.trim() &&
+      !input.lastFrameImageUpload?.trim()
         ? getCreditCost("media_image_generate")
         : 0) +
-      (planHasFeature(planId, "veo") && input.veoPrompt?.trim()
+      (planHasFeature(planId, "veo") &&
+      input.veoPrompt?.trim() &&
+      !input.motionVideoUpload?.trim()
         ? getCreditCost("media_video_generate")
         : 0);
 
     planLimitService.assertHasCredits(subscription, totalCredits, "run the generation pipeline");
 
-    if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
+    generationLocks.acquirePipeline(userId);
+    try {
+    if (planHasFeature(planId, "media_upload") && input.heroImageUpload?.trim()) {
+      heroImageUrl = input.heroImageUpload.trim();
+    } else if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
+      assertGeminiGenerationAllowed(subscription, "nano_banana");
       await planLimitService.assertWithinActionLimit(supabase, {
         userId,
         subscription,
@@ -102,7 +127,10 @@ export const pipelineService = {
 
     completedStages.push("image_generation");
 
-    if (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()) {
+    if (planHasFeature(planId, "media_upload") && input.lastFrameImageUpload?.trim()) {
+      lastFrameImageUrl = input.lastFrameImageUpload.trim();
+    } else if (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()) {
+      assertGeminiGenerationAllowed(subscription, "nano_banana");
       await planLimitService.assertWithinActionLimit(supabase, {
         userId,
         subscription,
@@ -121,26 +149,40 @@ export const pipelineService = {
       });
     }
 
-    if (
+    if (planHasFeature(planId, "media_upload") && input.motionVideoUpload?.trim()) {
+      motionVideoUrl = input.motionVideoUpload.trim();
+      completedStages.push("motion_generation");
+    } else if (
       planHasFeature(planId, "veo") &&
       input.veoPrompt?.trim() &&
       heroImageUrl
     ) {
+      assertGeminiGenerationAllowed(subscription, "veo");
+      if (!lastFrameImageUrl) {
+        throw new Error(
+          "Veo motion needs a first and last frame. Add a last-frame image in step 3 (upload or Nano Banana) before generating video.",
+        );
+      }
       await planLimitService.assertWithinActionLimit(supabase, {
         userId,
         subscription,
         action: "videos",
       });
-      const heroBase64 = heroImageUrl.startsWith("data:")
-        ? heroImageUrl.split(",")[1]
-        : undefined;
+      const firstFrame = await resolveInlineImage(heroImageUrl);
+      if (!firstFrame) {
+        throw new Error("Could not read the hero image for Veo video generation.");
+      }
+      const lastFrame = lastFrameImageUrl ? await resolveInlineImage(lastFrameImageUrl) : undefined;
+
       const videoResult = await googleMediaProvider.generateVideo({
         prompt: input.veoPrompt.trim(),
         capability: "hero_video",
         aspectRatio: "16:9",
         durationSeconds: 6,
-        inputImageBase64: heroBase64,
-        inputMimeType: "image/png",
+        inputImageBase64: firstFrame.imageBytes,
+        inputMimeType: firstFrame.mimeType,
+        lastFrameImageBase64: lastFrame?.imageBytes,
+        lastFrameMimeType: lastFrame?.mimeType,
       });
       motionVideoUrl = videoResult.assetUrl;
       await creditService.consumeCredits(supabase, {
@@ -178,11 +220,17 @@ export const pipelineService = {
     if (heroImageUrl) {
       websiteSchema = injectHeroImage(structuredClone(websiteSchema), heroImageUrl);
     }
+    if (motionVideoUrl) {
+      websiteSchema = injectMotionVideo(websiteSchema, motionVideoUrl);
+    }
 
     if (template?.schema && input.templateId) {
       websiteSchema = structuredClone(template.schema) as TemplateSchema;
       if (heroImageUrl) {
         websiteSchema = injectHeroImage(websiteSchema, heroImageUrl);
+      }
+      if (motionVideoUrl) {
+        websiteSchema = injectMotionVideo(websiteSchema, motionVideoUrl);
       }
     }
 
@@ -196,6 +244,9 @@ export const pipelineService = {
       lastImagePrompt: input.lastImagePrompt ?? null,
       veoPrompt: input.veoPrompt ?? null,
       presetHeroImageId: input.presetHeroImageId ?? null,
+      heroImageUpload: input.heroImageUpload ?? null,
+      lastFrameImageUpload: input.lastFrameImageUpload ?? null,
+      motionVideoUpload: input.motionVideoUpload ?? null,
       heroImageUrl: heroImageUrl ?? null,
       lastFrameImageUrl: lastFrameImageUrl ?? null,
       motionVideoUrl: motionVideoUrl ?? null,
@@ -222,6 +273,16 @@ export const pipelineService = {
 
     if (error) throw error;
 
+    const website = templateSchemaToWebsite(projectId, (data as { name: string }).name, websiteSchema);
+    await supabase.from("websites").upsert(
+      {
+        project_id: projectId,
+        user_id: userId,
+        website,
+      },
+      { onConflict: "project_id" },
+    );
+
     await aiPersistenceService.recordHistory(supabase, {
       userId,
       projectId,
@@ -245,6 +306,9 @@ export const pipelineService = {
       pipelineMetadata,
       publicPreviewPath: `/preview/${projectId}`,
     };
+    } finally {
+      generationLocks.releasePipeline(userId);
+    }
   },
 
   async editWebsite(
@@ -254,6 +318,8 @@ export const pipelineService = {
   ) {
     const subscription = await creditService.ensureSubscription(supabase, userId);
     const planId = normalizeBillingPlanId(subscription.plan);
+
+    planLimitService.assertSubscriptionActive(subscription);
 
     if (!planHasFeature(planId, "ai_website_edit")) {
       throw new Error("AI website edits are not included on your current plan.");

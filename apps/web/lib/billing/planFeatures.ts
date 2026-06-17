@@ -6,6 +6,7 @@ export type PlanFeature =
   | "website_prompt"
   | "preset_gallery"
   | "nano_banana"
+  | "media_upload"
   | "first_image_prompt"
   | "last_image_prompt"
   | "veo"
@@ -15,10 +16,11 @@ export type PlanFeature =
   | "priority_queue";
 
 const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
-  free_trial: new Set(["template_selection", "website_prompt", "preset_gallery", "free_hosting"]),
+  free_trial: new Set(["template_selection", "website_prompt", "preset_gallery", "media_upload", "free_hosting"]),
   basic: new Set([
     "template_selection",
     "website_prompt",
+    "media_upload",
     "nano_banana",
     "first_image_prompt",
     "last_image_prompt",
@@ -30,6 +32,7 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
   basic_plus: new Set([
     "template_selection",
     "website_prompt",
+    "media_upload",
     "nano_banana",
     "first_image_prompt",
     "last_image_prompt",
@@ -41,6 +44,7 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
   pro: new Set([
     "template_selection",
     "website_prompt",
+    "media_upload",
     "nano_banana",
     "first_image_prompt",
     "last_image_prompt",
@@ -53,6 +57,7 @@ const FEATURE_MATRIX: Record<BillingPlanId, ReadonlySet<PlanFeature>> = {
   premium: new Set([
     "template_selection",
     "website_prompt",
+    "media_upload",
     "nano_banana",
     "first_image_prompt",
     "last_image_prompt",

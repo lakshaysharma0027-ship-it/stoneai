@@ -1,5 +1,6 @@
 import type { BillingPlanId } from "../types";
-import { calculatePlanMonthlyCredits, PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
+import { calculatePlanMonthlyCredits, PLAN_ACTION_LIMITS, PLAN_MONTHLY_PRICES } from "@/lib/billing/planLimits";
+import { buildPlanFeatureRows } from "@/lib/billing/planDisplay";
 
 export type PlanCatalogEntry = {
   id: BillingPlanId;
@@ -26,7 +27,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {
     id: "basic",
     name: "Basic",
-    monthlyPrice: 15,
+    monthlyPrice: PLAN_MONTHLY_PRICES.basic,
     credits: calculatePlanMonthlyCredits("basic"),
     sites: PLAN_ACTION_LIMITS.basic.websites,
     images: PLAN_ACTION_LIMITS.basic.images,
@@ -36,7 +37,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {
     id: "basic_plus",
     name: "Basic Plus",
-    monthlyPrice: 25,
+    monthlyPrice: PLAN_MONTHLY_PRICES.basic_plus,
     credits: calculatePlanMonthlyCredits("basic_plus"),
     sites: PLAN_ACTION_LIMITS.basic_plus.websites,
     images: PLAN_ACTION_LIMITS.basic_plus.images,
@@ -46,7 +47,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {
     id: "pro",
     name: "Pro",
-    monthlyPrice: 50,
+    monthlyPrice: PLAN_MONTHLY_PRICES.pro,
     credits: calculatePlanMonthlyCredits("pro"),
     sites: PLAN_ACTION_LIMITS.pro.websites,
     images: PLAN_ACTION_LIMITS.pro.images,
@@ -56,7 +57,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {
     id: "premium",
     name: "Premium",
-    monthlyPrice: 100,
+    monthlyPrice: PLAN_MONTHLY_PRICES.premium,
     credits: calculatePlanMonthlyCredits("premium"),
     sites: PLAN_ACTION_LIMITS.premium.websites,
     images: PLAN_ACTION_LIMITS.premium.images,
@@ -65,111 +66,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   },
 ];
 
-export const PLAN_FEATURE_ROWS: Array<{
-  name: string;
-  values: Record<BillingPlanId, string | boolean>;
-}> = [
-  {
-    name: "Credits / period",
-    values: {
-      free_trial: "100",
-      basic: "250",
-      basic_plus: "500",
-      pro: "1,400",
-      premium: "3,250",
-    },
-  },
-  {
-    name: "Websites",
-    values: {
-      free_trial: "1",
-      basic: "1",
-      basic_plus: "2",
-      pro: "4",
-      premium: "10",
-    },
-  },
-  {
-    name: "Images",
-    values: {
-      free_trial: false,
-      basic: "2",
-      basic_plus: "4",
-      pro: "16",
-      premium: "20",
-    },
-  },
-  {
-    name: "Videos",
-    values: {
-      free_trial: false,
-      basic: "1",
-      basic_plus: "2",
-      pro: "6",
-      premium: "15",
-    },
-  },
-  {
-    name: "AI edits",
-    values: {
-      free_trial: false,
-      basic: "1",
-      basic_plus: "2",
-      pro: "6",
-      premium: "20",
-    },
-  },
-  {
-    name: "Custom domains",
-    values: {
-      free_trial: false,
-      basic: true,
-      basic_plus: true,
-      pro: true,
-      premium: true,
-    },
-  },
-  {
-    name: "Nano Banana",
-    values: {
-      free_trial: false,
-      basic: true,
-      basic_plus: true,
-      pro: true,
-      premium: true,
-    },
-  },
-  {
-    name: "Veo video",
-    values: {
-      free_trial: false,
-      basic: true,
-      basic_plus: true,
-      pro: true,
-      premium: true,
-    },
-  },
-  {
-    name: "Free hosting",
-    values: {
-      free_trial: true,
-      basic: true,
-      basic_plus: true,
-      pro: true,
-      premium: true,
-    },
-  },
-  {
-    name: "Priority queue",
-    values: {
-      free_trial: false,
-      basic: false,
-      basic_plus: false,
-      pro: true,
-      premium: true,
-    },
-  },
-];
+export const PLAN_FEATURE_ROWS = buildPlanFeatureRows();
 
 export const formatPlanPrice = (price: number | null) =>
   price === null ? "Free" : `$${price}/mo`;

@@ -39,6 +39,15 @@ export async function POST(request: Request) {
     const subscription = await creditService.ensureSubscription(supabase, user.id);
     const planId = normalizeBillingPlanId(subscription.plan);
 
+    try {
+      planLimitService.assertSubscriptionActive(subscription);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Subscription not active." },
+        { status: 402 },
+      );
+    }
+
     if (!planHasFeature(planId, "ai_website_edit")) {
       return NextResponse.json(
         { error: "AI website edits are not included on your current plan." },

@@ -23,6 +23,9 @@ export type PipelineMetadata = {
   lastImagePrompt?: string | null;
   veoPrompt?: string | null;
   presetHeroImageId?: string | null;
+  heroImageUpload?: string | null;
+  lastFrameImageUpload?: string | null;
+  motionVideoUpload?: string | null;
   heroImageUrl?: string | null;
   lastFrameImageUrl?: string | null;
   motionVideoUrl?: string | null;
@@ -39,6 +42,9 @@ export type PipelineGenerateRequest = {
   lastImagePrompt?: string;
   veoPrompt?: string;
   presetHeroImageId?: string;
+  heroImageUpload?: string;
+  lastFrameImageUpload?: string;
+  motionVideoUpload?: string;
 };
 
 export type PipelineGenerateResponse = {

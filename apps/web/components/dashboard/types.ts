@@ -106,6 +106,9 @@ export type PipelineFormState = {
   lastImagePrompt: string;
   veoPrompt: string;
   presetHeroImageId: string;
+  heroImageUpload: string;
+  lastFrameImageUpload: string;
+  motionVideoUpload: string;
 };
 
 import { calculatePlanMonthlyCredits, PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
