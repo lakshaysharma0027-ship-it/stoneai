@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, type GenerateVideosConfig } from "@google/genai";
 import type { GenerateImageInput, MediaProvider } from "@/lib/media/types";
 
 const getGoogleClient = () => {
@@ -8,7 +8,8 @@ const getGoogleClient = () => {
 };
 
 const imageModel = () => process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image";
-const videoModel = () => process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";
+const VEO_LITE_MODEL = "veo-3.1-lite-generate-preview";
+const videoModel = () => VEO_LITE_MODEL;
 
 const materializeVideoUrl = async (
   video: { uri?: string; videoBytes?: string; mimeType?: string } | undefined,
@@ -119,26 +120,32 @@ export const googleMediaProvider: MediaProvider = {
 
   async generateVideo(input) {
     const ai = getGoogleClient();
-    const source = {
-      prompt: input.prompt,
-      ...(input.inputImageBase64
-        ? {
-            image: {
-              imageBytes: input.inputImageBase64,
-              mimeType: input.inputMimeType ?? "image/png",
-            },
-          }
-        : {}),
+    const model = videoModel();
+
+    const firstImage = input.inputImageBase64
+      ? {
+          imageBytes: input.inputImageBase64,
+          mimeType: input.inputMimeType ?? "image/png",
+        }
+      : undefined;
+
+    const usesInterpolation = Boolean(input.lastFrameImageBase64 && firstImage);
+    const durationSeconds = usesInterpolation ? 8 : (input.durationSeconds ?? 8);
+
+    const config: GenerateVideosConfig = {
+      aspectRatio: input.aspectRatio ?? "16:9",
+      durationSeconds,
+      resolution: "720p",
     };
 
-    const config: Record<string, unknown> = {
-      numberOfVideos: 1,
-      aspectRatio: input.aspectRatio ?? "16:9",
-      durationSeconds: input.durationSeconds ?? 8,
-      enhancePrompt: false,
-    };
+    if (firstImage || usesInterpolation) {
+      config.personGeneration = "allow_adult";
+    }
 
     if (input.lastFrameImageBase64) {
+      if (!firstImage) {
+        throw new Error("Veo last-frame interpolation requires a first-frame image.");
+      }
       config.lastFrame = {
         imageBytes: input.lastFrameImageBase64,
         mimeType: input.lastFrameMimeType ?? "image/png",
@@ -146,8 +153,9 @@ export const googleMediaProvider: MediaProvider = {
     }
 
     let operation = await ai.models.generateVideos({
-      model: videoModel(),
-      source,
+      model,
+      prompt: input.prompt,
+      ...(firstImage ? { image: firstImage } : {}),
       config,
     });
 
@@ -156,8 +164,8 @@ export const googleMediaProvider: MediaProvider = {
       if (Date.now() - startedAt > 8 * 60 * 1000) {
         throw new Error("Video generation timed out after 8 minutes.");
       }
-      await new Promise((resolve) => setTimeout(resolve, 8000));
-      operation = await ai.operations.get({ operation });
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      operation = await ai.operations.getVideosOperation({ operation });
     }
 
     if (operation.error) {
@@ -168,15 +176,23 @@ export const googleMediaProvider: MediaProvider = {
       );
     }
 
+    const generatedVideo = operation.response?.generatedVideos?.[0]?.video;
+    const assetUrl = await materializeVideoUrl(generatedVideo);
+    if (!assetUrl) {
+      throw new Error("Video generation completed without a downloadable clip.");
+    }
+
     return {
       status: "completed" as const,
       operationId: operation.name,
-      assetUrl: await materializeVideoUrl(operation.response?.generatedVideos?.[0]?.video),
+      assetUrl,
       metadata: {
-        model: videoModel(),
+        model,
         capability: input.capability,
         operation,
         usedLastFrame: Boolean(input.lastFrameImageBase64),
+        durationSeconds,
+        resolution: "720p",
       },
     };
   },

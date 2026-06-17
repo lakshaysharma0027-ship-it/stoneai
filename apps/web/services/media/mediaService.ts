@@ -118,7 +118,7 @@ export const mediaService = {
     });
     planLimitService.assertHasCredits(subscription, credits, "generate videos");
 
-    const model = process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";
+    const model = "veo-3.1-lite-generate-preview";
     const { data: row, error } = await supabase
       .from("media_generations")
       .insert({
@@ -206,10 +206,12 @@ export const mediaService = {
 
     const ai = new GoogleGenAI({ apiKey });
     const storedOperation = record.metadata?.operation as { name?: string } | undefined;
-    const operation = await ai.operations.get({
+    const operation = await ai.operations.getVideosOperation({
       operation: (storedOperation?.name
         ? storedOperation
-        : { name: record.operation_id }) as Parameters<typeof ai.operations.get>[0]["operation"],
+        : { name: record.operation_id }) as Parameters<
+        typeof ai.operations.getVideosOperation
+      >[0]["operation"],
     });
 
     if (!operation.done) {

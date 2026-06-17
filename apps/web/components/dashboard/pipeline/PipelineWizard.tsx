@@ -342,7 +342,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                     />
                     <div className="pipeline-veo-hints">
                       <span><Film size={12} /> First + last frame</span>
-                      <span><ImageIcon size={12} /> 8s clip</span>
+                      <span><ImageIcon size={12} /> 720p · 8s</span>
                       <span><Sparkles size={12} /> Cinematic motion</span>
                     </div>
                   </>
