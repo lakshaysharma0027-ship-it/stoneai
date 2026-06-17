@@ -24,6 +24,8 @@ export function ProjectsPage({
 }) {
   const [filter, setFilter] = useState<"All" | "Live" | "Draft">("All");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const query = search.trim().toLowerCase();
 
@@ -92,6 +94,8 @@ export function ProjectsPage({
           </button>
         ))}
       </div>
+
+      {exportError ? <p className="gen-error">{exportError}</p> : null}
 
       {filtered.length === 0 ? (
         <div className="proj-empty">
@@ -168,6 +172,24 @@ export function ProjectsPage({
                       </button>
                       {openMenuId === project.id ? (
                         <div className="proj-card-menu">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExportError(null);
+                              setExportingId(project.id);
+                              void data
+                                .handleExportProject(project.id, project.name)
+                                .catch((error) => {
+                                  setExportError(
+                                    error instanceof Error ? error.message : "Export failed.",
+                                  );
+                                })
+                                .finally(() => setExportingId(null));
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            {exportingId === project.id ? "Exporting…" : "Download ZIP"}
+                          </button>
                           {site?.status === "published" ? (
                             <button
                               type="button"

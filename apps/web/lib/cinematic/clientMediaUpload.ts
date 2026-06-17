@@ -43,5 +43,21 @@ export async function uploadPipelineMedia(
     throw new Error("Upload to storage failed. Try a smaller file or different format.");
   }
 
+  await fetch("/api/media/recent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mediaType: kind === "video" ? "video" : "image",
+      capability:
+        kind === "video"
+          ? "pipeline_motion_video"
+          : kind === "last-frame"
+            ? "pipeline_last_frame"
+            : "pipeline_first_frame",
+      assetUrl: payload.publicUrl,
+      prompt: `Uploaded ${kind}`,
+    }),
+  }).catch(() => undefined);
+
   return payload.publicUrl;
 }

@@ -20,6 +20,7 @@ import {
   uploadPipelineMedia,
   type PipelineMediaKind,
 } from "@/lib/cinematic/clientMediaUpload";
+import { RecentMediaSelect } from "./RecentMediaSelect";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
 import { GenerationPageHeader } from "../generation/GenerationPageHeader";
 import { GenerationProgressOverlay } from "../generation/GenerationProgressOverlay";
@@ -264,6 +265,15 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
 
             {step === 2 ? (
               <>
+                <RecentMediaSelect
+                  slot="first"
+                  label="Reuse recent first-frame image (last 48h)"
+                  onSelect={(url) => {
+                    setForm("heroImageUpload", url);
+                    setForm("firstImagePrompt", "");
+                  }}
+                  disabled={data.generating}
+                />
                 {canUpload ? (
                   <MediaUploadField
                     accept="image/*"
@@ -312,6 +322,15 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
 
             {step === 3 ? (
               <>
+                <RecentMediaSelect
+                  slot="last"
+                  label="Reuse recent last-frame image (last 48h)"
+                  onSelect={(url) => {
+                    setForm("lastFrameImageUpload", url);
+                    setForm("lastImagePrompt", "");
+                  }}
+                  disabled={data.generating}
+                />
                 {canUpload ? (
                   <MediaUploadField
                     accept="image/*"
@@ -342,6 +361,15 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
 
             {step === 4 ? (
               <>
+                <RecentMediaSelect
+                  slot="video"
+                  label="Reuse recent motion video (last 48h)"
+                  onSelect={(url) => {
+                    setForm("motionVideoUpload", url);
+                    setForm("veoPrompt", "");
+                  }}
+                  disabled={data.generating}
+                />
                 {canUpload ? (
                   <MediaUploadField
                     accept="video/*"

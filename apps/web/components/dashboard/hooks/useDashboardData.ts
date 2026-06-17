@@ -180,6 +180,26 @@ export function useDashboardData() {
     router.refresh();
   };
 
+  const setUserDisplayName = (name: string) => {
+    setUserName(name);
+    setUserInitial(name.charAt(0).toUpperCase());
+  };
+
+  const handleExportProject = async (projectId: string, projectName: string) => {
+    const response = await fetch(`/api/projects/${projectId}/export`);
+    if (!response.ok) {
+      const payload = (await response.json()) as { error?: string };
+      throw new Error(payload.error ?? "Could not export website.");
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${projectName.replace(/[^\w\-]+/g, "-") || "stoneai-site"}.zip`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleImportLocalProjects = async () => {
     setImporting(true);
     await projectStorage.importLocalProjects();
@@ -545,6 +565,8 @@ export function useDashboardData() {
     draftProjectCount,
     creditUsageByType,
     handleLogout,
+    setUserDisplayName,
+    handleExportProject,
     handleImportLocalProjects,
     handleCheckout,
     handleCancelBilling,

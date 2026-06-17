@@ -2,18 +2,69 @@
 
 import { useState } from "react";
 import { LogOut, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
 import "../billing-settings.css";
 
 export function SettingsPage({ data }: { data: DashboardDataContext }) {
+  const router = useRouter();
   const defaultName = data.userName.includes("@")
     ? (data.userName.split("@")[0] ?? data.userName)
     : data.userName;
   const [displayName, setDisplayName] = useState(defaultName);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const planName = data.billingSummary?.plan.name ?? "Free Trial";
   const subscriptionStatus = data.billingSummary?.subscription.status ?? "trialing";
   const workspaceId = data.userEmail ? data.userEmail.split("@")[0] : "workspace";
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setSaveError(null);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName: displayName.trim() }),
+      });
+      const payload = (await response.json()) as { error?: string; displayName?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not save profile.");
+      setSaveMessage("Profile saved.");
+      if (payload.displayName) {
+        data.setUserDisplayName(payload.displayName);
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save profile.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Delete your account permanently? All projects, websites, and billing data will be removed.",
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const response = await fetch("/api/account/delete", { method: "DELETE" });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not delete account.");
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Could not delete account.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="bs-page">
@@ -54,9 +105,16 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
               <div className="avatar-lg">{data.userInitial}</div>
               <div className="avatar-note">Avatar is generated from your account name.</div>
             </div>
-            <button type="button" className="save-btn" disabled>
+            {saveError ? <p className="gen-error">{saveError}</p> : null}
+            {saveMessage ? <p className="pipeline-copy">{saveMessage}</p> : null}
+            <button
+              type="button"
+              className="save-btn"
+              disabled={saving || displayName.trim().length < 2}
+              onClick={() => void handleSaveProfile()}
+            >
               <Save size={13} />
-              Save changes
+              {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </div>
@@ -83,6 +141,36 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
             </div>
           </div>
 
+          <div className="section-card" style={{ marginTop: 16 }}>
+            <div className="card-header">
+              <h2>Workspace</h2>
+            </div>
+            <div className="settings-section-body">
+              <div className="settings-row">
+                <span className="settings-row-label">Workspace name</span>
+                <span className="settings-row-value">{defaultName}&apos;s workspace</span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">Workspace ID</span>
+                <span className="settings-row-value">{workspaceId}</span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">Current plan</span>
+                <span className="settings-row-value">{planName}</span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">Credits</span>
+                <span className="settings-row-value">
+                  {data.creditsRemaining.toLocaleString()} remaining
+                </span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">Subscription</span>
+                <span className="settings-row-value">{subscriptionStatus}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="danger-zone">
             <div className="danger-section">
               <div className="danger-header">
@@ -93,140 +181,17 @@ export function SettingsPage({ data }: { data: DashboardDataContext }) {
                   Permanently delete your account, workspace, and all associated data. This action
                   cannot be undone.
                 </p>
-                <button type="button" className="delete-btn" disabled>
-                  Delete account
+                {deleteError ? <p className="gen-error">{deleteError}</p> : null}
+                <button
+                  type="button"
+                  className="delete-btn"
+                  disabled={deleting}
+                  onClick={() => void handleDeleteAccount()}
+                >
+                  {deleting ? "Deleting…" : "Delete account"}
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="settings-sections">
-        <div className="section-card">
-          <div className="card-header">
-            <h2>Workspace</h2>
-          </div>
-          <div className="settings-section-body">
-            <div className="settings-row">
-              <span className="settings-row-label">Workspace name</span>
-              <span className="settings-row-value">{defaultName}&apos;s workspace</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Workspace ID</span>
-              <span className="settings-row-value">{workspaceId}</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Current plan</span>
-              <span className="settings-row-value">{planName}</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Credits</span>
-              <span className="settings-row-value">
-                {data.creditsRemaining.toLocaleString()} remaining
-              </span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Subscription</span>
-              <span className="settings-row-value">{subscriptionStatus}</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Team status</span>
-              <span className="coming-soon-badge">Coming soon</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="card-header">
-            <h2>Security</h2>
-          </div>
-          <div className="settings-section-body">
-            <div className="settings-row">
-              <span className="settings-row-label">Password</span>
-              <span className="coming-soon-badge">Coming soon</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Google login</span>
-              <span className="settings-row-value">Connected via Supabase</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Session</span>
-              <span className="settings-row-value">Active</span>
-            </div>
-            <div className="settings-row">
-              <span className="settings-row-label">Connected accounts</span>
-              <span className="settings-row-value">{data.userEmail || "—"}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="card-header">
-            <h2>Integrations</h2>
-          </div>
-          <div className="settings-section-body">
-            {[
-              { name: "Claude Opus (Bedrock)", status: "Connected", connected: true },
-              { name: "Supabase", status: "Connected", connected: true },
-              { name: "Resend", status: "Platform", connected: true },
-              { name: "Dodo Payments", status: "Connected", connected: true },
-              { name: "Veo 3.1 Lite", status: "Connected", connected: true },
-              { name: "Nano Banana", status: "Connected", connected: true },
-            ].map((item) => (
-              <div key={item.name} className="integration-row">
-                <span className="integration-name">{item.name}</span>
-                <span
-                  className={`integration-status ${item.connected ? "integration-status-connected" : ""}`}
-                >
-                  {item.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="card-header">
-            <h2>API access</h2>
-          </div>
-          <div className="settings-section-body">
-            <p className="avatar-note">
-              Public API keys are not available yet. Use the dashboard for all generation and
-              publishing workflows.
-            </p>
-            <span className="coming-soon-badge">Coming soon</span>
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="card-header">
-            <h2>Notifications</h2>
-          </div>
-          <div className="settings-section-body">
-            {[
-              "Email preferences",
-              "Product updates",
-              "Billing notifications",
-              "Security alerts",
-            ].map((item) => (
-              <div key={item} className="settings-row">
-                <span className="settings-row-label">{item}</span>
-                <span className="coming-soon-badge">Coming soon</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="card-header">
-            <h2>Data export</h2>
-          </div>
-          <div className="settings-section-body">
-            <p className="avatar-note">Export your projects and workspace data.</p>
-            <button type="button" className="delete-btn" disabled>
-              Export data
-            </button>
           </div>
         </div>
       </div>

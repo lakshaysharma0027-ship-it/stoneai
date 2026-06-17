@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Download,
   ExternalLink,
   Globe,
   Link2,
@@ -33,6 +34,8 @@ export function WebsiteReadyPage({
   const [editError, setEditError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [schema, setSchema] = useState<TemplateSchema | null>(project?.websiteSchema ?? null);
   const [metadata, setMetadata] = useState<PipelineMetadata | null>(
     (project as { pipelineMetadata?: PipelineMetadata } | undefined)?.pipelineMetadata ?? null,
@@ -44,6 +47,18 @@ export function WebsiteReadyPage({
   const site = data.publishedSites.find((item) => item.project_id === projectId);
 
   const isCinematic = metadata?.renderMode === "cinematic_scroll";
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await data.handleExportProject(projectId, project?.name ?? "stoneai-site");
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Could not export website.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handlePublish = async () => {
     setPublishing(true);
@@ -121,6 +136,15 @@ export function WebsiteReadyPage({
             <ExternalLink size={14} />
             Live Preview
           </a>
+          <button
+            type="button"
+            className="btn"
+            disabled={exporting || !isCinematic}
+            onClick={() => void handleExport()}
+          >
+            <Download size={14} />
+            {exporting ? "Exporting…" : "Download ZIP"}
+          </button>
           <button type="button" className="btn btn-primary" disabled={publishing || !isCinematic} onClick={() => void handlePublish()}>
             <Rocket size={14} />
             {publishing ? "Publishing…" : site?.status === "published" ? "Republish" : "Publish"}
@@ -135,6 +159,7 @@ export function WebsiteReadyPage({
           </button>
         </div>
         {publishError ? <p className="gen-error">{publishError}</p> : null}
+        {exportError ? <p className="gen-error">{exportError}</p> : null}
       </div>
 
       <div className="website-ready-grid">

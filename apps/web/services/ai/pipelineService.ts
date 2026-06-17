@@ -18,6 +18,7 @@ import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { generationLocks } from "@/services/ai/generationLocks";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
+import { recentMediaService } from "@/services/media/recentMediaService";
 import { googleMediaProvider } from "@/services/media/providers/google";
 import { resolveInlineImage } from "@/lib/media/inlineImage";
 import { sanitizeStoredUpload } from "@/lib/media/schemaMedia";
@@ -135,8 +136,18 @@ export const pipelineService = {
           capability: "hero_image",
           aspectRatio: "16:9",
         });
-        heroImageUrl = imageResult.assetUrl;
-        await creditService.consumeCredits(supabase, {
+      heroImageUrl = imageResult.assetUrl;
+      if (imageResult.assetUrl) {
+        await recentMediaService.record(supabase, userId, {
+          mediaType: "image",
+          capability: "pipeline_first_frame",
+          prompt: input.firstImagePrompt.trim(),
+          assetUrl: imageResult.assetUrl,
+          creditsUsed: getCreditCost("media_image_generate"),
+          model: process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image",
+        });
+      }
+      await creditService.consumeCredits(supabase, {
           userId,
           eventType: "media_image_generate",
           description: "Pipeline hero image (Nano Banana)",
@@ -163,6 +174,16 @@ export const pipelineService = {
           aspectRatio: "16:9",
         });
         lastFrameImageUrl = lastFrame.assetUrl;
+        if (lastFrame.assetUrl) {
+          await recentMediaService.record(supabase, userId, {
+            mediaType: "image",
+            capability: "pipeline_last_frame",
+            prompt: input.lastImagePrompt.trim(),
+            assetUrl: lastFrame.assetUrl,
+            creditsUsed: getCreditCost("media_image_generate"),
+            model: process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image",
+          });
+        }
         await creditService.consumeCredits(supabase, {
           userId,
           eventType: "media_image_generate",
@@ -206,6 +227,16 @@ export const pipelineService = {
           lastFrameMimeType: lastFrame?.mimeType,
         });
         motionVideoUrl = videoResult.assetUrl;
+        if (videoResult.assetUrl) {
+          await recentMediaService.record(supabase, userId, {
+            mediaType: "video",
+            capability: "pipeline_motion_video",
+            prompt: input.veoPrompt.trim(),
+            assetUrl: videoResult.assetUrl,
+            creditsUsed: getCreditCost("media_video_generate"),
+            model: "veo-3.1-lite-generate-preview",
+          });
+        }
         await creditService.consumeCredits(supabase, {
           userId,
           eventType: "media_video_generate",
