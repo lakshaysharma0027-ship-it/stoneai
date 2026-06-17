@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Search, Upload } from "lucide-react";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
 import "../overview-projects.css";
 import {
   formatShortDate,
-  getProjectCardThumbIndex,
   getProjectDomain,
+  getProjectPreviewUrl,
   getProjectStatus,
   getTemplateName,
-  projectInitials,
 } from "../utils";
 
 export function ProjectsPage({
@@ -26,6 +25,18 @@ export function ProjectsPage({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void data.refreshSites?.();
+    void data.refreshProjects?.();
+  }, [data.refreshSites, data.refreshProjects]);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = () => setOpenMenuId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [openMenuId]);
 
   const query = search.trim().toLowerCase();
 
@@ -121,10 +132,15 @@ export function ProjectsPage({
             const site = data.publishedSites.find((s) => s.project_id === project.id);
             const templateName = getTemplateName(project);
 
+            const previewSrc = getProjectPreviewUrl(project.id, data.publishedSites);
+
             return (
-              <article key={project.id} className="proj-card">
+              <article
+                key={project.id}
+                className={`proj-card${openMenuId === project.id ? " proj-card-menu-open" : ""}`}
+              >
                 <div
-                  className={`proj-card-thumb thumb-${getProjectCardThumbIndex(project.id)}`}
+                  className="proj-card-thumb"
                   onClick={() => data.router.push(`/dashboard?view=website-ready&projectId=${project.id}`)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -134,7 +150,14 @@ export function ProjectsPage({
                   role="button"
                   tabIndex={0}
                 >
-                  {projectInitials(project.name)}
+                  <iframe
+                    key={previewSrc}
+                    title={`${project.name} preview`}
+                    className="proj-card-preview-frame"
+                    src={previewSrc}
+                    loading="lazy"
+                    tabIndex={-1}
+                  />
                   <div className="proj-card-status">
                     <span className={status === "live" ? "chip chip-live" : "chip chip-draft"}>
                       {status === "live" ? "Live" : "Draft"}
@@ -166,12 +189,18 @@ export function ProjectsPage({
                           e.stopPropagation();
                           setOpenMenuId(openMenuId === project.id ? null : project.id);
                         }}
+                        aria-expanded={openMenuId === project.id}
+                        aria-haspopup="menu"
                         aria-label="More actions"
                       >
                         <MoreHorizontal size={13} />
                       </button>
                       {openMenuId === project.id ? (
-                        <div className="proj-card-menu">
+                        <div
+                          className="proj-card-menu"
+                          role="menu"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             type="button"
                             onClick={() => {

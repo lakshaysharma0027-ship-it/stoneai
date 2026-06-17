@@ -36,6 +36,17 @@ export const getProjectStatus = (
 export const getProjectSite = (projectId: string, publishedSites: PublishedSiteRow[]) =>
   publishedSites.find((site) => site.project_id === projectId) ?? null;
 
+export const getProjectPreviewUrl = (
+  projectId: string,
+  publishedSites: PublishedSiteRow[],
+) => {
+  const site = getProjectSite(projectId, publishedSites);
+  if (site?.status === "published" && site.public_url) {
+    return site.public_url;
+  }
+  return `/preview/${projectId}`;
+};
+
 export const getProjectDomain = (
   projectId: string,
   publishedSites: PublishedSiteRow[],
