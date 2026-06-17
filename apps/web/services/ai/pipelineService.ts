@@ -24,6 +24,7 @@ import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 import { googleMediaProvider } from "@/services/media/providers/google";
 import { resolveInlineImage } from "@/lib/media/inlineImage";
+import { sanitizeStoredUpload } from "@/lib/media/schemaMedia";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
@@ -205,9 +206,11 @@ export const pipelineService = {
       colorPreference: "Cinematic premium",
       websiteType: "Cinematic landing page",
       templateId: input.templateId ?? null,
-      heroImageUrl,
-      lastFrameImageUrl,
-      motionVideoUrl,
+      media: {
+        heroImageReady: Boolean(heroImageUrl),
+        lastFrameImageReady: Boolean(lastFrameImageUrl),
+        motionVideoReady: Boolean(motionVideoUrl),
+      },
     });
 
     await creditService.consumeCredits(supabase, {
@@ -244,12 +247,12 @@ export const pipelineService = {
       lastImagePrompt: input.lastImagePrompt ?? null,
       veoPrompt: input.veoPrompt ?? null,
       presetHeroImageId: input.presetHeroImageId ?? null,
-      heroImageUpload: input.heroImageUpload ?? null,
-      lastFrameImageUpload: input.lastFrameImageUpload ?? null,
-      motionVideoUpload: input.motionVideoUpload ?? null,
-      heroImageUrl: heroImageUrl ?? null,
-      lastFrameImageUrl: lastFrameImageUrl ?? null,
-      motionVideoUrl: motionVideoUrl ?? null,
+      heroImageUpload: sanitizeStoredUpload(input.heroImageUpload),
+      lastFrameImageUpload: sanitizeStoredUpload(input.lastFrameImageUpload),
+      motionVideoUpload: sanitizeStoredUpload(input.motionVideoUpload),
+      heroImageReady: Boolean(heroImageUrl),
+      lastFrameImageReady: Boolean(lastFrameImageUrl),
+      motionVideoReady: Boolean(motionVideoUrl),
       aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
         ? PLAN_ACTION_LIMITS[planId].aiEdits
         : 0,

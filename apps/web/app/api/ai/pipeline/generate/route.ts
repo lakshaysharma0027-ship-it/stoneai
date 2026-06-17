@@ -25,6 +25,9 @@ export async function POST(request: Request) {
       lastImagePrompt: payload.lastImagePrompt,
       veoPrompt: payload.veoPrompt,
       presetHeroImageId: payload.presetHeroImageId,
+      heroImageUpload: payload.heroImageUpload,
+      lastFrameImageUpload: payload.lastFrameImageUpload,
+      motionVideoUpload: payload.motionVideoUpload,
     });
 
     return NextResponse.json(result);

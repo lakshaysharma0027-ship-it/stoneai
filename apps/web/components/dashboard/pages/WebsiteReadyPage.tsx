@@ -144,8 +144,8 @@ export function WebsiteReadyPage({
             <span className="gen-card-title">Pipeline output</span>
           </div>
           <div className="gen-card-body pipeline-review">
-            <div><span>Hero image</span><strong>{metadata?.heroImageUrl ? "Generated" : "Preset"}</strong></div>
-            <div><span>Motion</span><strong>{metadata?.motionVideoUrl ? "Veo clip ready" : "Skipped"}</strong></div>
+            <div><span>Hero image</span><strong>{metadata?.heroImageReady || metadata?.heroImageUrl ? "Generated" : "Preset"}</strong></div>
+            <div><span>Motion</span><strong>{metadata?.motionVideoReady || metadata?.motionVideoUrl ? "Veo clip ready" : "Skipped"}</strong></div>
             <div><span>Publish status</span><strong>{site?.status === "published" ? "Published" : "Draft"}</strong></div>
             {site?.public_url ? (
               <div>

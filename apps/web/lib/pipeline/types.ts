@@ -26,9 +26,15 @@ export type PipelineMetadata = {
   heroImageUpload?: string | null;
   lastFrameImageUpload?: string | null;
   motionVideoUpload?: string | null;
+  /** @deprecated Use heroImageReady — URLs are not stored to avoid multi-MB metadata rows. */
   heroImageUrl?: string | null;
+  /** @deprecated Use lastFrameImageReady */
   lastFrameImageUrl?: string | null;
+  /** @deprecated Use motionVideoReady */
   motionVideoUrl?: string | null;
+  heroImageReady?: boolean;
+  lastFrameImageReady?: boolean;
+  motionVideoReady?: boolean;
   aiEditsRemaining: number;
   aiEditsUsed: number;
   completedStages: PipelineStageId[];

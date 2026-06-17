@@ -13,7 +13,8 @@ Design rules:
 - Use section IDs that are stable kebab-case strings.
 - Use only supported section types.
 - Keep image fields optional unless using existing safe placeholders.
-- When hero, last-frame, or motion media URLs are provided, wire them into the matching sections.
+- When hero or motion media were generated upstream, leave hero image/video fields empty in websiteSchema. The pipeline injects the real assets after your JSON response.
+- Never embed data URLs, base64, or binary media in websiteSchema.
 `;
 
 export const websiteEditingSystemPrompt = `

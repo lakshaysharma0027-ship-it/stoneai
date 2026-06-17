@@ -11,6 +11,11 @@ import {
 } from "@/lib/ai/structuredSchemas";
 import type { EditWebsiteRequest } from "@/lib/ai/schema";
 import {
+  extractInlineMediaFromSchema,
+  restoreInlineMediaToSchema,
+  stripInlineMediaFromSchema,
+} from "@/lib/media/schemaMedia";
+import {
   websiteEditingSystemPrompt,
   websiteGenerationSystemPrompt,
 } from "@/lib/ai/prompts/systemPrompts";
@@ -103,9 +108,11 @@ const converseJson = async <T>(
 
 const generationInput = (
   request: WebsiteGenerationInput & {
-    heroImageUrl?: string;
-    lastFrameImageUrl?: string;
-    motionVideoUrl?: string;
+    media?: {
+      heroImageReady?: boolean;
+      lastFrameImageReady?: boolean;
+      motionVideoReady?: boolean;
+    };
     templateId?: string | null;
   },
 ) => `
@@ -117,20 +124,24 @@ Website type: ${request.websiteType ?? "Cinematic landing page"}
 Template ID: ${request.templateId ?? "generated"}
 Business description: ${request.description}
 User prompt: ${request.prompt}
-Hero image URL: ${request.heroImageUrl ?? "none"}
-Last frame image URL: ${request.lastFrameImageUrl ?? "none"}
-Motion video URL: ${request.motionVideoUrl ?? "none"}
+
+Upstream media (already generated — do NOT embed URLs, base64, or binary in your JSON):
+- Hero image ready: ${request.media?.heroImageReady ? "yes" : "no"}
+- Last frame image ready (Veo reference): ${request.media?.lastFrameImageReady ? "yes" : "no"}
+- Hero motion video ready: ${request.media?.motionVideoReady ? "yes" : "no"}
 
 Create a complete StoneAI schema with cinematic sections for this business.
-When hero image URL is provided, use it in the hero section image field.
+Leave hero image/video fields empty when upstream media is ready; the pipeline injects them after generation.
 `;
 
 export const bedrockProvider = {
   async generateWebsite(
     request: WebsiteGenerationInput & {
-      heroImageUrl?: string;
-      lastFrameImageUrl?: string;
-      motionVideoUrl?: string;
+      media?: {
+        heroImageReady?: boolean;
+        lastFrameImageReady?: boolean;
+        motionVideoReady?: boolean;
+      };
       templateId?: string | null;
     },
   ): Promise<BedrockProviderResult<OpenAIGeneratedWebsiteResponse>> {
@@ -149,17 +160,29 @@ export const bedrockProvider = {
   async editWebsite(
     request: EditWebsiteRequest & { websiteSchema: TemplateSchema },
   ): Promise<BedrockProviderResult<OpenAIWebsiteEditResponse>> {
+    const preservedMedia = extractInlineMediaFromSchema(request.websiteSchema);
+    const schemaForAi = stripInlineMediaFromSchema(request.websiteSchema);
+
     const result = await converseJson<unknown>(
       websiteEditingSystemPrompt,
       JSON.stringify({
         instruction: request.instruction,
-        websiteSchema: request.websiteSchema,
+        websiteSchema: schemaForAi,
       }),
       "stoneai_website_edit",
     );
 
+    const parsed = WebsiteEditResponseSchema.parse(result.data);
+    const websiteSchema = restoreInlineMediaToSchema(
+      parsed.websiteSchema as TemplateSchema,
+      preservedMedia,
+    );
+
     return {
-      data: WebsiteEditResponseSchema.parse(result.data),
+      data: {
+        ...parsed,
+        websiteSchema: websiteSchema as typeof parsed.websiteSchema,
+      },
       usage: result.usage,
     };
   },
