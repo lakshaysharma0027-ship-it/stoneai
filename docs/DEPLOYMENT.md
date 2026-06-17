@@ -14,7 +14,7 @@ AWS_BEDROCK_API_KEY
 BEDROCK_CLAUDE_MODEL=global.anthropic.claude-opus-4-8
 AWS_REGION=us-east-1
 GOOGLE_API_KEY
-GOOGLE_NANO_BANANA_MODEL=gemini-3.1-flash-image
+GOOGLE_NANO_BANANA_MODEL=gemini-2.5-flash-image
 GOOGLE_VEO_MODEL=veo-3.1-lite-generate-preview
 GEMINI_GENERATION_ENABLED=true
 RESEND_API_KEY

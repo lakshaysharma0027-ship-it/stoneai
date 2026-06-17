@@ -5,4 +5,4 @@
 export { googleMediaProvider as nanoBananaProvider } from "@/services/media/providers/google";
 
 export const NANO_BANANA_MODEL =
-  process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-3.1-flash-image";
+  process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image";

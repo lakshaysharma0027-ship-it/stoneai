@@ -7,7 +7,7 @@ const getGoogleClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const imageModel = () => process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-3.1-flash-image";
+const imageModel = () => process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image";
 const videoModel = () => process.env.GOOGLE_VEO_MODEL ?? "veo-3.1-lite-generate-preview";
 
 const materializeVideoUrl = async (
@@ -49,6 +49,25 @@ const imageInstruction = (input: GenerateImageInput) => {
   return `${capabilityPrompts[input.capability]}\n\nPrompt: ${input.prompt}`;
 };
 
+const imageGenerationConfig = (aspectRatio?: string) => ({
+  responseModalities: ["IMAGE"],
+  imageConfig: {
+    aspectRatio: aspectRatio ?? "16:9",
+  },
+});
+
+const extractInlineImage = (
+  response: Awaited<ReturnType<ReturnType<typeof getGoogleClient>["models"]["generateContent"]>>,
+) => {
+  const parts = response.candidates?.[0]?.content?.parts ?? [];
+  for (const part of parts) {
+    if ("inlineData" in part && part.inlineData?.data) {
+      return part.inlineData;
+    }
+  }
+  return undefined;
+};
+
 export const googleMediaProvider: MediaProvider = {
   async generateImage(input) {
     const ai = getGoogleClient();
@@ -70,10 +89,10 @@ export const googleMediaProvider: MediaProvider = {
             ],
           },
         ],
+        config: imageGenerationConfig(input.aspectRatio),
       });
 
-      const imagePart = response.candidates?.[0]?.content?.parts?.find((part) => "inlineData" in part);
-      const inlineData = imagePart && "inlineData" in imagePart ? imagePart.inlineData : undefined;
+      const inlineData = extractInlineImage(response);
       if (!inlineData?.data) throw new Error("Google did not return an edited image.");
 
       return {
@@ -83,21 +102,17 @@ export const googleMediaProvider: MediaProvider = {
       };
     }
 
-    const response = await ai.models.generateImages({
+    const response = await ai.models.generateContent({
       model: imageModel(),
-      prompt: imageInstruction(input),
-      config: {
-        numberOfImages: 1,
-        aspectRatio: input.aspectRatio ?? "16:9",
-        includeRaiReason: true,
-      },
+      contents: imageInstruction(input),
+      config: imageGenerationConfig(input.aspectRatio),
     });
-    const generated = response.generatedImages?.[0]?.image;
-    if (!generated?.imageBytes) throw new Error("Google did not return an image.");
+    const inlineData = extractInlineImage(response);
+    if (!inlineData?.data) throw new Error("Google did not return an image.");
 
     return {
       status: "completed",
-      assetUrl: toDataUrl(generated.mimeType, generated.imageBytes),
+      assetUrl: toDataUrl(inlineData.mimeType, inlineData.data),
       metadata: { model: imageModel(), capability: input.capability },
     };
   },

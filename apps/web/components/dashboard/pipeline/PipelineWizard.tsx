@@ -399,7 +399,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
             )}
           </ul>
           <p className="pipeline-aside-note">
-            StoneAI uses Claude Opus on Amazon Bedrock for website structure, Nano Banana for imagery, and Veo 3.1 Lite for motion.
+            StoneAI uses Claude Opus on Amazon Bedrock for website structure, Nano Banana (Gemini 2.5 Flash Image) for imagery, and Veo 3.1 Lite for motion.
           </p>
         </aside>
       </div>

@@ -43,7 +43,7 @@ export const mediaService = {
     });
     planLimitService.assertHasCredits(subscription, credits, "generate images");
 
-    const model = process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-3.1-flash-image";
+    const model = process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image";
     const { data: row, error } = await supabase
       .from("media_generations")
       .insert({
