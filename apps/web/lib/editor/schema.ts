@@ -61,6 +61,8 @@ export type WebsiteMeta = {
   socialImage: string | null;
   lang: string;
   templateId?: string;
+  renderMode?: "cinematic_scroll" | "schema";
+  cinematicExperience?: import("@/lib/cinematic/types").CinematicExperience;
 };
 
 export type TypographyToken = {

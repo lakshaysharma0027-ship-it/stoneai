@@ -15,8 +15,9 @@ const PIPELINE_STEPS = [
   "Prompt Input",
   "Image Generation",
   "Motion Generation",
-  "Website Build",
-  "Website Ready",
+  "Frame Extraction",
+  "Scene Build",
+  "Experience Ready",
 ] as const;
 
 const MEDIA_STEPS = [

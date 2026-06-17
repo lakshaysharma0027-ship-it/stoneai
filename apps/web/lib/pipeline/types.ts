@@ -4,6 +4,7 @@ export type PipelineStageId =
   | "prompt_input"
   | "image_generation"
   | "motion_generation"
+  | "frame_extraction"
   | "website_build"
   | "website_ready";
 
@@ -11,8 +12,9 @@ export const PIPELINE_STAGES: Array<{ id: PipelineStageId; label: string }> = [
   { id: "prompt_input", label: "Prompt Input" },
   { id: "image_generation", label: "Image Generation" },
   { id: "motion_generation", label: "Motion Generation" },
-  { id: "website_build", label: "Website Build" },
-  { id: "website_ready", label: "Website Ready" },
+  { id: "frame_extraction", label: "Frame Extraction" },
+  { id: "website_build", label: "Scene Build" },
+  { id: "website_ready", label: "Experience Ready" },
 ];
 
 export type PipelineMetadata = {
@@ -35,6 +37,9 @@ export type PipelineMetadata = {
   heroImageReady?: boolean;
   lastFrameImageReady?: boolean;
   motionVideoReady?: boolean;
+  /** Cinematic scroll experience payload (frames + scenes) */
+  cinematicExperience?: import("@/lib/cinematic/types").CinematicExperience | null;
+  renderMode?: "cinematic_scroll" | "schema";
   aiEditsRemaining: number;
   aiEditsUsed: number;
   completedStages: PipelineStageId[];
@@ -64,5 +69,4 @@ export type PipelineGenerateResponse = {
 export type PipelineEditRequest = {
   projectId: string;
   instruction: string;
-  websiteSchema: TemplateSchema;
 };

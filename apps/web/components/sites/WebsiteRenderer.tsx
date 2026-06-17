@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { CinematicWebsiteShell } from "@/components/cinematic/CinematicWebsiteShell";
 import type {
   ButtonComponentProps,
   ContactFormComponentProps,
@@ -242,6 +243,13 @@ function RenderSection({ section }: { section: Section }) {
 }
 
 export function WebsiteRenderer({ website }: { website: Website }) {
+  if (
+    website.meta.renderMode === "cinematic_scroll" &&
+    website.meta.cinematicExperience
+  ) {
+    return <CinematicWebsiteShell experience={website.meta.cinematicExperience} />;
+  }
+
   const page = website.pages.find((candidate) => candidate.visibility !== "hidden") ?? website.pages[0];
   const sections = [...(page?.sections ?? [])].sort((a, b) => a.order - b.order);
 

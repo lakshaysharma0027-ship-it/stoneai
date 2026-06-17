@@ -116,6 +116,25 @@ export const WebsiteEditResponseSchema = z.object({
   websiteSchema: WebsiteSchema,
 });
 
+export const CinematicSceneSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  body: z.string().optional(),
+  scrollStart: z.number().min(0).max(1),
+  ctaLabel: z.string().optional(),
+});
+
+export const CinematicScenePlanSchema = z.object({
+  projectName: z.string(),
+  story: z.string(),
+  scenes: z.array(CinematicSceneSchema).min(4).max(12),
+  seo: z.object({
+    title: z.string(),
+    description: z.string(),
+  }),
+});
+
 export const ContentGenerationResponseSchema = z.object({
   headlines: z.array(z.string()),
   features: z.array(GeneratedFeatureSchema),
@@ -130,6 +149,7 @@ export type OpenAIGeneratedWebsiteResponse = z.infer<
   typeof GeneratedWebsiteResponseSchema
 >;
 export type OpenAIWebsiteEditResponse = z.infer<typeof WebsiteEditResponseSchema>;
+export type CinematicScenePlanResponse = z.infer<typeof CinematicScenePlanSchema>;
 export type OpenAIContentGenerationResponse = z.infer<
   typeof ContentGenerationResponseSchema
 >;

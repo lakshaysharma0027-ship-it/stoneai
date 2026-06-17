@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PipelineEditRequest } from "@/lib/pipeline/types";
-import type { TemplateSchema } from "@/lib/templateSchemas";
 import { pipelineService } from "@/services/ai/pipelineService";
 
 export async function POST(request: Request) {
@@ -10,9 +9,9 @@ export async function POST(request: Request) {
     const projectId = payload.projectId?.trim();
     const instruction = payload.instruction?.trim();
 
-    if (!projectId || !instruction || !payload.websiteSchema) {
+    if (!projectId || !instruction) {
       return NextResponse.json(
-        { error: "Project, instruction, and current website schema are required." },
+        { error: "Project and instruction are required." },
         { status: 400 },
       );
     }
@@ -31,7 +30,6 @@ export async function POST(request: Request) {
     const result = await pipelineService.editWebsite(supabase, user.id, {
       projectId,
       instruction,
-      websiteSchema: payload.websiteSchema as TemplateSchema,
     });
 
     return NextResponse.json(result);

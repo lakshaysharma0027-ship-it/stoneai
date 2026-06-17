@@ -1,13 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { bedrockProvider } from "@/lib/ai/providers/bedrock";
 import { getCreditCost } from "@/lib/billing/credits";
-import {
-  planHasFeature,
-} from "@/lib/billing/planFeatures";
+import { planHasFeature } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import { PLAN_ACTION_LIMITS } from "@/lib/billing/planLimits";
 import { assertGeminiGenerationAllowed } from "@/lib/media/geminiGate";
-import { nanoBananaGallery } from "@/lib/template-catalog";
+import { nanoBananaGallery, getTemplateById } from "@/lib/template-catalog";
 import type {
   PipelineEditRequest,
   PipelineGenerateRequest,
@@ -16,8 +14,6 @@ import type {
   PipelineStageId,
 } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
-import { getProjectTemplateById } from "@/lib/templates";
-import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import { aiPersistenceService } from "@/services/ai/aiPersistenceService";
 import { generationLocks } from "@/services/ai/generationLocks";
 import { creditService } from "@/services/billing/creditService";
@@ -25,26 +21,49 @@ import { planLimitService } from "@/services/billing/planLimitService";
 import { googleMediaProvider } from "@/services/media/providers/google";
 import { resolveInlineImage } from "@/lib/media/inlineImage";
 import { sanitizeStoredUpload } from "@/lib/media/schemaMedia";
+import { buildScrollFrames } from "@/lib/cinematic/frameExtraction";
+import {
+  buildCinematicExperience,
+  cinematicExperienceToWebsite,
+} from "@/lib/cinematic/buildExperience";
+import {
+  persistCinematicExperience,
+  slimCinematicMetadata,
+} from "@/lib/cinematic/persistExperience";
+import { DEFAULT_FRAME_COUNT } from "@/lib/cinematic/types";
+import type { CinematicExperience } from "@/lib/cinematic/types";
+import type { Website } from "@/lib/editor/schema";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
 
-const injectHeroImage = (schema: TemplateSchema, heroImageUrl: string) => {
-  const hero = schema.sections.find((section) => section.type === "hero");
-  if (hero?.content) {
-    hero.content.image = heroImageUrl;
-    hero.content.backgroundImage = heroImageUrl;
-  }
-  return schema;
+const templateReference = (templateId?: string | null) => {
+  if (!templateId) return null;
+  const template = getTemplateById(templateId);
+  if (!template) return null;
+  return `${template.name}: ${template.description}`;
 };
 
-const injectMotionVideo = (schema: TemplateSchema, motionVideoUrl: string) => {
-  const hero = schema.sections.find((section) => section.type === "hero");
-  if (hero?.content) {
-    hero.content.video = motionVideoUrl;
-  }
-  return schema;
-};
+const cinematicStubSchema = (
+  projectName: string,
+  story: string,
+  heroImageUrl?: string,
+  motionVideoUrl?: string,
+): TemplateSchema => ({
+  id: "generated",
+  sections: [
+    {
+      id: "cinematic-hero",
+      type: "hero",
+      content: {
+        heading: projectName,
+        body: story,
+        ...(heroImageUrl ? { image: heroImageUrl, backgroundImage: heroImageUrl } : {}),
+        ...(motionVideoUrl ? { video: motionVideoUrl } : {}),
+      },
+    },
+  ],
+});
 
 export const pipelineService = {
   async generate(
@@ -62,6 +81,7 @@ export const pipelineService = {
     const subscription = await creditService.ensureSubscription(supabase, userId);
     const planId = normalizeBillingPlanId(subscription.plan);
     const completedStages: PipelineStageId[] = ["prompt_input"];
+    const projectId = crypto.randomUUID();
 
     planLimitService.assertSubscriptionActive(subscription);
 
@@ -101,214 +121,229 @@ export const pipelineService = {
 
     generationLocks.acquirePipeline(userId);
     try {
-    if (planHasFeature(planId, "media_upload") && input.heroImageUpload?.trim()) {
-      heroImageUrl = input.heroImageUpload.trim();
-    } else if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
-      assertGeminiGenerationAllowed(subscription, "nano_banana");
-      await planLimitService.assertWithinActionLimit(supabase, {
-        userId,
-        subscription,
-        action: "images",
+      if (planHasFeature(planId, "media_upload") && input.heroImageUpload?.trim()) {
+        heroImageUrl = input.heroImageUpload.trim();
+      } else if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
+        assertGeminiGenerationAllowed(subscription, "nano_banana");
+        await planLimitService.assertWithinActionLimit(supabase, {
+          userId,
+          subscription,
+          action: "images",
+        });
+        const imageResult = await googleMediaProvider.generateImage({
+          prompt: input.firstImagePrompt.trim(),
+          capability: "hero_image",
+          aspectRatio: "16:9",
+        });
+        heroImageUrl = imageResult.assetUrl;
+        await creditService.consumeCredits(supabase, {
+          userId,
+          eventType: "media_image_generate",
+          description: "Pipeline hero image (Nano Banana)",
+        });
+      } else if (planHasFeature(planId, "preset_gallery")) {
+        const preset = presetHeroById(input.presetHeroImageId);
+        heroImageUrl = preset?.src;
+      }
+
+      completedStages.push("image_generation");
+
+      if (planHasFeature(planId, "media_upload") && input.lastFrameImageUpload?.trim()) {
+        lastFrameImageUrl = input.lastFrameImageUpload.trim();
+      } else if (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()) {
+        assertGeminiGenerationAllowed(subscription, "nano_banana");
+        await planLimitService.assertWithinActionLimit(supabase, {
+          userId,
+          subscription,
+          action: "images",
+        });
+        const lastFrame = await googleMediaProvider.generateImage({
+          prompt: input.lastImagePrompt.trim(),
+          capability: "hero_image",
+          aspectRatio: "16:9",
+        });
+        lastFrameImageUrl = lastFrame.assetUrl;
+        await creditService.consumeCredits(supabase, {
+          userId,
+          eventType: "media_image_generate",
+          description: "Pipeline last frame (Nano Banana)",
+        });
+      }
+
+      if (planHasFeature(planId, "media_upload") && input.motionVideoUpload?.trim()) {
+        motionVideoUrl = input.motionVideoUpload.trim();
+        completedStages.push("motion_generation");
+      } else if (
+        planHasFeature(planId, "veo") &&
+        input.veoPrompt?.trim() &&
+        heroImageUrl
+      ) {
+        assertGeminiGenerationAllowed(subscription, "veo");
+        if (!lastFrameImageUrl) {
+          throw new Error(
+            "Veo motion needs a first and last frame. Add a last-frame image in step 3 (upload or Nano Banana) before generating video.",
+          );
+        }
+        await planLimitService.assertWithinActionLimit(supabase, {
+          userId,
+          subscription,
+          action: "videos",
+        });
+        const firstFrame = await resolveInlineImage(heroImageUrl);
+        if (!firstFrame) {
+          throw new Error("Could not read the hero image for Veo video generation.");
+        }
+        const lastFrame = lastFrameImageUrl ? await resolveInlineImage(lastFrameImageUrl) : undefined;
+
+        const videoResult = await googleMediaProvider.generateVideo({
+          prompt: input.veoPrompt.trim(),
+          capability: "hero_video",
+          aspectRatio: "16:9",
+          durationSeconds: 8,
+          inputImageBase64: firstFrame.imageBytes,
+          inputMimeType: firstFrame.mimeType,
+          lastFrameImageBase64: lastFrame?.imageBytes,
+          lastFrameMimeType: lastFrame?.mimeType,
+        });
+        motionVideoUrl = videoResult.assetUrl;
+        await creditService.consumeCredits(supabase, {
+          userId,
+          eventType: "media_video_generate",
+          description: "Pipeline motion (Veo 3.1 Lite)",
+        });
+        completedStages.push("motion_generation");
+      } else {
+        completedStages.push("motion_generation");
+      }
+
+      const { frames, source: frameSource } = await buildScrollFrames({
+        motionVideoUrl,
+        heroImageUrl,
+        lastFrameImageUrl,
+        frameCount: DEFAULT_FRAME_COUNT,
       });
-      const imageResult = await googleMediaProvider.generateImage({
-        prompt: input.firstImagePrompt.trim(),
-        capability: "hero_image",
-        aspectRatio: "16:9",
+      completedStages.push("frame_extraction");
+
+      const templateStyle = templateReference(input.templateId);
+      const scenePlan = await bedrockProvider.generateCinematicPlan({
+        prompt: websitePrompt,
+        businessName,
+        description: websitePrompt,
+        industry: "Portfolio",
+        style: "Premium",
+        colorPreference: "Dark premium",
+        websiteType: "Scroll-driven cinematic experience",
+        templateReference: templateStyle,
+        media: {
+          heroImageReady: Boolean(heroImageUrl),
+          lastFrameImageReady: Boolean(lastFrameImageUrl),
+          motionVideoReady: Boolean(motionVideoUrl),
+        },
       });
-      heroImageUrl = imageResult.assetUrl;
+
       await creditService.consumeCredits(supabase, {
         userId,
-        eventType: "media_image_generate",
-        description: "Pipeline hero image (Nano Banana)",
+        eventType: "generate_website",
+        description: "Pipeline cinematic scene build (Claude Opus)",
       });
-    } else if (planHasFeature(planId, "preset_gallery")) {
-      const preset = presetHeroById(input.presetHeroImageId);
-      heroImageUrl = preset?.src;
-    }
 
-    completedStages.push("image_generation");
+      let cinematicExperience = buildCinematicExperience(scenePlan.data, {
+        frames,
+        frameSource,
+        heroImageUrl,
+        lastFrameImageUrl,
+        motionVideoUrl,
+      });
 
-    if (planHasFeature(planId, "media_upload") && input.lastFrameImageUpload?.trim()) {
-      lastFrameImageUrl = input.lastFrameImageUpload.trim();
-    } else if (planHasFeature(planId, "last_image_prompt") && input.lastImagePrompt?.trim()) {
-      assertGeminiGenerationAllowed(subscription, "nano_banana");
-      await planLimitService.assertWithinActionLimit(supabase, {
+      cinematicExperience = await persistCinematicExperience(
+        supabase,
         userId,
-        subscription,
-        action: "images",
-      });
-      const lastFrame = await googleMediaProvider.generateImage({
-        prompt: input.lastImagePrompt.trim(),
-        capability: "hero_image",
-        aspectRatio: "16:9",
-      });
-      lastFrameImageUrl = lastFrame.assetUrl;
-      await creditService.consumeCredits(supabase, {
+        projectId,
+        cinematicExperience,
+      );
+
+      const websiteSchema = cinematicStubSchema(
+        scenePlan.data.projectName,
+        scenePlan.data.story,
+        cinematicExperience.heroImageUrl ?? undefined,
+        cinematicExperience.motionVideoUrl ?? undefined,
+      );
+
+      completedStages.push("website_build");
+
+      const slimMeta = slimCinematicMetadata(cinematicExperience);
+      const pipelineMetadata: PipelineMetadata = {
+        templateId: input.templateId ?? null,
+        websitePrompt,
+        businessName,
+        firstImagePrompt: input.firstImagePrompt ?? null,
+        lastImagePrompt: input.lastImagePrompt ?? null,
+        veoPrompt: input.veoPrompt ?? null,
+        presetHeroImageId: input.presetHeroImageId ?? null,
+        heroImageUpload: sanitizeStoredUpload(input.heroImageUpload),
+        lastFrameImageUpload: sanitizeStoredUpload(input.lastFrameImageUpload),
+        motionVideoUpload: sanitizeStoredUpload(input.motionVideoUpload),
+        heroImageReady: Boolean(cinematicExperience.heroImageUrl),
+        lastFrameImageReady: Boolean(cinematicExperience.lastFrameImageUrl),
+        motionVideoReady: Boolean(cinematicExperience.motionVideoUrl),
+        renderMode: "cinematic_scroll",
+        cinematicExperience: { ...cinematicExperience, frames: [] },
+        aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
+          ? PLAN_ACTION_LIMITS[planId].aiEdits
+          : 0,
+        aiEditsUsed: 0,
+        completedStages: [...completedStages, "website_ready"],
+      };
+
+      const { data, error } = await supabase
+        .from("projects")
+        .insert({
+          id: projectId,
+          user_id: userId,
+          name: scenePlan.data.projectName || businessName,
+          template_id: input.templateId ?? "generated",
+          website_schema: websiteSchema,
+          pipeline_metadata: pipelineMetadata,
+        })
+        .select("id,name")
+        .single();
+
+      if (error) throw error;
+
+      const website = cinematicExperienceToWebsite(projectId, cinematicExperience);
+      await supabase.from("websites").upsert(
+        {
+          project_id: projectId,
+          user_id: userId,
+          website,
+        },
+        { onConflict: "project_id" },
+      );
+
+      await aiPersistenceService.recordHistory(supabase, {
         userId,
-        eventType: "media_image_generate",
-        description: "Pipeline last frame (Nano Banana)",
+        projectId,
+        prompt: websitePrompt,
+        generatedSchema: websiteSchema,
+        generationType: "generate",
       });
-    }
-
-    if (planHasFeature(planId, "media_upload") && input.motionVideoUpload?.trim()) {
-      motionVideoUrl = input.motionVideoUpload.trim();
-      completedStages.push("motion_generation");
-    } else if (
-      planHasFeature(planId, "veo") &&
-      input.veoPrompt?.trim() &&
-      heroImageUrl
-    ) {
-      assertGeminiGenerationAllowed(subscription, "veo");
-      if (!lastFrameImageUrl) {
-        throw new Error(
-          "Veo motion needs a first and last frame. Add a last-frame image in step 3 (upload or Nano Banana) before generating video.",
-        );
-      }
-      await planLimitService.assertWithinActionLimit(supabase, {
+      await aiPersistenceService.recordUsage(supabase, {
         userId,
-        subscription,
-        action: "videos",
+        projectId,
+        requestType: "generate",
+        usage: scenePlan.usage,
       });
-      const firstFrame = await resolveInlineImage(heroImageUrl);
-      if (!firstFrame) {
-        throw new Error("Could not read the hero image for Veo video generation.");
-      }
-      const lastFrame = lastFrameImageUrl ? await resolveInlineImage(lastFrameImageUrl) : undefined;
 
-      const videoResult = await googleMediaProvider.generateVideo({
-        prompt: input.veoPrompt.trim(),
-        capability: "hero_video",
-        aspectRatio: "16:9",
-        durationSeconds: 8,
-        inputImageBase64: firstFrame.imageBytes,
-        inputMimeType: firstFrame.mimeType,
-        lastFrameImageBase64: lastFrame?.imageBytes,
-        lastFrameMimeType: lastFrame?.mimeType,
-      });
-      motionVideoUrl = videoResult.assetUrl;
-      await creditService.consumeCredits(supabase, {
-        userId,
-        eventType: "media_video_generate",
-        description: "Pipeline motion (Veo 3.1 Lite)",
-      });
-      completedStages.push("motion_generation");
-    } else {
-      completedStages.push("motion_generation");
-    }
-
-    const template = input.templateId ? getProjectTemplateById(input.templateId) : null;
-    const generated = await bedrockProvider.generateWebsite({
-      prompt: websitePrompt,
-      businessName,
-      description: websitePrompt,
-      industry: "Startup",
-      style: "Premium",
-      colorPreference: "Cinematic premium",
-      websiteType: "Cinematic landing page",
-      templateId: input.templateId ?? null,
-      media: {
-        heroImageReady: Boolean(heroImageUrl),
-        lastFrameImageReady: Boolean(lastFrameImageUrl),
-        motionVideoReady: Boolean(motionVideoUrl),
-      },
-    });
-
-    await creditService.consumeCredits(supabase, {
-      userId,
-      eventType: "generate_website",
-      description: "Pipeline website build (Claude Opus)",
-    });
-
-    let websiteSchema: TemplateSchema = generated.data.websiteSchema;
-    if (heroImageUrl) {
-      websiteSchema = injectHeroImage(structuredClone(websiteSchema), heroImageUrl);
-    }
-    if (motionVideoUrl) {
-      websiteSchema = injectMotionVideo(websiteSchema, motionVideoUrl);
-    }
-
-    if (template?.schema && input.templateId) {
-      websiteSchema = structuredClone(template.schema) as TemplateSchema;
-      if (heroImageUrl) {
-        websiteSchema = injectHeroImage(websiteSchema, heroImageUrl);
-      }
-      if (motionVideoUrl) {
-        websiteSchema = injectMotionVideo(websiteSchema, motionVideoUrl);
-      }
-    }
-
-    completedStages.push("website_build");
-
-    const pipelineMetadata: PipelineMetadata = {
-      templateId: input.templateId ?? null,
-      websitePrompt,
-      businessName,
-      firstImagePrompt: input.firstImagePrompt ?? null,
-      lastImagePrompt: input.lastImagePrompt ?? null,
-      veoPrompt: input.veoPrompt ?? null,
-      presetHeroImageId: input.presetHeroImageId ?? null,
-      heroImageUpload: sanitizeStoredUpload(input.heroImageUpload),
-      lastFrameImageUpload: sanitizeStoredUpload(input.lastFrameImageUpload),
-      motionVideoUpload: sanitizeStoredUpload(input.motionVideoUpload),
-      heroImageReady: Boolean(heroImageUrl),
-      lastFrameImageReady: Boolean(lastFrameImageUrl),
-      motionVideoReady: Boolean(motionVideoUrl),
-      aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
-        ? PLAN_ACTION_LIMITS[planId].aiEdits
-        : 0,
-      aiEditsUsed: 0,
-      completedStages: [...completedStages, "website_ready"],
-    };
-
-    const projectId = crypto.randomUUID();
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({
-        id: projectId,
-        user_id: userId,
-        name: generated.data.projectName || businessName,
-        template_id: input.templateId ?? "generated",
-        website_schema: websiteSchema,
-        pipeline_metadata: pipelineMetadata,
-      })
-      .select("id,name")
-      .single();
-
-    if (error) throw error;
-
-    const website = templateSchemaToWebsite(projectId, (data as { name: string }).name, websiteSchema);
-    await supabase.from("websites").upsert(
-      {
-        project_id: projectId,
-        user_id: userId,
-        website,
-      },
-      { onConflict: "project_id" },
-    );
-
-    await aiPersistenceService.recordHistory(supabase, {
-      userId,
-      projectId,
-      prompt: websitePrompt,
-      generatedSchema: websiteSchema,
-      generationType: "generate",
-    });
-    await aiPersistenceService.recordUsage(supabase, {
-      userId,
-      projectId,
-      requestType: "generate",
-      usage: generated.usage,
-    });
-
-    completedStages.push("website_ready");
-
-    return {
-      projectId,
-      projectName: (data as { name: string }).name,
-      websiteSchema,
-      pipelineMetadata,
-      publicPreviewPath: `/preview/${projectId}`,
-    };
+      return {
+        projectId,
+        projectName: (data as { name: string }).name,
+        websiteSchema,
+        pipelineMetadata: {
+          ...pipelineMetadata,
+          cinematicExperience: { ...slimMeta, frames: [] } as CinematicExperience,
+        },
+        publicPreviewPath: `/preview/${projectId}`,
+      };
     } finally {
       generationLocks.releasePipeline(userId);
     }
@@ -352,45 +387,91 @@ export const pipelineService = {
     const creditCost = getCreditCost("ai_edit");
     planLimitService.assertHasCredits(subscription, creditCost, "edit with AI");
 
-    const edited = await bedrockProvider.editWebsite({
-      website: {
-        id: input.projectId,
-        name: (project as { name?: string }).name ?? "Generated Website",
-        prompt: input.instruction,
-        industry: "Startup",
-        style: "Premium",
-        pages: [],
-      },
+    const { data: websiteRow, error: websiteError } = await supabase
+      .from("websites")
+      .select("website")
+      .eq("project_id", input.projectId)
+      .maybeSingle();
+
+    if (websiteError) throw websiteError;
+
+    const storedWebsite = (websiteRow as { website?: Website } | null)?.website;
+    const currentExperience =
+      storedWebsite?.meta.cinematicExperience ??
+      metadata.cinematicExperience ??
+      null;
+
+    if (!currentExperience || metadata.renderMode !== "cinematic_scroll") {
+      throw new Error("This project uses the legacy format. Regenerate with the cinematic pipeline.");
+    }
+
+    const currentPlan = {
+      projectName: currentExperience.projectName,
+      story: currentExperience.story,
+      scenes: currentExperience.scenes,
+      seo: currentExperience.seo,
+    };
+
+    const edited = await bedrockProvider.editCinematicPlan({
       instruction: input.instruction,
-      websiteSchema: input.websiteSchema,
+      currentPlan,
+      businessName: metadata.businessName || (project as { name?: string }).name || "Project",
     });
 
     await creditService.consumeCredits(supabase, {
       userId,
       eventType: "ai_edit",
-      description: "Premium AI website edit",
+      description: "Cinematic scene edit",
     });
+
+    const updatedExperience = buildCinematicExperience(edited.data, {
+      frames: currentExperience.frames,
+      frameSource: "video",
+      heroImageUrl: currentExperience.heroImageUrl,
+      lastFrameImageUrl: currentExperience.lastFrameImageUrl,
+      motionVideoUrl: currentExperience.motionVideoUrl,
+    });
+
+    const websiteSchema = cinematicStubSchema(
+      edited.data.projectName,
+      edited.data.story,
+      updatedExperience.heroImageUrl ?? undefined,
+      updatedExperience.motionVideoUrl ?? undefined,
+    );
 
     const nextMetadata: PipelineMetadata = {
       ...metadata,
       aiEditsUsed: used + 1,
+      cinematicExperience: { ...slimCinematicMetadata(updatedExperience), frames: [] },
     };
+
+    const website = cinematicExperienceToWebsite(input.projectId, updatedExperience);
 
     const { error: updateError } = await supabase
       .from("projects")
       .update({
-        website_schema: edited.data.websiteSchema,
+        name: edited.data.projectName,
+        website_schema: websiteSchema,
         pipeline_metadata: nextMetadata,
       })
       .eq("id", input.projectId);
 
     if (updateError) throw updateError;
 
+    await supabase.from("websites").upsert(
+      {
+        project_id: input.projectId,
+        user_id: userId,
+        website,
+      },
+      { onConflict: "project_id" },
+    );
+
     await aiPersistenceService.recordHistory(supabase, {
       userId,
       projectId: input.projectId,
       prompt: input.instruction,
-      generatedSchema: edited.data.websiteSchema,
+      generatedSchema: websiteSchema,
       generationType: "edit",
     });
     await aiPersistenceService.recordUsage(supabase, {
@@ -401,7 +482,7 @@ export const pipelineService = {
     });
 
     return {
-      websiteSchema: edited.data.websiteSchema,
+      websiteSchema,
       pipelineMetadata: nextMetadata,
     };
   },

@@ -4,11 +4,15 @@ import {
 } from "@aws-sdk/client-bedrock-runtime";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import {
+  CinematicScenePlanSchema,
   GeneratedWebsiteResponseSchema,
   WebsiteEditResponseSchema,
+  type CinematicScenePlanResponse,
   type OpenAIGeneratedWebsiteResponse,
   type OpenAIWebsiteEditResponse,
 } from "@/lib/ai/structuredSchemas";
+import { cinematicSceneEditSystemPrompt, cinematicScenePlanSystemPrompt } from "@/lib/ai/prompts/cinematicPrompts";
+import { normalizeCinematicScenePlan } from "@/lib/ai/normalizeCinematicResponse";
 import type { EditWebsiteRequest } from "@/lib/ai/schema";
 import {
   extractInlineMediaFromSchema,
@@ -141,7 +145,88 @@ Always include projectName and seo { title, description }.
 Leave hero image/video fields empty when upstream media is ready; the pipeline injects them after generation.
 `;
 
+const cinematicPlanInput = (
+  request: WebsiteGenerationInput & {
+    media?: {
+      heroImageReady?: boolean;
+      lastFrameImageReady?: boolean;
+      motionVideoReady?: boolean;
+    };
+    templateReference?: string | null;
+  },
+) => `
+Business name: ${request.businessName}
+Industry: ${request.industry ?? "Luxury real estate / premium product"}
+Style: ${request.style ?? "Cinematic immersive"}
+Website type: Scroll-driven cinematic experience
+Template reference: ${request.templateReference ?? "Original cinematic direction"}
+Business description: ${request.description}
+Creative brief: ${request.prompt}
+
+Media pipeline status (visual motion is handled separately — do NOT output URLs):
+- First frame ready: ${request.media?.heroImageReady ? "yes" : "no"}
+- Last frame ready: ${request.media?.lastFrameImageReady ? "yes" : "no"}
+- Motion video ready: ${request.media?.motionVideoReady ? "yes" : "no"}
+
+Design a scene-by-scene scroll journey. Each scene needs id, title, optional subtitle/body, scrollStart (0–1), optional ctaLabel on the final scene.
+`;
+
 export const bedrockProvider = {
+  async generateCinematicPlan(
+    request: WebsiteGenerationInput & {
+      media?: {
+        heroImageReady?: boolean;
+        lastFrameImageReady?: boolean;
+        motionVideoReady?: boolean;
+      };
+      templateReference?: string | null;
+    },
+  ): Promise<BedrockProviderResult<CinematicScenePlanResponse>> {
+    const result = await converseJson<unknown>(
+      cinematicScenePlanSystemPrompt,
+      cinematicPlanInput(request),
+      "stoneai_cinematic_scene_plan",
+    );
+
+    const normalized = normalizeCinematicScenePlan(result.data, {
+      fallbackProjectName: request.businessName,
+      fallbackDescription: request.description,
+    });
+
+    return {
+      data: CinematicScenePlanSchema.parse(normalized),
+      usage: result.usage,
+    };
+  },
+
+  async editCinematicPlan(
+    request: {
+      instruction: string;
+      currentPlan: CinematicScenePlanResponse;
+      businessName: string;
+    },
+  ): Promise<BedrockProviderResult<CinematicScenePlanResponse>> {
+    const result = await converseJson<unknown>(
+      cinematicSceneEditSystemPrompt,
+      JSON.stringify({
+        instruction: request.instruction,
+        currentScenePlan: request.currentPlan,
+        businessName: request.businessName,
+      }),
+      "stoneai_cinematic_scene_edit",
+    );
+
+    const normalized = normalizeCinematicScenePlan(result.data, {
+      fallbackProjectName: request.currentPlan.projectName || request.businessName,
+      fallbackDescription: request.currentPlan.story,
+    });
+
+    return {
+      data: CinematicScenePlanSchema.parse(normalized),
+      usage: result.usage,
+    };
+  },
+
   async generateWebsite(
     request: WebsiteGenerationInput & {
       media?: {

@@ -392,14 +392,19 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
             <span className="aside-head-title">Pipeline stages</span>
           </div>
           <ul className="pipeline-stage-list">
-            {["Prompt Input", "Image Generation", "Motion Generation", "Website Build", "Website Ready"].map(
-              (stage) => (
-                <li key={stage}>{stage}</li>
-              ),
-            )}
+            {[
+              "Prompt Input",
+              "Image Generation",
+              "Motion Generation",
+              "Frame Extraction",
+              "Scene Build",
+              "Experience Ready",
+            ].map((stage) => (
+              <li key={stage}>{stage}</li>
+            ))}
           </ul>
           <p className="pipeline-aside-note">
-            StoneAI uses Claude Opus on Amazon Bedrock for website structure, Nano Banana (Gemini 2.5 Flash Image) for imagery, and Veo 3.1 Lite for motion.
+            StoneAI builds scroll-driven cinematic experiences: Claude Opus plans scenes, Nano Banana creates first/last frames, Veo 3.1 Lite generates motion, and GSAP scroll-scrub drives the journey.
           </p>
         </aside>
       </div>

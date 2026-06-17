@@ -42,6 +42,7 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
       website?: unknown;
+      projectId?: string;
       settings?: {
         siteName?: string;
         seoTitle?: string;
@@ -52,11 +53,10 @@ export async function POST(request: Request) {
       };
     };
 
-    if (!isWebsite(payload.website)) {
-      return NextResponse.json({ error: "A valid website is required." }, { status: 400 });
+    if (!isWebsite(payload.website) && !payload.projectId?.trim()) {
+      return NextResponse.json({ error: "A valid website or projectId is required." }, { status: 400 });
     }
 
-    const website = payload.website;
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -66,6 +66,38 @@ export async function POST(request: Request) {
     if (userError && userError.message !== "Auth session missing!") throw userError;
     if (!user) {
       return NextResponse.json({ error: "You must be logged in to publish." }, { status: 401 });
+    }
+
+    let website: Website;
+
+    if (isWebsite(payload.website)) {
+      website = payload.website;
+    } else {
+      const projectId = payload.projectId!.trim();
+      const { data: websiteRow, error: websiteError } = await supabase
+        .from("websites")
+        .select("website")
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (websiteError) throw websiteError;
+
+      if (isWebsite((websiteRow as { website?: unknown } | null)?.website)) {
+        website = (websiteRow as { website: Website }).website;
+      } else {
+        return NextResponse.json(
+          { error: "Cinematic website not found. Regenerate with the pipeline." },
+          { status: 404 },
+        );
+      }
+    }
+
+    if (website.meta.renderMode !== "cinematic_scroll" || !website.meta.cinematicExperience) {
+      return NextResponse.json(
+        { error: "Only cinematic scroll experiences can be published." },
+        { status: 400 },
+      );
     }
 
     const { data: project, error: projectError } = await supabase

@@ -10,7 +10,7 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
+import { cinematicExperienceToWebsite } from "@/lib/cinematic/buildExperience";
 import { planHasFeature } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
@@ -43,16 +43,16 @@ export function WebsiteReadyPage({
   const editsRemaining = metadata?.aiEditsRemaining ?? 0;
   const site = data.publishedSites.find((item) => item.project_id === projectId);
 
+  const isCinematic = metadata?.renderMode === "cinematic_scroll";
+
   const handlePublish = async () => {
-    if (!schema) return;
     setPublishing(true);
     setPublishError(null);
     try {
-      const website = templateSchemaToWebsite(projectId, project?.name ?? "Generated Website", schema);
       const response = await fetch("/api/sites/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website }),
+        body: JSON.stringify({ projectId }),
       });
       const payload = (await response.json()) as { error?: string; publicUrl?: string };
       if (!response.ok) throw new Error(payload.error ?? "Could not publish website.");
@@ -65,7 +65,7 @@ export function WebsiteReadyPage({
   };
 
   const handleAiEdit = async () => {
-    if (!schema || !editPrompt.trim()) return;
+    if (!editPrompt.trim()) return;
     setEditing(true);
     setEditError(null);
     try {
@@ -75,7 +75,6 @@ export function WebsiteReadyPage({
         body: JSON.stringify({
           projectId,
           instruction: editPrompt.trim(),
-          websiteSchema: schema,
         }),
       });
       const payload = (await response.json()) as {
@@ -122,7 +121,7 @@ export function WebsiteReadyPage({
             <ExternalLink size={14} />
             Live Preview
           </a>
-          <button type="button" className="btn btn-primary" disabled={publishing || !schema} onClick={() => void handlePublish()}>
+          <button type="button" className="btn btn-primary" disabled={publishing || !isCinematic} onClick={() => void handlePublish()}>
             <Rocket size={14} />
             {publishing ? "Publishing…" : site?.status === "published" ? "Republish" : "Publish"}
           </button>
@@ -174,7 +173,7 @@ export function WebsiteReadyPage({
                   className="prompt-area"
                   value={editPrompt}
                   onChange={(e) => setEditPrompt(e.target.value)}
-                  placeholder="Make the website more premium, add testimonials, add pricing, change palette…"
+                  placeholder="Refine scene titles, deepen the story, adjust the journey tone…"
                   disabled={editing || editsRemaining <= 0}
                 />
                 {editError ? <p className="gen-error">{editError}</p> : null}

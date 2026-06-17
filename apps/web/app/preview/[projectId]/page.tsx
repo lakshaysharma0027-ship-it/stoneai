@@ -1,9 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import type { Website } from "@/lib/editor/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { TemplateSchema } from "@/lib/templateSchemas";
 import { WebsiteRenderer } from "@/components/sites/WebsiteRenderer";
 
 type PreviewPageProps = {
@@ -38,28 +36,17 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
 
   if (websiteError) throw websiteError;
 
-  let website: Website | null = isWebsite((websiteRow as { website?: unknown } | null)?.website)
-    ? ((websiteRow as { website: Website }).website)
+  const website = isWebsite((websiteRow as { website?: unknown } | null)?.website)
+    ? (websiteRow as { website: Website }).website
     : null;
 
   if (!website) {
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select("name,website_schema")
-      .eq("id", projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    notFound();
+  }
 
-    if (projectError) throw projectError;
-    const schema = (project as { website_schema?: TemplateSchema; name?: string } | null)?.website_schema;
-    if (!schema) notFound();
-
-    website = templateSchemaToWebsite(
-      projectId,
-      (project as { name?: string }).name ?? "Generated Website",
-      schema,
-    );
+  if (website.meta.renderMode !== "cinematic_scroll" || !website.meta.cinematicExperience) {
+    notFound();
   }
 
   return <WebsiteRenderer website={website} />;
-};
+}
