@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchJson } from "@/lib/api/fetchJson";
 import { projectStorage, type StoredProject } from "@/lib/projects";
 import type { TemplateId } from "@/lib/templates";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -396,10 +397,28 @@ export function useDashboardData() {
       return;
     }
 
+    const uploadFields = [
+      pipelineForm.heroImageUpload,
+      pipelineForm.lastFrameImageUpload,
+      pipelineForm.motionVideoUpload,
+    ];
+    if (uploadFields.some((value) => value.trim().startsWith("data:"))) {
+      setGenerateError(
+        "Uploaded files must go to storage first. Re-select your image/video files and wait for “Uploaded” before generating.",
+      );
+      return;
+    }
+
     setGenerating(true);
     setGenerateError(null);
     try {
-      const response = await fetch("/api/ai/pipeline/generate", {
+      const { response, payload } = await fetchJson<{
+        error?: string;
+        projectId?: string;
+        projectName?: string;
+        websiteSchema?: StoredProject["websiteSchema"];
+        pipelineMetadata?: StoredProject["pipelineMetadata"];
+      }>("/api/ai/pipeline/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -415,13 +434,6 @@ export function useDashboardData() {
           motionVideoUpload: pipelineForm.motionVideoUpload.trim() || undefined,
         }),
       });
-      const payload = (await response.json()) as {
-        error?: string;
-        projectId?: string;
-        projectName?: string;
-        websiteSchema?: StoredProject["websiteSchema"];
-        pipelineMetadata?: StoredProject["pipelineMetadata"];
-      };
       if (!response.ok || !payload.projectId) {
         throw new Error(payload.error ?? "Could not complete generation pipeline.");
       }

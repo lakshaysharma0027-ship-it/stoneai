@@ -15,6 +15,11 @@ import { CREDIT_COSTS } from "@/lib/billing/credits";
 import { getUpgradeHint, planHasFeature } from "@/lib/billing/planFeatures";
 import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import { nanoBananaGallery, templateCatalog } from "@/lib/template-catalog";
+import {
+  PIPELINE_UPLOAD_LIMITS,
+  uploadPipelineMedia,
+  type PipelineMediaKind,
+} from "@/lib/cinematic/clientMediaUpload";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
 import { GenerationPageHeader } from "../generation/GenerationPageHeader";
 import { GenerationProgressOverlay } from "../generation/GenerationProgressOverlay";
@@ -37,27 +42,26 @@ const PROMPT_EXAMPLES = [
   "Fine dining restaurant with reservation flow and tasting menu",
 ];
 
-const readUploadAsDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Could not read file."));
-    reader.readAsDataURL(file);
-  });
-
 function MediaUploadField({
   label,
   accept,
   value,
   onChange,
   hint,
+  kind,
+  maxBytes,
 }: {
   label: string;
   accept: string;
   value: string;
   onChange: (value: string) => void;
   hint: string;
+  kind: PipelineMediaKind;
+  maxBytes: number;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   return (
     <div className="pipeline-upload">
       <label className="field-label">{label}</label>
@@ -65,20 +69,36 @@ function MediaUploadField({
       <input
         type="file"
         accept={accept}
+        disabled={uploading}
         onChange={async (event) => {
           const file = event.target.files?.[0];
           if (!file) return;
-          if (file.size > 8 * 1024 * 1024) {
-            alert("File must be 8 MB or smaller.");
+          setUploadError(null);
+          if (file.size > maxBytes) {
+            setUploadError(`File must be ${Math.round(maxBytes / (1024 * 1024))} MB or smaller.`);
             return;
           }
-          onChange(await readUploadAsDataUrl(file));
+          setUploading(true);
+          try {
+            const url = await uploadPipelineMedia(file, kind);
+            onChange(url);
+          } catch (error) {
+            setUploadError(error instanceof Error ? error.message : "Upload failed.");
+          } finally {
+            setUploading(false);
+            event.target.value = "";
+          }
         }}
       />
+      {uploading ? <p className="pipeline-copy">Uploading to storage…</p> : null}
+      {uploadError ? <p className="gen-error">{uploadError}</p> : null}
       {value ? (
-        <button type="button" className="pipeline-link" onClick={() => onChange("")}>
-          Remove upload
-        </button>
+        <>
+          <p className="pipeline-copy">{value.startsWith("http") ? "Uploaded" : "Ready"}</p>
+          <button type="button" className="pipeline-link" onClick={() => onChange("")}>
+            Remove upload
+          </button>
+        </>
       ) : null}
     </div>
   );
@@ -247,8 +267,10 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                 {canUpload ? (
                   <MediaUploadField
                     accept="image/*"
-                    hint="Upload your own hero image instead of generating with Nano Banana. Available on every plan."
+                    hint="Upload your own hero image instead of generating with Nano Banana. Files upload to storage (not sent as base64)."
                     label="Upload hero image (optional)"
+                    kind="hero"
+                    maxBytes={PIPELINE_UPLOAD_LIMITS.imageBytes}
                     onChange={(value) => setForm("heroImageUpload", value)}
                     value={form.heroImageUpload}
                   />
@@ -294,6 +316,8 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                   <MediaUploadField
                     accept="image/*"
                     hint="Upload a last-frame image instead of generating with Nano Banana."
+                    kind="last-frame"
+                    maxBytes={PIPELINE_UPLOAD_LIMITS.imageBytes}
                     label="Upload last image (optional)"
                     onChange={(value) => setForm("lastFrameImageUpload", value)}
                     value={form.lastFrameImageUpload}
@@ -321,7 +345,9 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                 {canUpload ? (
                   <MediaUploadField
                     accept="video/*"
-                    hint="Upload your own video instead of generating with Veo. Available on every plan."
+                    hint="Upload your own video instead of generating with Veo. Max 50 MB — uploads directly to storage."
+                    kind="video"
+                    maxBytes={PIPELINE_UPLOAD_LIMITS.videoBytes}
                     label="Upload video (optional)"
                     onChange={(value) => setForm("motionVideoUpload", value)}
                     value={form.motionVideoUpload}

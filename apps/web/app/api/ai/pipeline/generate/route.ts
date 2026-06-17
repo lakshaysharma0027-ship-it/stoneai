@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PipelineGenerateRequest } from "@/lib/pipeline/types";
 import { pipelineService } from "@/services/ai/pipelineService";
 
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as Partial<PipelineGenerateRequest>;

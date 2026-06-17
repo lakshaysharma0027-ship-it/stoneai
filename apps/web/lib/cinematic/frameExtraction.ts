@@ -14,6 +14,20 @@ const decodeDataUrl = (url: string) => {
   return { mimeType: match[1], buffer: Buffer.from(match[2], "base64") };
 };
 
+const resolveMediaBuffer = async (url: string): Promise<Buffer> => {
+  if (url.startsWith("data:")) {
+    return decodeDataUrl(url).buffer;
+  }
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Could not fetch media (${response.status}).`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+  }
+  throw new Error("Unsupported media URL.");
+};
+
 const getFfmpegPath = async (): Promise<string | null> => {
   try {
     const mod = await import("ffmpeg-static");
@@ -25,7 +39,7 @@ const getFfmpegPath = async (): Promise<string | null> => {
 };
 
 export async function extractVideoFrames(
-  videoDataUrl: string,
+  videoSource: string,
   targetFrames = 80,
 ): Promise<string[]> {
   const ffmpegPath = await getFfmpegPath();
@@ -33,7 +47,7 @@ export async function extractVideoFrames(
     throw new Error("ffmpeg-static is not available.");
   }
 
-  const { buffer } = decodeDataUrl(videoDataUrl);
+  const buffer = await resolveMediaBuffer(videoSource);
   const dir = join(tmpdir(), `stoneai-frames-${randomUUID()}`);
   await mkdir(dir, { recursive: true });
   const inputPath = join(dir, "input.mp4");
@@ -76,12 +90,12 @@ export async function extractVideoFrames(
 
 /** Blend first→last when video extraction is unavailable (still scroll-driven). */
 export async function interpolateImageFrames(
-  firstDataUrl: string,
-  lastDataUrl: string,
+  firstSource: string,
+  lastSource: string,
   count: number,
 ): Promise<string[]> {
-  const first = decodeDataUrl(firstDataUrl).buffer;
-  const last = decodeDataUrl(lastDataUrl).buffer;
+  const first = await resolveMediaBuffer(firstSource);
+  const last = await resolveMediaBuffer(lastSource);
   const base = sharp(first);
   const meta = await base.metadata();
   const width = meta.width ?? 1920;
@@ -116,27 +130,29 @@ export async function buildScrollFrames(options: {
   frameCount?: number;
 }): Promise<{ frames: string[]; source: "video" | "interpolated" | "hero_only" }> {
   const frameCount = options.frameCount ?? 80;
+  const videoUrl = options.motionVideoUrl?.trim();
+  const heroUrl = options.heroImageUrl?.trim();
+  const lastUrl = options.lastFrameImageUrl?.trim();
 
-  if (options.motionVideoUrl?.startsWith("data:")) {
+  const isRemoteOrData = (value?: string) =>
+    Boolean(value?.startsWith("data:") || value?.startsWith("http://") || value?.startsWith("https://"));
+
+  if (isRemoteOrData(videoUrl)) {
     try {
-      const frames = await extractVideoFrames(options.motionVideoUrl, frameCount);
+      const frames = await extractVideoFrames(videoUrl!, frameCount);
       return { frames, source: "video" };
     } catch (error) {
       console.warn("[StoneAI] Video frame extraction failed, falling back:", error);
     }
   }
 
-  if (options.heroImageUrl?.startsWith("data:") && options.lastFrameImageUrl?.startsWith("data:")) {
-    const frames = await interpolateImageFrames(
-      options.heroImageUrl,
-      options.lastFrameImageUrl,
-      frameCount,
-    );
+  if (isRemoteOrData(heroUrl) && isRemoteOrData(lastUrl)) {
+    const frames = await interpolateImageFrames(heroUrl!, lastUrl!, frameCount);
     return { frames, source: "interpolated" };
   }
 
-  if (options.heroImageUrl) {
-    return { frames: [options.heroImageUrl], source: "hero_only" };
+  if (heroUrl) {
+    return { frames: [heroUrl], source: "hero_only" };
   }
 
   return { frames: [], source: "hero_only" };
