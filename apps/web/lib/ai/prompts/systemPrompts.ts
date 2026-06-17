@@ -15,6 +15,7 @@ Design rules:
 - Keep image fields optional unless using existing safe placeholders.
 - When hero or motion media were generated upstream, leave hero image/video fields empty in websiteSchema. The pipeline injects the real assets after your JSON response.
 - Never embed data URLs, base64, or binary media in websiteSchema.
+- Always set websiteSchema.id to "generated", include projectName, seo { title, description }, and stable string ids on every nested item (features, testimonials, FAQs, gallery, pricing).
 `;
 
 export const websiteEditingSystemPrompt = `

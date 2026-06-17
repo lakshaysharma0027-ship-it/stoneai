@@ -19,6 +19,10 @@ import {
   websiteEditingSystemPrompt,
   websiteGenerationSystemPrompt,
 } from "@/lib/ai/prompts/systemPrompts";
+import {
+  normalizeGeneratedWebsiteResponse,
+  normalizeWebsiteEditResponse,
+} from "@/lib/ai/normalizeWebsiteResponse";
 import type { AIUsage, WebsiteGenerationInput } from "@/lib/ai/types";
 
 export type BedrockProviderResult<T> = {
@@ -131,6 +135,9 @@ Upstream media (already generated — do NOT embed URLs, base64, or binary in yo
 - Hero motion video ready: ${request.media?.motionVideoReady ? "yes" : "no"}
 
 Create a complete StoneAI schema with cinematic sections for this business.
+Use websiteSchema.id exactly "generated".
+Every feature, testimonial, FAQ, gallery item, and pricing tier must include a unique string id.
+Always include projectName and seo { title, description }.
 Leave hero image/video fields empty when upstream media is ready; the pipeline injects them after generation.
 `;
 
@@ -151,8 +158,13 @@ export const bedrockProvider = {
       "stoneai_website",
     );
 
+    const normalized = normalizeGeneratedWebsiteResponse(result.data, {
+      fallbackProjectName: request.businessName,
+      fallbackSeoDescription: request.description,
+    });
+
     return {
-      data: GeneratedWebsiteResponseSchema.parse(result.data),
+      data: GeneratedWebsiteResponseSchema.parse(normalized),
       usage: result.usage,
     };
   },
@@ -172,7 +184,9 @@ export const bedrockProvider = {
       "stoneai_website_edit",
     );
 
-    const parsed = WebsiteEditResponseSchema.parse(result.data);
+    const parsed = WebsiteEditResponseSchema.parse(
+      normalizeWebsiteEditResponse(result.data),
+    );
     const websiteSchema = restoreInlineMediaToSchema(
       parsed.websiteSchema as TemplateSchema,
       preservedMedia,
