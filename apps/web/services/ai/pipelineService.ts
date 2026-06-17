@@ -178,7 +178,7 @@ export const pipelineService = {
         prompt: input.veoPrompt.trim(),
         capability: "hero_video",
         aspectRatio: "16:9",
-        durationSeconds: 6,
+        durationSeconds: 8,
         inputImageBase64: firstFrame.imageBytes,
         inputMimeType: firstFrame.mimeType,
         lastFrameImageBase64: lastFrame?.imageBytes,

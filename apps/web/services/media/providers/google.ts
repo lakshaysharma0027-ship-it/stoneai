@@ -136,7 +136,6 @@ export const googleMediaProvider: MediaProvider = {
       aspectRatio: input.aspectRatio ?? "16:9",
       durationSeconds: input.durationSeconds ?? 8,
       enhancePrompt: false,
-      generateAudio: false,
     };
 
     if (input.lastFrameImageBase64) {

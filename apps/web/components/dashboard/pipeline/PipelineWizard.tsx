@@ -329,7 +329,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                 ) : null}
                 {canVeo && !form.motionVideoUpload ? (
                   <>
-                    <label className="field-label" htmlFor="veo-prompt">Or generate with Veo (no audio)</label>
+                    <label className="field-label" htmlFor="veo-prompt">Or generate with Veo</label>
                     <p className="field-hint">
                       Uses your hero image as the first frame and your last-frame image from step 3 as the ending view — same as Google AI Studio image-to-video.
                     </p>
@@ -342,7 +342,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                     />
                     <div className="pipeline-veo-hints">
                       <span><Film size={12} /> First + last frame</span>
-                      <span><ImageIcon size={12} /> 6s silent clip</span>
+                      <span><ImageIcon size={12} /> 8s clip</span>
                       <span><Sparkles size={12} /> Cinematic motion</span>
                     </div>
                   </>
