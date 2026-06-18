@@ -11,22 +11,32 @@ const ensureId = (item: JsonRecord, prefix: string, index: number) => {
   return { ...item, id: `${prefix}-${index + 1}` };
 };
 
+const optionalString = (value: unknown) => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+};
+
 export const normalizeCinematicScenePlan = (
   raw: unknown,
   options: { fallbackProjectName: string; fallbackDescription?: string },
 ) => {
   const record = asRecord(raw);
-  const scenes = asArray(record.scenes).map((scene, index) => {
+  const rawScenes = asArray(record.scenes);
+  const scenes = rawScenes.map((scene, index) => {
     const item = ensureId(asRecord(scene), "scene", index);
     const scrollStart =
       typeof item.scrollStart === "number" && Number.isFinite(item.scrollStart)
         ? Math.min(1, Math.max(0, item.scrollStart))
-        : index / Math.max(1, asArray(record.scenes).length - 1);
+        : index / Math.max(1, rawScenes.length - 1);
 
     return {
-      ...item,
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : `scene-${index + 1}`,
+      title: typeof item.title === "string" && item.title.trim() ? item.title.trim() : `Scene ${index + 1}`,
+      subtitle: optionalString(item.subtitle),
+      body: optionalString(item.body),
       scrollStart,
-      title: typeof item.title === "string" && item.title.trim() ? item.title : `Scene ${index + 1}`,
+      ctaLabel: optionalString(item.ctaLabel),
     };
   });
 

@@ -125,10 +125,22 @@ export const CinematicSceneSchema = z.object({
   ctaLabel: z.string().optional(),
 });
 
+const nullishToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => (value === null ? undefined : value), schema);
+
 export const CinematicScenePlanSchema = z.object({
   projectName: z.string(),
   story: z.string(),
-  scenes: z.array(CinematicSceneSchema).min(4).max(12),
+  scenes: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      subtitle: nullishToUndefined(z.string().optional()),
+      body: nullishToUndefined(z.string().optional()),
+      scrollStart: z.number().min(0).max(1),
+      ctaLabel: nullishToUndefined(z.string().optional()),
+    }),
+  ).min(4).max(12),
   seo: z.object({
     title: z.string(),
     description: z.string(),
