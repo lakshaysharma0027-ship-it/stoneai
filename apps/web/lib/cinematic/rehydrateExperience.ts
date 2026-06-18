@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { CinematicExperience } from "@/lib/cinematic/types";
 
 const BUCKET = "cinematic-media";
@@ -26,21 +27,29 @@ export async function listStoredFrameUrls(
   projectId: string,
 ): Promise<string[]> {
   const prefix = `${userId}/${projectId}/frames`;
-  const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
-    limit: 200,
-    sortBy: { column: "name", order: "asc" },
-  });
+  const listFrom = async (client: SupabaseClient) => {
+    const { data, error } = await client.storage.from(BUCKET).list(prefix, {
+      limit: 200,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error || !data?.length) return [] as string[];
+    const { data: publicData } = client.storage.from(BUCKET).getPublicUrl(prefix);
+    const base = publicData.publicUrl.endsWith("/")
+      ? publicData.publicUrl
+      : `${publicData.publicUrl}/`;
+    return data
+      .filter((item) => item.name && !item.name.startsWith("."))
+      .map((item) => `${base}${item.name}`);
+  };
 
-  if (error || !data?.length) return [];
+  const primary = await listFrom(supabase);
+  if (primary.length > 0) return primary;
 
-  const { data: publicData } = supabase.storage.from(BUCKET).getPublicUrl(prefix);
-  const base = publicData.publicUrl.endsWith("/")
-    ? publicData.publicUrl
-    : `${publicData.publicUrl}/`;
-
-  return data
-    .filter((item) => item.name && !item.name.startsWith("."))
-    .map((item) => `${base}${item.name}`);
+  try {
+    return await listFrom(createSupabaseAdminClient());
+  } catch {
+    return [];
+  }
 }
 
 export async function rehydrateCinematicExperience(

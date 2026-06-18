@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cinematicExperienceToWebsite } from "@/lib/cinematic/buildExperience";
 import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperience";
 import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import type { Website } from "@/lib/editor/schema";
+import type { PipelineMetadata } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 
 const isWebsite = (value: unknown): value is Website => {
@@ -73,7 +75,40 @@ export async function loadProjectWebsite(
     }
   }
 
+  const metadata = (project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata;
+
+  if (
+    !website &&
+    metadata?.renderMode === "cinematic_scroll" &&
+    metadata.cinematicExperience
+  ) {
+    const rehydrated = await rehydrateCinematicExperience(
+      supabase,
+      userId,
+      projectId,
+      metadata.cinematicExperience,
+    );
+    website = cinematicExperienceToWebsite(projectId, rehydrated);
+  }
+
   if (!website) return null;
+
+  if (!website.meta.cinematicExperience && metadata?.cinematicExperience) {
+    const rehydrated = await rehydrateCinematicExperience(
+      supabase,
+      userId,
+      projectId,
+      metadata.cinematicExperience,
+    );
+    website = {
+      ...website,
+      meta: {
+        ...website.meta,
+        renderMode: "cinematic_scroll",
+        cinematicExperience: rehydrated,
+      },
+    };
+  }
 
   const experience = website.meta.cinematicExperience;
   if (!experience) return website;

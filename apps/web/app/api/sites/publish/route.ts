@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Website } from "@/lib/editor/schema";
 import { getPublicSiteUrl, normalizeSiteSlug } from "@/lib/sites/siteResolver";
+import { loadProjectWebsite } from "@/lib/sites/loadProjectWebsite";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 
@@ -74,17 +75,9 @@ export async function POST(request: Request) {
       website = payload.website;
     } else {
       const projectId = payload.projectId!.trim();
-      const { data: websiteRow, error: websiteError } = await supabase
-        .from("websites")
-        .select("website")
-        .eq("project_id", projectId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (websiteError) throw websiteError;
-
-      if (isWebsite((websiteRow as { website?: unknown } | null)?.website)) {
-        website = (websiteRow as { website: Website }).website;
+      const loaded = await loadProjectWebsite(supabase, user.id, projectId);
+      if (loaded) {
+        website = loaded;
       } else {
         return NextResponse.json(
           { error: "Cinematic website not found. Regenerate with the pipeline." },

@@ -22,7 +22,8 @@ import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { getProjectEmbedUrl, getProjectPreviewUrl } from "../utils";
+import { ProjectPreviewFrame } from "../ProjectPreviewFrame";
+import { getProjectPreviewUrl } from "../utils";
 import "../generation-pages.css";
 
 export function WebsiteReadyPage({
@@ -60,13 +61,11 @@ export function WebsiteReadyPage({
     void data.refreshProjects?.();
   }, [projectId, data.refreshSites, data.refreshProjects]);
 
-  const previewSrc = useMemo(() => getProjectEmbedUrl(projectId), [projectId]);
-
-  const liveUrl = site?.public_url ?? null;
   const openPreviewUrl = useMemo(
     () => getProjectPreviewUrl(projectId, data.publishedSites),
     [projectId, data.publishedSites],
   );
+  const liveUrl = site?.public_url ?? null;
   const previewLabel = isPublished ? "Live website" : "Draft preview";
 
   const handleCopyUrl = async () => {
@@ -170,12 +169,10 @@ export function WebsiteReadyPage({
 
       <div className="wr-hero-grid">
         <div className="wr-preview-wrap">
-          <iframe
-            key={previewSrc}
-            title={`${project.name} preview`}
+          <ProjectPreviewFrame
+            key={`${projectId}-${project.updatedAt}`}
+            projectId={projectId}
             className="wr-preview-frame"
-            src={previewSrc}
-            loading="lazy"
           />
           <a
             href={openPreviewUrl}

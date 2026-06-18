@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Website } from "@/lib/editor/schema";
 import { buildCinematicWebsiteZip } from "@/lib/export/buildCinematicZip";
+import { loadProjectWebsite } from "@/lib/sites/loadProjectWebsite";
 
 type RouteProps = { params: Promise<{ projectId: string }> };
 
@@ -21,16 +21,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
     }
 
-    const { data: websiteRow, error: websiteError } = await supabase
-      .from("websites")
-      .select("website")
-      .eq("project_id", projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (websiteError) throw websiteError;
-
-    const website = (websiteRow as { website?: Website } | null)?.website;
+    const website = await loadProjectWebsite(supabase, user.id, projectId);
     const experience = website?.meta.cinematicExperience;
 
     if (!website || !experience) {

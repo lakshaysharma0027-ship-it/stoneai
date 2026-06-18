@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Search, Upload } from "lucide-react";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
+import { ProjectPreviewFrame } from "../ProjectPreviewFrame";
 import "../overview-projects.css";
 import {
   formatShortDate,
   getProjectDomain,
-  getProjectEmbedUrl,
   getProjectStatus,
   getTemplateName,
 } from "../utils";
@@ -132,8 +132,6 @@ export function ProjectsPage({
             const site = data.publishedSites.find((s) => s.project_id === project.id);
             const templateName = getTemplateName(project);
 
-            const previewSrc = getProjectEmbedUrl(project.id);
-
             return (
               <article
                 key={project.id}
@@ -150,14 +148,7 @@ export function ProjectsPage({
                   role="button"
                   tabIndex={0}
                 >
-                  <iframe
-                    key={previewSrc}
-                    title={`${project.name} preview`}
-                    className="proj-card-preview-frame"
-                    src={previewSrc}
-                    loading="lazy"
-                    tabIndex={-1}
-                  />
+                  <ProjectPreviewFrame projectId={project.id} compact />
                   <div className="proj-card-status">
                     <span className={status === "live" ? "chip chip-live" : "chip chip-draft"}>
                       {status === "live" ? "Live" : "Draft"}

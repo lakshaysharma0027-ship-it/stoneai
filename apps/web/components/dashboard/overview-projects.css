@@ -744,6 +744,55 @@
   pointer-events: none;
 }
 
+.project-preview-frame {
+  width: 100%;
+  height: 100%;
+  background: #0b0b0b;
+  overflow: hidden;
+  position: relative;
+}
+
+.project-preview-frame-compact .project-preview-scaler {
+  transform: scale(0.35);
+  transform-origin: top left;
+  width: 285%;
+  height: 285%;
+  pointer-events: none;
+}
+
+.project-preview-scaler {
+  width: 100%;
+  min-height: 100%;
+  pointer-events: none;
+}
+
+.project-preview-loading,
+.project-preview-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hint);
+  font-size: 11px;
+  text-align: center;
+  padding: 12px;
+}
+
+.project-preview-error {
+  color: #f87171;
+}
+
+.website-ready-v2 .wr-preview-wrap .project-preview-frame {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 12px;
+}
+
+.website-ready-v2 .wr-preview-wrap .wr-preview-frame {
+  position: absolute;
+  inset: 0;
+}
+
 .spec-page .proj-card-status {
   position: absolute;
   top: 10px;
