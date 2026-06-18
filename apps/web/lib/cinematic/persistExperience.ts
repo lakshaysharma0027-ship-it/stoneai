@@ -4,8 +4,9 @@ import {
   uploadDataUrlIfNeeded,
   uploadFrameSequence,
 } from "@/lib/cinematic/cinematicStorage";
+import { assertNoInlineMedia } from "@/lib/cinematic/slimStorage";
 
-/** Upload inline media to Supabase Storage; return experience with HTTPS URLs. */
+/** Upload inline media to Supabase Storage; return experience with HTTPS URLs only. */
 export async function persistCinematicExperience(
   supabase: SupabaseClient,
   userId: string,
@@ -37,7 +38,7 @@ export async function persistCinematicExperience(
     uploadFrameSequence(supabase, userId, projectId, experience.frames),
   ]);
 
-  return {
+  const persisted: CinematicExperience = {
     ...experience,
     heroImageUrl,
     lastFrameImageUrl,
@@ -45,6 +46,14 @@ export async function persistCinematicExperience(
     frames: frames.length > 0 ? frames : experience.frames,
     frameCount: frames.length > 0 ? frames.length : experience.frameCount,
   };
+
+  assertNoInlineMedia(persisted);
+
+  if (persisted.frames.length === 0 && !persisted.heroImageUrl) {
+    throw new Error("No scroll frames were produced. Upload a hero image or motion video.");
+  }
+
+  return persisted;
 }
 
 /** Slim metadata for projects row — scenes only, no frame payloads. */

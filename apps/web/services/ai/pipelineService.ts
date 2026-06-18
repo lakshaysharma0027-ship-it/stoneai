@@ -34,6 +34,8 @@ import {
 import { DEFAULT_FRAME_COUNT } from "@/lib/cinematic/types";
 import type { CinematicExperience } from "@/lib/cinematic/types";
 import type { Website } from "@/lib/editor/schema";
+import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperience";
+import { saveProjectWebsiteRecord } from "@/lib/sites/saveProjectWebsite";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
@@ -342,18 +344,11 @@ export const pipelineService = {
       if (error) throw error;
 
       const website = cinematicExperienceToWebsite(projectId, cinematicExperience);
-      const { error: websiteUpsertError } = await supabase.from("websites").upsert(
-        {
-          project_id: projectId,
-          user_id: userId,
-          website,
-        },
-        { onConflict: "project_id" },
-      );
-
-      if (websiteUpsertError) {
-        console.error("[StoneAI pipeline] websites upsert failed", websiteUpsertError);
-        throw new Error("Could not save website preview. Try again or contact support.");
+      try {
+        await saveProjectWebsiteRecord(supabase, userId, projectId, website);
+      } catch (saveError) {
+        await supabase.from("projects").delete().eq("id", projectId).eq("user_id", userId);
+        throw saveError;
       }
 
       await aiPersistenceService.recordHistory(supabase, {
@@ -441,11 +436,18 @@ export const pipelineService = {
       throw new Error("This project uses the legacy format. Regenerate with the cinematic pipeline.");
     }
 
+    const hydratedExperience = await rehydrateCinematicExperience(
+      supabase,
+      userId,
+      input.projectId,
+      currentExperience,
+    );
+
     const currentPlan = {
-      projectName: currentExperience.projectName,
-      story: currentExperience.story,
-      scenes: currentExperience.scenes,
-      seo: currentExperience.seo,
+      projectName: hydratedExperience.projectName,
+      story: hydratedExperience.story,
+      scenes: hydratedExperience.scenes,
+      seo: hydratedExperience.seo,
     };
 
     const edited = await bedrockProvider.editCinematicPlan({
@@ -461,11 +463,11 @@ export const pipelineService = {
     });
 
     const updatedExperience = buildCinematicExperience(edited.data, {
-      frames: currentExperience.frames,
+      frames: hydratedExperience.frames,
       frameSource: "video",
-      heroImageUrl: currentExperience.heroImageUrl,
-      lastFrameImageUrl: currentExperience.lastFrameImageUrl,
-      motionVideoUrl: currentExperience.motionVideoUrl,
+      heroImageUrl: hydratedExperience.heroImageUrl,
+      lastFrameImageUrl: hydratedExperience.lastFrameImageUrl,
+      motionVideoUrl: hydratedExperience.motionVideoUrl,
     });
 
     const websiteSchema = cinematicStubSchema(
@@ -494,16 +496,7 @@ export const pipelineService = {
 
     if (updateError) throw updateError;
 
-    const { error: websiteUpsertError } = await supabase.from("websites").upsert(
-      {
-        project_id: input.projectId,
-        user_id: userId,
-        website,
-      },
-      { onConflict: "project_id" },
-    );
-
-    if (websiteUpsertError) throw websiteUpsertError;
+    await saveProjectWebsiteRecord(supabase, userId, input.projectId, website);
 
     await aiPersistenceService.recordHistory(supabase, {
       userId,

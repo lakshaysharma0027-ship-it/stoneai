@@ -33,6 +33,8 @@ export async function loadProjectWebsite(
   if (projectError) throw projectError;
   if (!project) return null;
 
+  const metadata = (project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata;
+
   const [{ data: websiteRow, error: websiteError }, { data: siteRow, error: siteError }] =
     await Promise.all([
       supabase.from("websites").select("website,updated_at").eq("project_id", projectId).maybeSingle(),
@@ -46,7 +48,7 @@ export async function loadProjectWebsite(
   if (websiteError) throw websiteError;
   if (siteError) throw siteError;
 
-  let website: Website | null = isWebsite((websiteRow as { website?: unknown } | null)?.website)
+  const draftWebsite = isWebsite((websiteRow as { website?: unknown } | null)?.website)
     ? (websiteRow as { website: Website }).website
     : null;
 
@@ -55,6 +57,24 @@ export async function loadProjectWebsite(
     isWebsite((siteRow as { published_schema?: unknown } | null)?.published_schema)
       ? (siteRow as { published_schema: Website }).published_schema
       : null;
+
+  let baseExperience =
+    draftWebsite?.meta.cinematicExperience ??
+    publishedWebsite?.meta.cinematicExperience ??
+    metadata?.cinematicExperience ??
+    null;
+
+  if (metadata?.renderMode === "cinematic_scroll" && baseExperience) {
+    const rehydrated = await rehydrateCinematicExperience(
+      supabase,
+      userId,
+      projectId,
+      baseExperience,
+    );
+    return cinematicExperienceToWebsite(projectId, rehydrated);
+  }
+
+  let website: Website | null = draftWebsite;
 
   if (publishedWebsite && website) {
     const siteUpdated = new Date((siteRow as { updated_at: string }).updated_at).getTime();
@@ -75,56 +95,5 @@ export async function loadProjectWebsite(
     }
   }
 
-  const metadata = (project as { pipeline_metadata?: PipelineMetadata }).pipeline_metadata;
-
-  if (
-    !website &&
-    metadata?.renderMode === "cinematic_scroll" &&
-    metadata.cinematicExperience
-  ) {
-    const rehydrated = await rehydrateCinematicExperience(
-      supabase,
-      userId,
-      projectId,
-      metadata.cinematicExperience,
-    );
-    website = cinematicExperienceToWebsite(projectId, rehydrated);
-  }
-
-  if (!website) return null;
-
-  if (!website.meta.cinematicExperience && metadata?.cinematicExperience) {
-    const rehydrated = await rehydrateCinematicExperience(
-      supabase,
-      userId,
-      projectId,
-      metadata.cinematicExperience,
-    );
-    website = {
-      ...website,
-      meta: {
-        ...website.meta,
-        renderMode: "cinematic_scroll",
-        cinematicExperience: rehydrated,
-      },
-    };
-  }
-
-  const experience = website.meta.cinematicExperience;
-  if (!experience) return website;
-
-  const rehydrated = await rehydrateCinematicExperience(
-    supabase,
-    userId,
-    projectId,
-    experience,
-  );
-
-  return {
-    ...website,
-    meta: {
-      ...website.meta,
-      cinematicExperience: rehydrated,
-    },
-  };
+  return website;
 }

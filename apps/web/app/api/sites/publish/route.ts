@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { slimWebsiteForStorage } from "@/lib/cinematic/slimStorage";
 import type { Website } from "@/lib/editor/schema";
 import { getPublicSiteUrl, normalizeSiteSlug } from "@/lib/sites/siteResolver";
 import { loadProjectWebsite } from "@/lib/sites/loadProjectWebsite";
+import { saveProjectWebsiteRecord } from "@/lib/sites/saveProjectWebsite";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
     const faviconUrl = payload.settings?.faviconUrl?.trim() || website.meta.favicon;
     const openGraphImageUrl = payload.settings?.openGraphImageUrl?.trim() || website.meta.socialImage;
 
-    const publishedSchema: Website = {
+    const publishedSchema: Website = slimWebsiteForStorage({
       ...website,
       name: payload.settings?.siteName?.trim() || website.name,
       slug,
@@ -141,7 +143,7 @@ export async function POST(request: Request) {
       },
       updatedAt: new Date().toISOString(),
       version: website.version + 1,
-    };
+    });
 
     const { data, error } = await supabase
       .from("sites")
@@ -163,6 +165,8 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    await saveProjectWebsiteRecord(supabase, user.id, website.projectId, publishedSchema);
 
     const { error: analyticsError } = await supabase.from("site_analytics").upsert(
       {
