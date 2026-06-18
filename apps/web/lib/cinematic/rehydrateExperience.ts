@@ -8,7 +8,18 @@ export const normalizeExperienceFrames = (
   experience: CinematicExperience,
 ): CinematicExperience => {
   const frames = experience.frames.filter(Boolean);
-  if (frames.length > 0) return { ...experience, frames, frameCount: frames.length };
+  if (frames.length > 0) {
+    return { ...experience, frames, frameCount: frames.length };
+  }
+
+  const expectsVideoFrames =
+    experience.frameSource === "video" ||
+    Boolean(experience.motionVideoUrl) ||
+    experience.frameCount > 2;
+
+  if (expectsVideoFrames) {
+    return experience;
+  }
 
   const fallback = [experience.heroImageUrl, experience.lastFrameImageUrl].filter(
     (url): url is string => Boolean(url?.trim()),
@@ -63,8 +74,22 @@ export async function rehydrateCinematicExperience(
   if (normalized.frames.length === 0) {
     const storedFrames = await listStoredFrameUrls(supabase, userId, projectId);
     if (storedFrames.length > 0) {
-      normalized = { ...normalized, frames: storedFrames, frameCount: storedFrames.length };
+      normalized = {
+        ...normalized,
+        frames: storedFrames,
+        frameCount: storedFrames.length,
+        frameSource: normalized.frameSource ?? "video",
+      };
     }
+  }
+
+  if (
+    normalized.frames.length <= 2 &&
+    (normalized.frameSource === "video" || Boolean(normalized.motionVideoUrl))
+  ) {
+    throw new Error(
+      "Scroll frames are missing for this project. Regenerate with your motion video to restore the cinematic experience.",
+    );
   }
 
   return normalized;

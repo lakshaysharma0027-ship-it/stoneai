@@ -49,6 +49,12 @@ export async function persistCinematicExperience(
 
   assertNoInlineMedia(persisted);
 
+  if (persisted.frameSource === "video" && persisted.frames.length < 12) {
+    throw new Error(
+      `Only ${persisted.frames.length} scroll frames were extracted from video. Use a longer MP4/WebM motion clip.`,
+    );
+  }
+
   if (persisted.frames.length === 0 && !persisted.heroImageUrl) {
     throw new Error("No scroll frames were produced. Upload a hero image or motion video.");
   }
@@ -63,6 +69,7 @@ export const slimCinematicMetadata = (experience: CinematicExperience) => ({
   story: experience.story,
   scenes: experience.scenes,
   frameCount: experience.frameCount,
+  frameSource: experience.frameSource,
   scrollHeightVh: experience.scrollHeightVh,
   seo: experience.seo,
   heroImageUrl: experience.heroImageUrl,

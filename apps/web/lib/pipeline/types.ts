@@ -40,6 +40,7 @@ export type PipelineMetadata = {
   /** Cinematic scroll experience payload (frames + scenes) */
   cinematicExperience?: import("@/lib/cinematic/types").CinematicExperience | null;
   renderMode?: "cinematic_scroll" | "schema";
+  frameSource?: "video" | "interpolated" | "hero_only";
   aiEditsRemaining: number;
   aiEditsUsed: number;
   completedStages: PipelineStageId[];

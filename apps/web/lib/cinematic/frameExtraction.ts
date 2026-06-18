@@ -1,12 +1,18 @@
 import { execFile } from "node:child_process";
+import { constants } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import sharp from "sharp";
+import { DEFAULT_FRAME_COUNT } from "@/lib/cinematic/types";
 
 const execFileAsync = promisify(execFile);
+
+export type FrameSource = "video" | "interpolated" | "hero_only";
+
+const MIN_VIDEO_FRAMES = 12;
 
 const decodeDataUrl = (url: string) => {
   const match = url.match(/^data:([^;]+);base64,(.+)$/);
@@ -14,12 +20,27 @@ const decodeDataUrl = (url: string) => {
   return { mimeType: match[1], buffer: Buffer.from(match[2], "base64") };
 };
 
+const extensionFromBuffer = (buffer: Buffer, url: string) => {
+  if (buffer.length >= 12 && buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
+    return "mp4";
+  }
+  if (buffer.length >= 4 && buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
+    return "webm";
+  }
+  const fromUrl = url.match(/\.([a-z0-9]+)(?:\?|$)/i)?.[1]?.toLowerCase();
+  if (fromUrl && ["mp4", "webm", "mov", "mkv", "m4v"].includes(fromUrl)) return fromUrl;
+  return "mp4";
+};
+
 const resolveMediaBuffer = async (url: string): Promise<Buffer> => {
   if (url.startsWith("data:")) {
     return decodeDataUrl(url).buffer;
   }
   if (url.startsWith("http://") || url.startsWith("https://")) {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: { Accept: "*/*" },
+      signal: AbortSignal.timeout(120_000),
+    });
     if (!response.ok) {
       throw new Error(`Could not fetch media (${response.status}).`);
     }
@@ -28,45 +49,80 @@ const resolveMediaBuffer = async (url: string): Promise<Buffer> => {
   throw new Error("Unsupported media URL.");
 };
 
-const getFfmpegPath = async (): Promise<string | null> => {
+let ffmpegCachePath: string | null = null;
+
+const resolveFfmpegBinary = async (): Promise<string> => {
+  if (ffmpegCachePath) {
+    try {
+      await access(ffmpegCachePath, constants.X_OK);
+      return ffmpegCachePath;
+    } catch {
+      ffmpegCachePath = null;
+    }
+  }
+
+  const mod = await import("ffmpeg-static");
+  const bundled = typeof mod.default === "string" ? mod.default : null;
+  if (!bundled) {
+    throw new Error("ffmpeg-static is not available on this server.");
+  }
+
+  const cached = join(tmpdir(), "stoneai-ffmpeg");
   try {
-    const mod = await import("ffmpeg-static");
-    const ffmpegPath = typeof mod.default === "string" ? mod.default : null;
-    return ffmpegPath;
+    await access(cached, constants.X_OK);
+    ffmpegCachePath = cached;
+    return cached;
   } catch {
-    return null;
+    const binary = await readFile(bundled);
+    await writeFile(cached, binary);
+    await chmod(cached, 0o755);
+    ffmpegCachePath = cached;
+    return cached;
   }
 };
 
 export async function extractVideoFrames(
   videoSource: string,
-  targetFrames = 80,
+  targetFrames = DEFAULT_FRAME_COUNT,
 ): Promise<string[]> {
-  const ffmpegPath = await getFfmpegPath();
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg-static is not available.");
+  const ffmpegPath = await resolveFfmpegBinary();
+  const buffer = await resolveMediaBuffer(videoSource);
+  if (buffer.length === 0) {
+    throw new Error("Motion video file is empty.");
   }
 
-  const buffer = await resolveMediaBuffer(videoSource);
   const dir = join(tmpdir(), `stoneai-frames-${randomUUID()}`);
   await mkdir(dir, { recursive: true });
-  const inputPath = join(dir, "input.mp4");
+  const extension = extensionFromBuffer(buffer, videoSource);
+  const inputPath = join(dir, `input.${extension}`);
   const outputPattern = join(dir, "frame-%04d.jpg");
 
   try {
     await writeFile(inputPath, buffer);
-    await execFileAsync(ffmpegPath, [
-      "-y",
-      "-i",
-      inputPath,
-      "-vf",
-      `fps=${Math.max(1, Math.min(24, Math.ceil(targetFrames / 8)))}`,
-      "-frames:v",
-      String(targetFrames),
-      "-q:v",
-      "2",
-      outputPattern,
-    ]);
+
+    const fps = Math.max(2, Math.min(24, Math.ceil(targetFrames / 6)));
+    await execFileAsync(
+      ffmpegPath,
+      [
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        inputPath,
+        "-an",
+        "-vf",
+        `fps=${fps},scale='min(1920,iw)':-2`,
+        "-frames:v",
+        String(targetFrames),
+        "-q:v",
+        "2",
+        "-pix_fmt",
+        "yuvj420p",
+        outputPattern,
+      ],
+      { maxBuffer: 16 * 1024 * 1024, timeout: 240_000 },
+    );
 
     const files = (await readdir(dir))
       .filter((name) => name.startsWith("frame-") && name.endsWith(".jpg"))
@@ -78,17 +134,22 @@ export async function extractVideoFrames(
       frames.push(`data:image/jpeg;base64,${imageBuffer.toString("base64")}`);
     }
 
-    if (frames.length === 0) {
-      throw new Error("ffmpeg produced no frames.");
+    if (frames.length < MIN_VIDEO_FRAMES) {
+      throw new Error(
+        `ffmpeg produced only ${frames.length} frames (need at least ${MIN_VIDEO_FRAMES}). Check video format (MP4/WebM) and length.`,
+      );
     }
 
     return frames;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown ffmpeg error";
+    throw new Error(`Video frame extraction failed: ${detail}`);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 }
 
-/** Blend first→last when video extraction is unavailable (still scroll-driven). */
+/** Blend first→last when no motion video is available. */
 export async function interpolateImageFrames(
   firstSource: string,
   lastSource: string,
@@ -123,27 +184,23 @@ export async function interpolateImageFrames(
   return frames;
 }
 
+const isRemoteOrData = (value?: string) =>
+  Boolean(value?.startsWith("data:") || value?.startsWith("http://") || value?.startsWith("https://"));
+
 export async function buildScrollFrames(options: {
   motionVideoUrl?: string;
   heroImageUrl?: string;
   lastFrameImageUrl?: string;
   frameCount?: number;
-}): Promise<{ frames: string[]; source: "video" | "interpolated" | "hero_only" }> {
-  const frameCount = options.frameCount ?? 80;
+}): Promise<{ frames: string[]; source: FrameSource }> {
+  const frameCount = options.frameCount ?? DEFAULT_FRAME_COUNT;
   const videoUrl = options.motionVideoUrl?.trim();
   const heroUrl = options.heroImageUrl?.trim();
   const lastUrl = options.lastFrameImageUrl?.trim();
 
-  const isRemoteOrData = (value?: string) =>
-    Boolean(value?.startsWith("data:") || value?.startsWith("http://") || value?.startsWith("https://"));
-
   if (isRemoteOrData(videoUrl)) {
-    try {
-      const frames = await extractVideoFrames(videoUrl!, frameCount);
-      return { frames, source: "video" };
-    } catch (error) {
-      console.warn("[StoneAI] Video frame extraction failed, falling back:", error);
-    }
+    const frames = await extractVideoFrames(videoUrl!, frameCount);
+    return { frames, source: "video" };
   }
 
   if (isRemoteOrData(heroUrl) && isRemoteOrData(lastUrl)) {
@@ -155,5 +212,5 @@ export async function buildScrollFrames(options: {
     return { frames: [heroUrl], source: "hero_only" };
   }
 
-  return { frames: [], source: "hero_only" };
+  throw new Error("Add a motion video or hero image to build the cinematic scroll experience.");
 }

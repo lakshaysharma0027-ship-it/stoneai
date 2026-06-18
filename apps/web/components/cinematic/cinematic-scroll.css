@@ -135,11 +135,14 @@
 
 .cinematic-depth-layer {
   position: absolute;
-  inset: 10% 15%;
-  border: 1px solid rgba(201, 168, 76, 0.15);
+  inset: -6%;
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  background: radial-gradient(circle at 50% 42%, rgba(201, 168, 76, 0.1), transparent 58%);
   pointer-events: none;
   transform-origin: center;
   opacity: 0.35;
+  will-change: transform, opacity;
+  mix-blend-mode: screen;
 }
 
 .cinematic-reduced .cinematic-pin-static {

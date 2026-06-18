@@ -16,6 +16,8 @@ export type CinematicExperience = {
   /** Scroll-scrub frame sequence (JPEG data URLs or HTTPS) */
   frames: string[];
   frameCount: number;
+  /** How frames were produced */
+  frameSource?: "video" | "interpolated" | "hero_only";
   /** Total scroll height as viewport multiples */
   scrollHeightVh: number;
   heroImageUrl?: string | null;

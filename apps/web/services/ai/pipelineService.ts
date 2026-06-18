@@ -257,6 +257,18 @@ export const pipelineService = {
       });
       completedStages.push("frame_extraction");
 
+      if (motionVideoUrl && frameSource !== "video") {
+        throw new Error(
+          "Motion video was provided but scroll frames could not be extracted from it. Use MP4 or WebM under 50MB.",
+        );
+      }
+
+      if (frameSource === "video" && frames.length < 12) {
+        throw new Error(
+          `Video frame extraction produced only ${frames.length} frames. Upload a longer MP4/WebM clip.`,
+        );
+      }
+
       const templateStyle = templateReference(input.templateId);
       const scenePlan = await bedrockProvider.generateCinematicPlan({
         prompt: websitePrompt,
@@ -320,6 +332,7 @@ export const pipelineService = {
         lastFrameImageReady: Boolean(cinematicExperience.lastFrameImageUrl),
         motionVideoReady: Boolean(cinematicExperience.motionVideoUrl),
         renderMode: "cinematic_scroll",
+        frameSource,
         cinematicExperience: { ...cinematicExperience, frames: [] },
         aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
           ? PLAN_ACTION_LIMITS[planId].aiEdits
@@ -464,7 +477,7 @@ export const pipelineService = {
 
     const updatedExperience = buildCinematicExperience(edited.data, {
       frames: hydratedExperience.frames,
-      frameSource: "video",
+      frameSource: hydratedExperience.frameSource ?? "video",
       heroImageUrl: hydratedExperience.heroImageUrl,
       lastFrameImageUrl: hydratedExperience.lastFrameImageUrl,
       motionVideoUrl: hydratedExperience.motionVideoUrl,

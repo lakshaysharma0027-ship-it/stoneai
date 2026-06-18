@@ -165,7 +165,11 @@ export default function CinematicScrollExperience({ experience }: Props) {
             gsap.set(overlay, { y: progress * (isMobile ? 20 : 40) });
           }
           if (depth) {
-            gsap.set(depth, { scale: 1 + progress * 0.04, opacity: 0.35 + progress * 0.25 });
+            gsap.set(depth, {
+              scale: 1 + progress * 0.08,
+              y: progress * -24,
+              opacity: 0.35 + progress * 0.3,
+            });
           }
 
           if (useVideoScrub && video && video.duration) {

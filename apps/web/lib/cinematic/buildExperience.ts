@@ -30,6 +30,7 @@ export const buildCinematicExperience = (
   })),
   frames: media.frames,
   frameCount: media.frames.length || DEFAULT_FRAME_COUNT,
+  frameSource: media.frameSource,
   scrollHeightVh: DEFAULT_SCROLL_HEIGHT_VH,
   heroImageUrl: media.heroImageUrl ?? null,
   lastFrameImageUrl: media.lastFrameImageUrl ?? null,

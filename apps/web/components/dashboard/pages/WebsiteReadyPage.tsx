@@ -252,7 +252,11 @@ export function WebsiteReadyPage({
               Motion
             </span>
             <span className="wr-pill-neutral">
-              {metadata?.motionVideoReady || metadata?.motionVideoUrl ? "Veo clip ready" : "Skipped"}
+              {metadata?.frameSource === "video"
+                ? `${metadata?.cinematicExperience?.frameCount ?? 80} video frames`
+                : metadata?.motionVideoReady || metadata?.motionVideoUrl
+                  ? "Veo clip ready"
+                  : "Skipped"}
             </span>
           </div>
           <div className="wr-data-row">
