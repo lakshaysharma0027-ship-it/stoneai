@@ -67,19 +67,29 @@ export default function CinematicScrollExperience({ experience }: Props) {
     let cancelled = false;
     const load = async () => {
       if (frameSources.length === 0) return;
-      const images = await Promise.all(
+      const results = await Promise.allSettled(
         frameSources.map(
           (src) =>
             new Promise<HTMLImageElement>((resolve, reject) => {
               const img = new Image();
-              img.crossOrigin = "anonymous";
               img.onload = () => resolve(img);
-              img.onerror = reject;
+              img.onerror = () => {
+                const fallback = new Image();
+                fallback.onload = () => resolve(fallback);
+                fallback.onerror = () => reject(new Error(`Failed to load frame: ${src}`));
+                fallback.src = src;
+              };
+              if (src.startsWith("http://") || src.startsWith("https://")) {
+                img.crossOrigin = "anonymous";
+              }
               img.src = src;
             }),
         ),
       );
-      if (!cancelled) setLoadedFrames(images);
+      const images = results
+        .filter((result): result is PromiseFulfilledResult<HTMLImageElement> => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (!cancelled && images.length > 0) setLoadedFrames(images);
     };
     void load();
     return () => {

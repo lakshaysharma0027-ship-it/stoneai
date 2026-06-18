@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperience";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { siteResolver } from "@/lib/sites/siteResolver";
 import { WebsiteRenderer } from "@/components/sites/WebsiteRenderer";
@@ -36,5 +37,23 @@ export default async function SitePage({ params }: SitePageProps) {
 
   await supabase.rpc("record_site_page_view", { target_site_id: site.id });
 
-  return <WebsiteRenderer website={site.publishedSchema} />;
+  let website = site.publishedSchema;
+  const experience = website.meta.cinematicExperience;
+  if (experience) {
+    const rehydrated = await rehydrateCinematicExperience(
+      supabase,
+      site.userId,
+      site.projectId,
+      experience,
+    );
+    website = {
+      ...website,
+      meta: {
+        ...website.meta,
+        cinematicExperience: rehydrated,
+      },
+    };
+  }
+
+  return <WebsiteRenderer website={website} />;
 }

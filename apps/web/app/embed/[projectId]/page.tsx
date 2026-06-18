@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadProjectWebsite } from "@/lib/sites/loadProjectWebsite";
 import { WebsiteRenderer } from "@/components/sites/WebsiteRenderer";
 
-type PreviewPageProps = {
+type EmbedPageProps = {
   params: Promise<{ projectId: string }>;
 };
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function PreviewPage({ params }: PreviewPageProps) {
+export default async function EmbedPage({ params }: EmbedPageProps) {
   const { projectId } = await params;
   const supabase = await createSupabaseServerClient();
   const {
@@ -25,5 +25,9 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   const website = await loadProjectWebsite(supabase, user.id, projectId);
   if (!website) notFound();
 
-  return <WebsiteRenderer website={website} />;
+  return (
+    <div style={{ margin: 0, padding: 0, minHeight: "100vh", background: "#050505" }}>
+      <WebsiteRenderer website={website} />
+    </div>
+  );
 }

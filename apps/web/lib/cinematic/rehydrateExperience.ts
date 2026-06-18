@@ -1,0 +1,62 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { CinematicExperience } from "@/lib/cinematic/types";
+
+const BUCKET = "cinematic-media";
+
+export const normalizeExperienceFrames = (
+  experience: CinematicExperience,
+): CinematicExperience => {
+  const frames = experience.frames.filter(Boolean);
+  if (frames.length > 0) return { ...experience, frames, frameCount: frames.length };
+
+  const fallback = [experience.heroImageUrl, experience.lastFrameImageUrl].filter(
+    (url): url is string => Boolean(url?.trim()),
+  );
+
+  if (fallback.length > 0) {
+    return { ...experience, frames: fallback, frameCount: fallback.length };
+  }
+
+  return experience;
+};
+
+export async function listStoredFrameUrls(
+  supabase: SupabaseClient,
+  userId: string,
+  projectId: string,
+): Promise<string[]> {
+  const prefix = `${userId}/${projectId}/frames`;
+  const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
+    limit: 200,
+    sortBy: { column: "name", order: "asc" },
+  });
+
+  if (error || !data?.length) return [];
+
+  const { data: publicData } = supabase.storage.from(BUCKET).getPublicUrl(prefix);
+  const base = publicData.publicUrl.endsWith("/")
+    ? publicData.publicUrl
+    : `${publicData.publicUrl}/`;
+
+  return data
+    .filter((item) => item.name && !item.name.startsWith("."))
+    .map((item) => `${base}${item.name}`);
+}
+
+export async function rehydrateCinematicExperience(
+  supabase: SupabaseClient,
+  userId: string,
+  projectId: string,
+  experience: CinematicExperience,
+): Promise<CinematicExperience> {
+  let normalized = normalizeExperienceFrames(experience);
+
+  if (normalized.frames.length === 0) {
+    const storedFrames = await listStoredFrameUrls(supabase, userId, projectId);
+    if (storedFrames.length > 0) {
+      normalized = { ...normalized, frames: storedFrames, frameCount: storedFrames.length };
+    }
+  }
+
+  return normalized;
+}

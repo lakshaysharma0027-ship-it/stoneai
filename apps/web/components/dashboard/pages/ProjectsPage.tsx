@@ -7,7 +7,7 @@ import "../overview-projects.css";
 import {
   formatShortDate,
   getProjectDomain,
-  getProjectPreviewUrl,
+  getProjectEmbedUrl,
   getProjectStatus,
   getTemplateName,
 } from "../utils";
@@ -132,7 +132,7 @@ export function ProjectsPage({
             const site = data.publishedSites.find((s) => s.project_id === project.id);
             const templateName = getTemplateName(project);
 
-            const previewSrc = getProjectPreviewUrl(project.id, data.publishedSites);
+            const previewSrc = getProjectEmbedUrl(project.id);
 
             return (
               <article

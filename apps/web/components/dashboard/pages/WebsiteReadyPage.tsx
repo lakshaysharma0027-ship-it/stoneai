@@ -22,7 +22,7 @@ import { normalizeBillingPlanId } from "@/lib/billing/plans";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
-import { getProjectPreviewUrl } from "../utils";
+import { getProjectEmbedUrl, getProjectPreviewUrl } from "../utils";
 import "../generation-pages.css";
 
 export function WebsiteReadyPage({
@@ -60,12 +60,13 @@ export function WebsiteReadyPage({
     void data.refreshProjects?.();
   }, [projectId, data.refreshSites, data.refreshProjects]);
 
-  const previewSrc = useMemo(
+  const previewSrc = useMemo(() => getProjectEmbedUrl(projectId), [projectId]);
+
+  const liveUrl = site?.public_url ?? null;
+  const openPreviewUrl = useMemo(
     () => getProjectPreviewUrl(projectId, data.publishedSites),
     [projectId, data.publishedSites],
   );
-
-  const liveUrl = site?.public_url ?? null;
   const previewLabel = isPublished ? "Live website" : "Draft preview";
 
   const handleCopyUrl = async () => {
@@ -177,7 +178,7 @@ export function WebsiteReadyPage({
             loading="lazy"
           />
           <a
-            href={previewSrc}
+            href={openPreviewUrl}
             target="_blank"
             rel="noreferrer"
             className="wr-preview-open"
@@ -190,7 +191,7 @@ export function WebsiteReadyPage({
 
         <div className="wr-action-list">
           <a
-            href={`/preview/${projectId}`}
+            href={openPreviewUrl}
             target="_blank"
             rel="noreferrer"
             className="wr-action-row"

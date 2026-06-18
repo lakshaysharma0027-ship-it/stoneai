@@ -342,7 +342,7 @@ export const pipelineService = {
       if (error) throw error;
 
       const website = cinematicExperienceToWebsite(projectId, cinematicExperience);
-      await supabase.from("websites").upsert(
+      const { error: websiteUpsertError } = await supabase.from("websites").upsert(
         {
           project_id: projectId,
           user_id: userId,
@@ -350,6 +350,11 @@ export const pipelineService = {
         },
         { onConflict: "project_id" },
       );
+
+      if (websiteUpsertError) {
+        console.error("[StoneAI pipeline] websites upsert failed", websiteUpsertError);
+        throw new Error("Could not save website preview. Try again or contact support.");
+      }
 
       await aiPersistenceService.recordHistory(supabase, {
         userId,
@@ -489,7 +494,7 @@ export const pipelineService = {
 
     if (updateError) throw updateError;
 
-    await supabase.from("websites").upsert(
+    const { error: websiteUpsertError } = await supabase.from("websites").upsert(
       {
         project_id: input.projectId,
         user_id: userId,
@@ -497,6 +502,8 @@ export const pipelineService = {
       },
       { onConflict: "project_id" },
     );
+
+    if (websiteUpsertError) throw websiteUpsertError;
 
     await aiPersistenceService.recordHistory(supabase, {
       userId,

@@ -47,6 +47,9 @@ export const getProjectPreviewUrl = (
   return `/preview/${projectId}`;
 };
 
+/** Same-origin embed route for dashboard iframes (avoids cross-origin iframe blocks). */
+export const getProjectEmbedUrl = (projectId: string) => `/embed/${projectId}`;
+
 export const getProjectDomain = (
   projectId: string,
   publishedSites: PublishedSiteRow[],
