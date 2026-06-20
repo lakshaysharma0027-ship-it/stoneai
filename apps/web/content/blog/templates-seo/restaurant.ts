@@ -149,7 +149,13 @@ export const restaurantTemplate: TemplateSeoPage = {
     p(
       "Menus change. Summer patios open. Holiday hours shift. StoneAI's editor lets managers update dishes and banners in minutes—no ticket to a web agency, no fighting WordPress plugins. Marketing teams spin up Valentine's or Super Bowl landing pages linked from the homepage for two-week campaigns.",
     ),
-    link("ai-website-builder-agencies", "How agencies build restaurant sites for clients with AI"),
+    h2("staff-training", "Training Staff to Keep the Site Accurate"),
+    p(
+      "Managers—not only owners—should know how to update hours, 86'd dishes, and event banners in StoneAI. A fifteen-minute walkthrough prevents the classic failure mode: correct info on Instagram, wrong info on the website. Assign one shift lead as site owner; they publish weekly specials every Monday before service.",
+    ),
+    p(
+      "Multi-location groups document update rules in a one-page playbook: who changes menus, who approves photos, how fast holiday hours go live. Consistency across locations builds brand trust when guests visit your second or third restaurant.",
+    ),
     h2("visual-quality", "Food Photography and AI Imagery"),
     p(
       "Great food photos drive reservations. When professional shoots lag behind menu changes, StoneAI's AI imagery fills gaps with stylistically consistent plate and ambiance visuals until your photographer visits. Replace generated images with real shots over time—the layout stays stable.",
@@ -165,6 +171,21 @@ export const restaurantTemplate: TemplateSeoPage = {
     p(
       "The template does not replace your POS—but it links to it cleanly. OpenTable, Resy, Tock, Toast, DoorDash, and Uber Eats buttons belong above the fold on mobile. Direct ordering saves commission when guests pick up. StoneAI keeps those CTAs consistent across pages so you are not maintaining link lists in three places.",
     ),
+    h3("private-events-catering", "Private Events and Catering Revenue"),
+    p(
+      "Full-service restaurants often make higher margin on private dining and catering than walk-in covers. Dedicated event pages describe room capacity, AV options, sample menus, and inquiry forms routed to your events coordinator. Wedding season, corporate holiday parties, and rehearsal dinners start with a Google search—your site should capture that demand with photography of past events, not a buried PDF.",
+    ),
+    h3("google-business-profile", "Aligning Website with Google Business Profile"),
+    p(
+      "Guests cross-check your site against your Google listing. Hours, phone number, and address must match exactly or you lose trust and local ranking signals. After publishing in StoneAI, audit NAP consistency across GBP, Instagram, and reservation platforms. Add the website URL to GBP and request reviews from regulars—the site gives reviewers context about what to mention.",
+    ),
+    h3("seasonal-campaigns", "Seasonal Campaigns and Limited-Time Menus"),
+    p(
+      "Holiday prix fixe, summer patio menus, and collaboration dinners deserve temporary landing pages linked from your homepage banner. StoneAI lets you publish a Valentine's or holiday campaign page in under an hour, then archive or redirect it when the event ends. Campaign-specific URLs are easier to track in analytics than generic homepage traffic.",
+    ),
+    p(
+      "Independent restaurants compete with chains that have national marketing budgets. A distinctive website with real photography and clear reservation paths levels the playing field for discovery—especially in dense dining markets where guests choose between ten options on the same block.",
+    ),
     link("ai-website-builder-pricing-guide", "Website costs for independent restaurants"),
     h2("open-tonight", "Get Your Restaurant Site Live This Week"),
     p(
@@ -172,6 +193,15 @@ export const restaurantTemplate: TemplateSeoPage = {
     ),
     p(
       "Whether you run a single neighborhood bistro or a growing restaurant group, the template gives guests everything they need to choose you tonight—not your competitor down the street.",
+    ),
+    p(
+      "Update your menu and specials before the dinner rush, not after the weekend. Guests who land on your site from Instagram or Google should see tonight's offering immediately.",
+    ),
+    p(
+      "Treat the website as part of service: accurate hours, current menus, and working reservation links are hospitality basics in 2026. StoneAI makes those updates fast enough that they actually happen.",
+    ),
+    p(
+      "Photograph new dishes when they hit the menu and swap gallery images the same week. Guests choose restaurants that look active and cared for—your site should reflect what is on the pass tonight.",
     ),
     link("stoneai-vs-framer", "StoneAI vs Framer for hospitality brands"),
     ctaBottom(),

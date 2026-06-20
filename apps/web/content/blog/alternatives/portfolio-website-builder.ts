@@ -88,7 +88,7 @@ export const portfolioWebsiteBuilder: AlternativePage = {
     p(
       "Visitors should know what you do, who you serve, and how to hire you within ten seconds. Vague 'creative professional' copy converts nobody. StoneAI generates role-specific copy—UX designer for fintech, brand photographer for hospitality, full-stack developer for startups—from your brief. You refine tone; the structure is conversion-aware.",
     ),
-    comparison("Approach", ["StoneAI", "Traditional Platforms"], [
+    comparison(["Approach", "StoneAI", "Traditional Platforms"], [
       ["Creation", "AI from work description", "Template + uploads"],
       ["Visual quality", "Cinematic / 3D options", "Standard grids"],
       ["Domain", "Custom, owned", "Often subdomain"],

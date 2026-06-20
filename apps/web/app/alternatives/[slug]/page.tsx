@@ -8,7 +8,8 @@ import { BlogCTA } from "@/components/blog/BlogCTA";
 import { RelatedArticles } from "@/components/blog/ArticleCards";
 import { getAlternativeBySlug, getAllAlternativeSlugs } from "@/content/blog/alternatives/registry";
 import { getArticleBySlug } from "@/lib/blog/registry";
-import { breadcrumbSchema, faqSchema, JsonLd, webPageSchema } from "@/lib/blog/schema";
+import { JsonLd } from "@/components/blog/JsonLd";
+import { breadcrumbSchema, faqSchema, webPageSchema } from "@/lib/blog/schema";
 import { STONEAI_SITE_URL } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -47,7 +48,7 @@ export default async function AlternativePage({ params }: Props) {
 
   const relatedArticles = page.relatedArticleSlugs
     .map((s) => getArticleBySlug(s))
-    .filter(Boolean);
+    .filter((a): a is NonNullable<typeof a> => Boolean(a));
 
   return (
     <>

@@ -5,7 +5,8 @@ import { Breadcrumbs } from "@/components/blog/Breadcrumbs";
 import { NewsletterCTA } from "@/components/blog/NewsletterCTA";
 import { categoryMap, categories } from "@/content/blog/categories";
 import { getArticlesByCategory } from "@/lib/blog/registry";
-import { breadcrumbSchema, JsonLd } from "@/lib/blog/schema";
+import { JsonLd } from "@/components/blog/JsonLd";
+import { breadcrumbSchema } from "@/lib/blog/schema";
 import { STONEAI_SITE_URL } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };

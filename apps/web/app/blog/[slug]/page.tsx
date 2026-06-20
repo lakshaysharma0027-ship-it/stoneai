@@ -9,11 +9,11 @@ import { SocialShare } from "@/components/blog/SocialShare";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { NewsletterCTA } from "@/components/blog/NewsletterCTA";
 import { authors } from "@/content/blog/authors";
+import { JsonLd } from "@/components/blog/JsonLd";
 import {
   articleSchema,
   breadcrumbSchema,
   faqSchema,
-  JsonLd,
 } from "@/lib/blog/schema";
 import {
   getAllArticleSlugs,

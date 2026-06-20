@@ -91,7 +91,7 @@ export const boltAlternative: AlternativePage = {
     p(
       "StoneAI also includes cinematic 3D experiences, AI image generation through Nano Banana workflows, and AI video through Veo integration. These are the assets marketing sites need but code-first tools typically leave as placeholders or external dependencies.",
     ),
-    comparison("Capability", ["StoneAI", "Bolt"], [
+    comparison(["Capability", "StoneAI", "Bolt"], [
       ["Primary output", "Marketing websites", "Full-stack apps"],
       ["Code required", "No", "Yes (generated)"],
       ["3D experiences", "Built-in", "Not core"],

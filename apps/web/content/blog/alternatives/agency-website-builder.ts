@@ -91,7 +91,7 @@ export const agencyWebsiteBuilder: AlternativePage = {
     p(
       "Senior designers then focus on high-value refinement and custom experiences, not boilerplate homepage layouts. Junior designers handle volume refinement under supervision. The agency's effective capacity increases without proportional headcount growth.",
     ),
-    comparison("Workflow", ["StoneAI", "Traditional Platforms"], [
+    comparison(["Workflow", "StoneAI", "Traditional Platforms"], [
       ["First draft", "Minutes (AI generation)", "Days (manual design)"],
       ["Skills for draft", "Brief writing", "Design tool expertise"],
       ["Revision speed", "Visual editor", "Canvas + code"],

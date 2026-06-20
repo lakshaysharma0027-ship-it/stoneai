@@ -13,7 +13,6 @@ export const article: BlogArticle = {
   authorId: "stoneai-team",
   publishedAt: "2026-01-22",
   updatedAt: "2026-06-15",
-  trending: true,
   relatedSlugs: [
     "stoneai-vs-framer",
     "best-ai-website-builders-2026",

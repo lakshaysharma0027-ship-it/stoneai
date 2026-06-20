@@ -89,7 +89,7 @@ export const realEstateWebsiteBuilder: AlternativePage = {
     p(
       "Platform-hosted agent sites on subdomains (yourname.platform.com) send a signal: you rent your web presence. Custom domains (yourname.com) build brand equity you own. When you change brokerages or build a team, your domain and site stay with you. StoneAI publishes to custom domains with HTTPS from the dashboard—no developer required.",
     ),
-    comparison("Capability", ["StoneAI", "Traditional Platforms"], [
+    comparison(["Capability", "StoneAI", "Traditional Platforms"], [
       ["Site creation", "AI from brand brief", "Template selection"],
       ["Visual quality", "Cinematic / 3D", "Standard galleries"],
       ["Customization", "Visual editor", "Theme-limited"],

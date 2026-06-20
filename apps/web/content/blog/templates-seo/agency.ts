@@ -146,6 +146,13 @@ export const agencyTemplate: TemplateSeoPage = {
     p(
       "The strongest agency pitch is a live example. When prospects ask how you ship fast, show your site and a recent client launch built the same way. StoneAI becomes both your storefront and your production line—margins improve because standard marketing sites no longer consume developer weeks.",
     ),
+    h2("client-onboarding", "From New Business Win to Client Site Delivery"),
+    p(
+      "The same StoneAI workflow that powers your agency site can power client delivery. After you win the pitch, feed the client brief into StoneAI, generate their marketing site, and present a live preview during the kickoff call. Clients experience momentum immediately; your team avoids the dead air between contract signature and first design mockup.",
+    ),
+    p(
+      "Standardize prompts per vertical—restaurant, SaaS, professional services—so account managers produce consistent quality without designer bottlenecks on every project. Senior creatives review and elevate; juniors or strategists handle first-pass generation and copy edits.",
+    ),
     link("stoneai-vs-framer", "StoneAI vs Framer for agency client sites"),
     h2("design-differentiation", "Looking Like the Creative Partner You Claim to Be"),
     p(
@@ -162,6 +169,21 @@ export const agencyTemplate: TemplateSeoPage = {
     p(
       "Some agencies publish starting prices or package tiers to filter leads. Others hide pricing and force discovery calls. The template supports both: pricing tables for productized services, or 'request a quote' modules for custom retainers. Match the site to your sales motion so form submissions arrive pre-qualified.",
     ),
+    h3("new-business-playbook", "Using Your Site in New Business Conversations"),
+    p(
+      "Account executives should send prospects to specific service pages—not the homepage—based on discovery notes. A fintech lead gets the fintech case study and paid media service page. A rebrand lead gets the branding portfolio and process page. StoneAI's structure makes those deep links credible because every page stands alone with proof and CTAs.",
+    ),
+    h3("hiring-and-culture", "Careers Pages That Recruit While You Sleep"),
+    p(
+      "Top talent evaluates your site before applying. Careers sections with role summaries, culture photos, and benefits signals matter as much as client proof. Agencies growing past twenty people use the same StoneAI workflow for careers refreshes as for client work—no separate microsite on a subdomain that looks like an afterthought.",
+    ),
+    h3("retainer-vs-project", "Positioning Retainers vs One-Off Projects"),
+    p(
+      "Agencies stuck in project-only mode chase revenue every quarter. Retainer positioning on your site—ongoing SEO, creative support, growth partnerships—signals stability to buyers comparing vendors. Dedicated retainer pages explain scope, reporting cadence, and typical engagement length. Prospects self-select into the model that fits, reducing mismatched discovery calls.",
+    ),
+    p(
+      "The agencies winning retainers in 2026 pair outbound with inbound authority. Your site is the hub: case studies for sales, service pages for SEO, careers for hiring, and blog posts that prove you understand client industries deeply.",
+    ),
     link("best-landing-page-builders", "Best landing page builders for agency lead gen"),
     h2("get-started", "Rebuild Your Agency Site This Week"),
     p(
@@ -169,6 +191,18 @@ export const agencyTemplate: TemplateSeoPage = {
     ),
     p(
       "Then reuse the workflow on client projects. Your agency site is not just marketing—it is the prototype for how you deliver in 2026.",
+    ),
+    p(
+      "Prospects notice when your own property looks dated while you pitch modernization. Closing that gap with StoneAI takes one focused day and pays back on the next proposal you send.",
+    ),
+    p(
+      "Winning agencies treat the website as a living case study: update it when you ship a notable client launch, publish a new vertical focus page, or hire a practice lead. Stale agency sites undermine premium positioning faster than almost any other signal.",
+    ),
+    p(
+      "Block one morning per quarter for a site refresh: new case study, updated team photo, revised service packaging. Small consistent updates beat annual redesigns that never ship because client work always wins the calendar.",
+    ),
+    p(
+      "Your agency site is the first deliverable in every pitch. Make it one you would proudly put in a case study—because for many prospects, it is the only sample they review before the call.",
     ),
     link("stoneai-vs-lovable", "StoneAI vs Lovable for agency deliverables"),
     ctaBottom(),

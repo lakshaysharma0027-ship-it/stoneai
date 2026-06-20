@@ -85,7 +85,7 @@ export const lovableAlternative: AlternativePage = {
     p(
       "Flat, template-looking AI sites are everywhere in 2026. StoneAI differentiates with cinematic layouts, depth, and optional 3D interactive sections that feel closer to Framer-grade experiences than typical AI builders. If your brand competes on aesthetics—agencies, premium SaaS, real estate—this matters.",
     ),
-    comparison("Capability", ["StoneAI", "Lovable"], [
+    comparison(["Capability", "StoneAI", "Lovable"], [
       ["Primary output", "Marketing websites", "Web apps"],
       ["3D experiences", "Built-in", "Not core"],
       ["Client deliverables", "Strong", "Moderate"],

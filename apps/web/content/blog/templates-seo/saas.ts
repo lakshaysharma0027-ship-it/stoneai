@@ -168,13 +168,34 @@ export const saasTemplate: TemplateSeoPage = {
     p(
       "StoneAI focuses on marketing and conversion layers—not authenticated product UI. You still build your app in your stack. The template handles everything before signup: positioning, proof, pricing, and contact. Docs, in-app onboarding, and customer portals stay in dedicated tools. That separation keeps marketing iteration fast without risking production deployments.",
     ),
+    h3("competitor-comparison-pages", "Competitor and Comparison Landing Pages"),
+    p(
+      "SaaS buyers rarely choose in a vacuum—they shortlist two or three tools. Comparison pages that honestly position your strengths against incumbents capture high-intent search traffic and arm sales with shareable URLs. StoneAI generates alternate layouts for 'you vs legacy spreadsheet' or 'you vs category leader' narratives. Keep claims factual, link to docs, and end every comparison page with a clear trial or demo CTA.",
+    ),
+    h3("changelog-and-trust", "Changelog, Security, and Procurement Pages"),
+    p(
+      "Enterprise deals stall when security questionnaires arrive and your site has no trust center. Add pages for security practices, data handling, uptime status, and subprocessors. A lightweight changelog signals active product investment to technical evaluators. These pages do not need weekly updates, but having them published before the first enterprise call removes a common objection.",
+    ),
+    p(
+      "Founders who treat the marketing site as a living product—not a one-time launch artifact—compound advantages over competitors still running 2023 positioning. StoneAI makes those updates fast enough that marketing keeps pace with shipping.",
+    ),
+    h3("analytics-and-experiments", "Analytics, Experiments, and Iteration Loops"),
+    p(
+      "Connect your site to analytics before you drive paid traffic. Track homepage CTA clicks, pricing page scroll depth, and form submissions by source. When a headline test wins, promote it to the default in StoneAI without a deploy pipeline. SaaS teams that iterate weekly on copy routinely outperform teams that treat the marketing site as frozen after launch day.",
+    ),
+    p(
+      "Pair the template with simple experiment discipline: one change per week, measure for seven days, keep winners. The structure stays stable while messaging sharpens—exactly how high-growth startups compound conversion over time.",
+    ),
     link("ai-website-builder-pricing-guide", "AI website builder pricing for startup budgets"),
     h2("start-building", "Launch Your SaaS Site Before the Next Board Meeting"),
     p(
       "Sign up for StoneAI, describe your product in one detailed prompt, and review the generated SaaS site in the visual editor. Swap in screenshots, tighten pricing copy, connect your domain, and share a live link with investors, design partners, and early customers. Speed to credible web presence is a competitive advantage—especially when every week of delay is a week competitors capture search and share of voice.",
     ),
-  p(
+    p(
       "Whether you are pre-revenue or scaling a growth team, the SaaS template gives you the architecture B2B buyers expect so you focus on product-market fit—not fighting layout tools.",
+    ),
+    p(
+      "Run your next launch, fundraise, or paid campaign with a site that looks as mature as your roadmap. Update positioning the same week you ship features—your marketing site should never be the bottleneck.",
     ),
     link("stoneai-vs-framer", "StoneAI vs Framer for startup marketing sites"),
     ctaBottom(),

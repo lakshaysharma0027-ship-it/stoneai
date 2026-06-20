@@ -91,7 +91,7 @@ export const framerAlternative: AlternativePage = {
     p(
       "Beyond static layouts, StoneAI supports cinematic 3D experiences and scroll-driven sections that would take hours to build manually in Framer. AI image generation through Nano Banana workflows and AI video through Veo integration mean you never leave the workspace to hunt stock photos or edit hero reels in a separate tool. For teams that value speed and integrated media, this is a fundamentally different—and often faster—path to a live site.",
     ),
-    comparison("Capability", ["StoneAI", "Framer"], [
+    comparison(["Capability", "StoneAI", "Framer"], [
       ["Primary workflow", "Prompt → edit → publish", "Design canvas → refine → publish"],
       ["Time to first draft", "Minutes", "Hours to days"],
       ["3D experiences", "Built-in at generation", "Custom components/embeds"],

@@ -1,6 +1,5 @@
 import { STONEAI_COMPANY, STONEAI_DEFAULT_DESCRIPTION, STONEAI_SITE_URL } from "@/lib/site";
 import type { BlogArticle, FAQItem } from "./types";
-import { formatDate } from "./utils";
 
 export function organizationSchema() {
   return {
@@ -88,20 +87,4 @@ export function webPageSchema(title: string, description: string, path: string) 
     },
     dateModified: new Date().toISOString().split("T")[0],
   };
-}
-
-export function JsonLd({ data }: { data: object | object[] | null }) {
-  if (!data) return null;
-  const items = Array.isArray(data) ? data : [data];
-  return (
-    <>
-      {items.map((item, i) => (
-        <script
-          key={i}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }}
-        />
-      ))}
-    </>
-  );
 }

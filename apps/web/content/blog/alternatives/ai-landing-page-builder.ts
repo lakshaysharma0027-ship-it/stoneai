@@ -88,7 +88,7 @@ export const aiLandingPageBuilder: AlternativePage = {
     p(
       "Visitors decide whether to trust a page in milliseconds. Generic templates with mismatched stock photos signal 'low effort' and increase bounce rate. Premium visual design—cohesive typography, cinematic heroes, on-brand imagery—increases time-on-page and conversion. StoneAI generates visually distinct pages with optional 3D and depth-driven sections that stand out from flat template competitors.",
     ),
-    comparison("Capability", ["StoneAI", "Traditional Tools"], [
+    comparison(["Capability", "StoneAI", "Traditional Tools"], [
       ["Page creation", "AI-generated from brief", "Template + manual fill"],
       ["Copy generation", "Campaign-aware", "Manual or basic AI"],
       ["Visual quality", "Cinematic / 3D options", "Template-limited"],

@@ -91,7 +91,7 @@ export const threeDWebsiteBuilder: AlternativePage = {
     p(
       "The visual editor lets you refine depth, copy, imagery, and layout without touching code. AI image generation through Nano Banana workflows and AI video through Veo integration supply the media assets immersive sites demand—hero reels, product visuals, ambient backgrounds—inside the same workspace.",
     ),
-    comparison("Approach", ["StoneAI", "Traditional 3D Tools"], [
+    comparison(["Approach", "StoneAI", "Traditional 3D Tools"], [
       ["Creation workflow", "Prompt → edit → publish", "Model → code → embed → host"],
       ["Skills required", "Business description", "3D + WebGL development"],
       ["Time to live site", "Hours", "Weeks to months"],

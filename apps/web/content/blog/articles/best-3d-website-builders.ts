@@ -190,6 +190,28 @@ export const article: BlogArticle = {
     ]),
     link("best-ai-website-builders-2026", "Best AI website builders 2026"),
     link("how-to-build-website-with-ai", "How to build a website with AI"),
+    h2("tool-combinations", "Sensible Tool Combinations"),
+    p(
+      "You do not have to pick only one platform. A common 2026 stack: StoneAI for the marketing site and client landing pages, Framer + Spline for a single flagship case-study page, and Lovable for the authenticated product behind the login button. The mistake is using one tool for all three jobs.",
+    ),
+    p(
+      "Solo founders should start with StoneAI until revenue justifies design specialization. Agencies should standardize StoneAI for volume work and reserve Framer for clients who pay for bespoke motion. Developers prototyping novel 3D interactions can spike Bolt for a week, then rebuild the winner in StoneAI for production maintenance.",
+    ),
+    h2("getting-started-stoneai", "Getting Started: Your First 3D Site in One Session"),
+    p(
+      "Start with a specific atmosphere prompt—not build me a 3D website. Try: cinematic AI agency with dark atmosphere, scroll-driven product reveal, and teal accent lighting. StoneAI maps atmosphere language to section types, color palettes, and motion defaults.",
+    ),
+    p(
+      "After generation, audit mobile first. Toggle the visual editor preview to phone width and verify text contrast over 3D backgrounds. Regenerate hero imagery if readability suffers. Add your CTA above the fold before publishing—immersion without conversion is an art project, not marketing.",
+    ),
+    h3("common-mistakes", "Common 3D Website Mistakes to Avoid"),
+    ul([
+      "Loading heavy 3D on every page instead of the hero only",
+      "Baking all text into canvas textures where search engines cannot read it",
+      "Skipping fallback images for devices that disable WebGL",
+      "Choosing 3D for novelty when your audience needs clarity and speed",
+      "Forgetting accessibility—provide reduced-motion alternatives where possible",
+    ]),
     h2("future-trends", "3D Web Trends Beyond 2026"),
     p(
       "AI generation of 3D assets—meshes, textures, environments—from text prompts will compress timelines further. WebGPU adoption will unlock richer scenes in browser. For now, marketing teams win by shipping immersive sites today with StoneAI rather than waiting for perfect generative 3D modeling.",
