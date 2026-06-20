@@ -33,8 +33,17 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Resources",
     links: [
+      { href: "/blog", label: "Blog" },
       { href: "/faq", label: "FAQ" },
       { href: "/docs", label: "Documentation" },
+    ],
+  },
+  {
+    title: "Compare",
+    links: [
+      { href: "/alternatives/lovable", label: "Lovable Alternative" },
+      { href: "/alternatives/framer", label: "Framer Alternative" },
+      { href: "/alternatives/bolt", label: "Bolt Alternative" },
     ],
   },
   {
