@@ -926,75 +926,291 @@
 
 .pipeline-wizard .pipeline-stepper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 18px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 22px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.pipeline-stepper-item {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pipeline-step-line {
+  width: 22px;
+  height: 1px;
+  background: var(--border);
+  flex-shrink: 0;
 }
 
 .pipeline-step-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--border);
-  background: var(--s1);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--hint);
   border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 11px;
+  padding: 9px 14px;
+  font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.pipeline-step-pill span {
+.pipeline-step-num {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: var(--s2);
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.pipeline-step-pill.active,
-.pipeline-step-pill.done {
-  color: var(--text);
+.pipeline-step-pill.active {
+  background: var(--s1);
   border-color: var(--border2);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pipeline-step-pill.active .pipeline-step-num,
+.pipeline-step-pill.done .pipeline-step-num {
+  background: var(--white);
+  color: var(--bg);
+}
+
+.pipeline-step-pill.done {
+  color: var(--soft);
+}
+
+.pipeline-wizard .gen-card {
+  border-radius: 12px;
+}
+
+.pipeline-wizard .gen-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+}
+
+.pipeline-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--soft);
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pipeline-nav-link:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.pipeline-nav-link.continue {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pipeline-nav-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pipeline-upload-box {
+  border: 1px dashed var(--border2);
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 16px;
+  background: var(--s1);
+}
+
+.pipeline-upload-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--soft);
+}
+
+.pipeline-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pipeline-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.pipeline-file-btn:hover {
+  border-color: var(--border2);
+}
+
+.pipeline-file-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pipeline-file-name {
+  font-size: 12.5px;
+  color: var(--hint);
+}
+
+.pipeline-attachment-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.pipeline-attachment-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--soft);
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.pipeline-attachment-list button {
+  border: none;
+  background: transparent;
+  color: var(--hint);
+  cursor: pointer;
+  display: flex;
+  padding: 2px;
+}
+
+.pipeline-stage-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--hint);
+}
+
+.pipeline-stage-list li.current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pipeline-stage-marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.pipeline-stage-list li.done .pipeline-stage-marker {
+  background: var(--white);
+  border-color: var(--white);
+  color: var(--bg);
+}
+
+.pipeline-stage-list li.current .pipeline-stage-marker {
+  border-color: var(--white);
+  position: relative;
+}
+
+.pipeline-stage-list li.current .pipeline-stage-marker::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--white);
+  position: absolute;
 }
 
 .pipeline-template-grid,
 .pipeline-preset-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 14px;
 }
 
 .pipeline-template-card,
 .pipeline-preset-card {
   border: 1px solid var(--border);
   background: var(--s2);
-  border-radius: var(--r);
-  padding: 10px;
+  border-radius: 8px;
+  padding: 0;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.pipeline-template-card:first-child {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  aspect-ratio: 16 / 10;
 }
 
 .pipeline-template-card img,
 .pipeline-preset-card img {
   width: 100%;
-  height: 88px;
+  height: auto;
+  flex: 1;
+  min-height: 0;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+
+.pipeline-template-card strong,
+.pipeline-template-card span,
+.pipeline-preset-card span {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.pipeline-template-card span {
+  color: var(--hint);
 }
 
 .pipeline-template-card.active,
 .pipeline-preset-card.active {
   border-color: var(--white);
+  box-shadow: 0 0 0 1px var(--white);
 }
 
 .pipeline-copy,
 .pipeline-aside-note {
   color: var(--hint);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.6;
   margin-bottom: 12px;
 }
@@ -1008,12 +1224,17 @@
 
 .pipeline-examples button {
   border: 1px solid var(--border);
-  background: var(--s2);
+  background: var(--s1);
   color: var(--soft);
   border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
+  padding: 7px 13px;
+  font-size: 12.5px;
   cursor: pointer;
+}
+
+.pipeline-examples button:hover {
+  color: var(--text);
+  border-color: var(--border2);
 }
 
 .pipeline-locked {

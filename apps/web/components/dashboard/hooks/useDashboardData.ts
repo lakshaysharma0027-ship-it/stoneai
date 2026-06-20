@@ -32,6 +32,7 @@ const defaultPipelineForm = (): PipelineFormState => ({
   templateId: null,
   businessName: "",
   websitePrompt: "",
+  promptAttachments: [],
   firstImagePrompt: "",
   lastImagePrompt: "",
   veoPrompt: "",
@@ -445,6 +446,10 @@ export function useDashboardData() {
           templateId: pipelineForm.templateId,
           businessName,
           websitePrompt,
+          promptAttachments:
+            pipelineForm.promptAttachments.length > 0
+              ? pipelineForm.promptAttachments
+              : undefined,
           firstImagePrompt: pipelineForm.firstImagePrompt.trim() || undefined,
           lastImagePrompt: pipelineForm.lastImagePrompt.trim() || undefined,
           veoPrompt: pipelineForm.veoPrompt.trim() || undefined,

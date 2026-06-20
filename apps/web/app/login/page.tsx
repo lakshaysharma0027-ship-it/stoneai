@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthMessage, AuthShell, SocialAuthButtons } from "@/components/auth/AuthShell";
+import { resolveLoginErrorMessage } from "@/lib/auth/loginErrors";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -15,7 +16,9 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    resolveLoginErrorMessage(searchParams.get("error")),
+  );
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();

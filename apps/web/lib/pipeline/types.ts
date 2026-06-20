@@ -17,10 +17,17 @@ export const PIPELINE_STAGES: Array<{ id: PipelineStageId; label: string }> = [
   { id: "website_ready", label: "Experience Ready" },
 ];
 
+export type PromptAttachmentRef = {
+  url: string;
+  name: string;
+  type: "image" | "pdf";
+};
+
 export type PipelineMetadata = {
   templateId?: string | null;
   websitePrompt: string;
   businessName: string;
+  promptAttachments?: PromptAttachmentRef[];
   firstImagePrompt?: string | null;
   lastImagePrompt?: string | null;
   veoPrompt?: string | null;
@@ -50,6 +57,7 @@ export type PipelineGenerateRequest = {
   templateId?: string | null;
   websitePrompt: string;
   businessName: string;
+  promptAttachments?: PromptAttachmentRef[];
   firstImagePrompt?: string;
   lastImagePrompt?: string;
   veoPrompt?: string;

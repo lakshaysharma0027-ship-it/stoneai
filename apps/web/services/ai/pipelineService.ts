@@ -36,6 +36,8 @@ import type { CinematicExperience } from "@/lib/cinematic/types";
 import type { Website } from "@/lib/editor/schema";
 import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperience";
 import { saveProjectWebsiteRecord } from "@/lib/sites/saveProjectWebsite";
+import { buildPromptAttachmentContext } from "@/lib/pipeline/promptAttachments.server";
+import { validatePromptAttachments } from "@/lib/pipeline/validatePromptAttachments.server";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
@@ -76,10 +78,18 @@ export const pipelineService = {
   ): Promise<PipelineGenerateResponse> {
     const websitePrompt = input.websitePrompt.trim();
     const businessName = input.businessName.trim();
+    const promptAttachments = input.promptAttachments ?? [];
 
     if (!websitePrompt || !businessName) {
       throw new Error("Website prompt and business name are required.");
     }
+
+    validatePromptAttachments(promptAttachments, userId);
+
+    const attachmentContext = await buildPromptAttachmentContext(promptAttachments, userId);
+    const creativeBrief = attachmentContext
+      ? `${websitePrompt}\n\n${attachmentContext}`
+      : websitePrompt;
 
     const subscription = await creditService.ensureSubscription(supabase, userId);
     const planId = normalizeBillingPlanId(subscription.plan);
@@ -271,9 +281,9 @@ export const pipelineService = {
 
       const templateStyle = templateReference(input.templateId);
       const scenePlan = await bedrockProvider.generateCinematicPlan({
-        prompt: websitePrompt,
+        prompt: creativeBrief,
         businessName,
-        description: websitePrompt,
+        description: creativeBrief,
         industry: "Portfolio",
         style: "Premium",
         colorPreference: "Dark premium",
@@ -321,6 +331,7 @@ export const pipelineService = {
         templateId: input.templateId ?? null,
         websitePrompt,
         businessName,
+        promptAttachments: promptAttachments.length ? promptAttachments : undefined,
         firstImagePrompt: input.firstImagePrompt ?? null,
         lastImagePrompt: input.lastImagePrompt ?? null,
         veoPrompt: input.veoPrompt ?? null,

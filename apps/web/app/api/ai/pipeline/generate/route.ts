@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       templateId: payload.templateId ?? null,
       websitePrompt: payload.websitePrompt ?? "",
       businessName: payload.businessName ?? "",
+      promptAttachments: payload.promptAttachments,
       firstImagePrompt: payload.firstImagePrompt,
       lastImagePrompt: payload.lastImagePrompt,
       veoPrompt: payload.veoPrompt,

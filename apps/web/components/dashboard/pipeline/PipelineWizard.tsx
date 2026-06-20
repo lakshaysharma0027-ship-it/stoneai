@@ -4,12 +4,16 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Check,
   Film,
   ImageIcon,
   LayoutGrid,
   Lock,
+  Paperclip,
+  Route,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
 import { CREDIT_COSTS } from "@/lib/billing/credits";
 import { getUpgradeHint, planHasFeature } from "@/lib/billing/planFeatures";
@@ -18,14 +22,25 @@ import { nanoBananaGallery, templateCatalog } from "@/lib/template-catalog";
 import {
   PIPELINE_UPLOAD_LIMITS,
   uploadPipelineMedia,
+  uploadPromptAttachment,
   type PipelineMediaKind,
 } from "@/lib/cinematic/clientMediaUpload";
+import { PROMPT_ATTACHMENT_LIMITS } from "@/lib/pipeline/promptAttachmentLimits";
 import { RecentMediaSelect } from "./RecentMediaSelect";
 import type { DashboardDataContext } from "../hooks/useDashboardData";
 import { GenerationPageHeader } from "../generation/GenerationPageHeader";
 import { GenerationProgressOverlay } from "../generation/GenerationProgressOverlay";
-import type { PipelineFormState } from "../types";
+import type { PipelineFormState, PromptAttachmentFormItem } from "../types";
 import "../generation-pages.css";
+
+const PIPELINE_STAGES = [
+  "Prompt input",
+  "Image generation",
+  "Motion generation",
+  "Frame extraction",
+  "Scene build",
+  "Experience ready",
+] as const;
 
 const STEP_LABELS = [
   "Template",
@@ -64,42 +79,137 @@ function MediaUploadField({
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   return (
-    <div className="pipeline-upload">
-      <label className="field-label">{label}</label>
+    <div className="pipeline-upload pipeline-upload-box">
+      <p className="pipeline-upload-title">{label}</p>
       <p className="pipeline-copy">{hint}</p>
-      <input
-        type="file"
-        accept={accept}
-        disabled={uploading}
-        onChange={async (event) => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          setUploadError(null);
-          if (file.size > maxBytes) {
-            setUploadError(`File must be ${Math.round(maxBytes / (1024 * 1024))} MB or smaller.`);
-            return;
-          }
-          setUploading(true);
-          try {
-            const url = await uploadPipelineMedia(file, kind);
-            onChange(url);
-          } catch (error) {
-            setUploadError(error instanceof Error ? error.message : "Upload failed.");
-          } finally {
-            setUploading(false);
-            event.target.value = "";
-          }
-        }}
-      />
+      <div className="pipeline-file-row">
+        <label className="pipeline-file-btn">
+          Choose file
+          <input
+            type="file"
+            accept={accept}
+            disabled={uploading}
+            hidden
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setUploadError(null);
+              if (file.size > maxBytes) {
+                setUploadError(`File must be ${Math.round(maxBytes / (1024 * 1024))} MB or smaller.`);
+                return;
+              }
+              setUploading(true);
+              try {
+                const url = await uploadPipelineMedia(file, kind);
+                onChange(url);
+              } catch (error) {
+                setUploadError(error instanceof Error ? error.message : "Upload failed.");
+              } finally {
+                setUploading(false);
+                event.target.value = "";
+              }
+            }}
+          />
+        </label>
+        <span className="pipeline-file-name">{value ? "Uploaded" : "No file chosen"}</span>
+      </div>
       {uploading ? <p className="pipeline-copy">Uploading to storage…</p> : null}
       {uploadError ? <p className="gen-error">{uploadError}</p> : null}
       {value ? (
-        <>
-          <p className="pipeline-copy">{value.startsWith("http") ? "Uploaded" : "Ready"}</p>
-          <button type="button" className="pipeline-link" onClick={() => onChange("")}>
-            Remove upload
-          </button>
-        </>
+        <button type="button" className="pipeline-link" onClick={() => onChange("")}>
+          Remove upload
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function PromptAttachmentsField({
+  attachments,
+  onChange,
+}: {
+  attachments: PromptAttachmentFormItem[];
+  onChange: (items: PromptAttachmentFormItem[]) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  return (
+    <div className="pipeline-upload pipeline-upload-box">
+      <p className="pipeline-upload-title">Attach images or PDFs (optional)</p>
+      <p className="pipeline-copy">
+        Add logos, menus, brand photos, or a PDF brief. Files upload to storage — only filenames and PDF text excerpts are sent to the AI (not base64).
+      </p>
+      <div className="pipeline-file-row">
+        <label className={`pipeline-file-btn ${uploading ? "disabled" : ""}`}>
+          <Paperclip size={13} />
+          Add files
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            multiple
+            hidden
+            disabled={uploading || attachments.length >= PROMPT_ATTACHMENT_LIMITS.maxFiles}
+            onChange={async (event) => {
+              const files = Array.from(event.target.files ?? []);
+              if (!files.length) return;
+              setUploadError(null);
+              setUploading(true);
+              const next = [...attachments];
+              try {
+                for (const file of files) {
+                  if (next.length >= PROMPT_ATTACHMENT_LIMITS.maxFiles) break;
+                  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+                  const type = isPdf ? "pdf" : "image";
+                  const pdfs = next.filter((item) => item.type === "pdf").length;
+                  const images = next.filter((item) => item.type === "image").length;
+                  if (type === "pdf" && pdfs >= PROMPT_ATTACHMENT_LIMITS.maxPdfs) {
+                    setUploadError(`Maximum ${PROMPT_ATTACHMENT_LIMITS.maxPdfs} PDF files.`);
+                    continue;
+                  }
+                  if (type === "image" && images >= PROMPT_ATTACHMENT_LIMITS.maxImages) {
+                    setUploadError(`Maximum ${PROMPT_ATTACHMENT_LIMITS.maxImages} images.`);
+                    continue;
+                  }
+                  const limit = isPdf ? PROMPT_ATTACHMENT_LIMITS.pdfBytes : PROMPT_ATTACHMENT_LIMITS.imageBytes;
+                  if (file.size > limit) {
+                    setUploadError(`${file.name} must be ${Math.round(limit / (1024 * 1024))} MB or smaller.`);
+                    continue;
+                  }
+                  const url = await uploadPromptAttachment(file);
+                  next.push({ url, name: file.name, type });
+                }
+                onChange(next);
+              } catch (error) {
+                setUploadError(error instanceof Error ? error.message : "Upload failed.");
+              } finally {
+                setUploading(false);
+                event.target.value = "";
+              }
+            }}
+          />
+        </label>
+        <span className="pipeline-file-name">
+          {attachments.length ? `${attachments.length} file${attachments.length === 1 ? "" : "s"}` : "No files chosen"}
+        </span>
+      </div>
+      {uploading ? <p className="pipeline-copy">Uploading to storage…</p> : null}
+      {uploadError ? <p className="gen-error">{uploadError}</p> : null}
+      {attachments.length > 0 ? (
+        <ul className="pipeline-attachment-list">
+          {attachments.map((item) => (
+            <li key={item.url}>
+              <span>{item.type === "pdf" ? "PDF" : "IMG"} · {item.name}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${item.name}`}
+                onClick={() => onChange(attachments.filter((entry) => entry.url !== item.url))}
+              >
+                <X size={12} />
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   );
@@ -177,15 +287,17 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
 
       <div className="pipeline-stepper">
         {STEP_LABELS.map((label, index) => (
-          <button
-            key={label}
-            type="button"
-            className={`pipeline-step-pill ${index === step ? "active" : index < step ? "done" : ""}`}
-            onClick={() => setStep(index)}
-          >
-            <span>{index + 1}</span>
-            {label}
-          </button>
+          <div key={label} className="pipeline-stepper-item">
+            <button
+              type="button"
+              className={`pipeline-step-pill ${index === step ? "active" : index < step ? "done" : ""}`}
+              onClick={() => setStep(index)}
+            >
+              <span className="pipeline-step-num">{index < step ? <Check size={10} /> : index + 1}</span>
+              {label}
+            </button>
+            {index < STEP_LABELS.length - 1 ? <span className="pipeline-step-line" aria-hidden /> : null}
+          </div>
         ))}
       </div>
 
@@ -194,7 +306,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
           <div className="gen-card-head">
             <span className="gen-card-title">{STEP_LABELS[step]}</span>
             <span className="gen-card-meta">
-              <Sparkles size={12} />
+              <Route size={12} />
               Pipeline step {step + 1} of {STEP_LABELS.length}
             </span>
           </div>
@@ -252,6 +364,10 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                   value={form.websitePrompt}
                   onChange={(e) => setForm("websitePrompt", e.target.value)}
                   placeholder="Describe the website you want — industry, audience, mood, and sections."
+                />
+                <PromptAttachmentsField
+                  attachments={form.promptAttachments}
+                  onChange={(items) => setForm("promptAttachments", items)}
                 />
                 <div className="pipeline-examples">
                   {PROMPT_EXAMPLES.map((example) => (
@@ -408,6 +524,7 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
               <div className="pipeline-review">
                 <div><span>Template</span><strong>{form.templateId ?? "Skipped"}</strong></div>
                 <div><span>Website prompt</span><strong>{form.websitePrompt || "—"}</strong></div>
+                <div><span>Prompt attachments</span><strong>{form.promptAttachments.length ? `${form.promptAttachments.length} file(s)` : "None"}</strong></div>
                 <div><span>Hero image</span><strong>{form.heroImageUpload ? "Uploaded" : canNano && form.firstImagePrompt ? "Nano Banana" : form.presetHeroImageId ?? "Skipped"}</strong></div>
                 <div><span>Last frame</span><strong>{form.lastFrameImageUpload ? "Uploaded" : canLast && form.lastImagePrompt ? "Nano Banana" : "Skipped"}</strong></div>
                 <div><span>Video</span><strong>{form.motionVideoUpload ? "Uploaded" : canVeo && form.veoPrompt ? "Veo" : "Skipped"}</strong></div>
@@ -425,19 +542,21 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
                 </button>
               </div>
             ) : null}
+          </div>
 
-            <div className="pipeline-nav">
-              <button type="button" className="btn" onClick={goBack} disabled={step === 0 || data.generating}>
-                <ChevronLeft size={14} />
-                Back
+          <div className="gen-card-foot pipeline-nav">
+            <button type="button" className="pipeline-nav-link" onClick={goBack} disabled={step === 0 || data.generating}>
+              <ChevronLeft size={14} />
+              Back
+            </button>
+            {step < STEP_LABELS.length - 1 ? (
+              <button type="button" className="pipeline-nav-link continue" onClick={goNext} disabled={data.generating}>
+                Continue
+                <ChevronRight size={14} />
               </button>
-              {step < STEP_LABELS.length - 1 ? (
-                <button type="button" className="btn btn-primary" onClick={goNext} disabled={data.generating}>
-                  Continue
-                  <ChevronRight size={14} />
-                </button>
-              ) : null}
-            </div>
+            ) : (
+              <span />
+            )}
           </div>
         </div>
 
@@ -446,16 +565,19 @@ export function PipelineWizard({ data }: { data: DashboardDataContext }) {
             <span className="aside-head-title">Pipeline stages</span>
           </div>
           <ul className="pipeline-stage-list">
-            {[
-              "Prompt Input",
-              "Image Generation",
-              "Motion Generation",
-              "Frame Extraction",
-              "Scene Build",
-              "Experience Ready",
-            ].map((stage) => (
-              <li key={stage}>{stage}</li>
-            ))}
+            {PIPELINE_STAGES.map((stage, index) => {
+              const stageIndex = index + 1;
+              const cls =
+                stageIndex < step + 1 ? "done" : stageIndex === step + 1 ? "current" : "";
+              return (
+                <li key={stage} className={cls}>
+                  <span className="pipeline-stage-marker">
+                    {stageIndex < step + 1 ? <Check size={10} /> : null}
+                  </span>
+                  {stage}
+                </li>
+              );
+            })}
           </ul>
           <p className="pipeline-aside-note">
             StoneAI builds scroll-driven cinematic experiences: Claude Opus plans scenes, Nano Banana creates first/last frames, Veo 3.1 Lite generates motion, and GSAP scroll-scrub drives the journey.

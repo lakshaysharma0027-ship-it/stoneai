@@ -98,10 +98,17 @@ export type GenerateFormState = {
   websiteType: string;
 };
 
+export type PromptAttachmentFormItem = {
+  url: string;
+  name: string;
+  type: "image" | "pdf";
+};
+
 export type PipelineFormState = {
   templateId: string | null;
   businessName: string;
   websitePrompt: string;
+  promptAttachments: PromptAttachmentFormItem[];
   firstImagePrompt: string;
   lastImagePrompt: string;
   veoPrompt: string;

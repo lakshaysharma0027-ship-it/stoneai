@@ -13,6 +13,7 @@ const extensionFor = (filename: string, contentType: string) => {
   if (contentType.includes("webp")) return "webp";
   if (contentType.includes("webm")) return "webm";
   if (contentType.includes("mp4")) return "mp4";
+  if (contentType.includes("pdf")) return "pdf";
   return "bin";
 };
 
@@ -23,7 +24,15 @@ async function ensureBucket(admin: ReturnType<typeof createSupabaseAdminClient>)
   await admin.storage.createBucket(BUCKET, {
     public: true,
     fileSizeLimit: MAX_BYTES,
-    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
+    allowedMimeTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+      "video/mp4",
+      "video/webm",
+    ],
   });
 }
 
@@ -41,13 +50,20 @@ export async function POST(request: Request) {
     const contentType = payload.contentType?.trim() || "application/octet-stream";
     const size = payload.size ?? 0;
 
-    if (!kind || !["hero", "last-frame", "video"].includes(kind)) {
+    if (!kind || !["hero", "last-frame", "video", "prompt-reference"].includes(kind)) {
       return NextResponse.json({ error: "Invalid upload kind." }, { status: 400 });
     }
 
-    if (size <= 0 || size > MAX_BYTES) {
+    const maxBytes =
+      kind === "prompt-reference"
+        ? 10 * 1024 * 1024
+        : kind === "video"
+          ? MAX_BYTES
+          : 10 * 1024 * 1024;
+
+    if (size <= 0 || size > maxBytes) {
       return NextResponse.json(
-        { error: `File must be between 1 byte and ${MAX_BYTES / (1024 * 1024)} MB.` },
+        { error: `File must be between 1 byte and ${maxBytes / (1024 * 1024)} MB.` },
         { status: 400 },
       );
     }
