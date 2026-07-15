@@ -39,7 +39,18 @@ export const getProjectSite = (projectId: string, publishedSites: PublishedSiteR
 export const getProjectPreviewUrl = (
   projectId: string,
   publishedSites: PublishedSiteRow[],
+  project?: StoredProject | null,
 ) => {
+  const metadata = (project as { pipelineMetadata?: { renderMode?: string } } | null | undefined)
+    ?.pipelineMetadata;
+  if (metadata?.renderMode === "template_html") {
+    const site = getProjectSite(projectId, publishedSites);
+    if (site?.status === "published" && site.public_url) {
+      return site.public_url;
+    }
+    return `/api/projects/${projectId}/template-html`;
+  }
+
   const site = getProjectSite(projectId, publishedSites);
   if (site?.status === "published" && site.public_url) {
     return site.public_url;

@@ -7,7 +7,9 @@ export type ContentBlock =
   | { type: "blockquote"; text: string }
   | { type: "cta"; variant: "top" | "middle" | "bottom" }
   | { type: "comparison"; headers: string[]; rows: string[][] }
-  | { type: "internal-link"; slug: string; label: string };
+  | { type: "internal-link"; slug: string; label: string }
+  | { type: "internal-href"; href: string; label: string }
+  | { type: "pros-cons"; stoneai: { pros: string[]; cons: string[] }; competitor: { name: string; pros: string[]; cons: string[] } };
 
 export type FAQItem = {
   question: string;
@@ -60,6 +62,27 @@ export type AlternativePage = {
   features: { title: string; description: string }[];
   faq: FAQItem[];
   relatedArticleSlugs: string[];
+  content: ContentBlock[];
+  prosCons?: {
+    stoneai: { pros: string[]; cons: string[] };
+    competitor: { pros: string[]; cons: string[] };
+  };
+};
+
+export type IndustryPage = {
+  slug: string;
+  name: string;
+  seoTitle: string;
+  metaDescription: string;
+  title: string;
+  subtitle: string;
+  heroDescription: string;
+  templateSlug?: string;
+  stats: { label: string; value: string }[];
+  features: { title: string; description: string }[];
+  faq: FAQItem[];
+  relatedArticleSlugs: string[];
+  relatedAlternativeSlugs: string[];
   content: ContentBlock[];
 };
 

@@ -25,5 +25,9 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   const website = await loadProjectWebsite(supabase, user.id, projectId);
   if (!website) notFound();
 
+  if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+    redirect(`/api/projects/${projectId}/template-html`);
+  }
+
   return <WebsiteRenderer website={website} />;
 }

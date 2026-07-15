@@ -25,8 +25,12 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
   const website = await loadProjectWebsite(supabase, user.id, projectId);
   if (!website) notFound();
 
+  if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+    redirect(`/api/projects/${projectId}/template-html`);
+  }
+
   return (
-    <div style={{ margin: 0, padding: 0, minHeight: "100vh", background: "#050505" }}>
+    <div style={{ margin: 0, padding: 0, minHeight: "100dvh", background: "#050505" }}>
       <WebsiteRenderer website={website} />
     </div>
   );

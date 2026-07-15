@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { STONEAI_APP_URL, STONEAI_COMPANY, STONEAI_DEFAULT_DESCRIPTION } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "About",
+export const metadata: Metadata = buildPageMetadata({
+  title: "About StoneAI",
   description: "About StoneAI — AI website generation, publishing, and creative workflows for premium teams.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

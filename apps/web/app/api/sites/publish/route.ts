@@ -5,6 +5,7 @@ import type { Website } from "@/lib/editor/schema";
 import { getPublicSiteUrl, normalizeSiteSlug } from "@/lib/sites/siteResolver";
 import { loadProjectWebsite } from "@/lib/sites/loadProjectWebsite";
 import { saveProjectWebsiteRecord } from "@/lib/sites/saveProjectWebsite";
+import { mergeTemplateMetaFromPipeline } from "@/lib/templates/resolveTemplateSiteOptions";
 import { creditService } from "@/services/billing/creditService";
 import { planLimitService } from "@/services/billing/planLimitService";
 
@@ -88,16 +89,18 @@ export async function POST(request: Request) {
       }
     }
 
-    if (website.meta.renderMode !== "cinematic_scroll" || !website.meta.cinematicExperience) {
+    if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+      // Template websites publish as-is.
+    } else if (website.meta.renderMode !== "cinematic_scroll" || !website.meta.cinematicExperience) {
       return NextResponse.json(
-        { error: "Only cinematic scroll experiences can be published." },
+        { error: "Only cinematic scroll or template websites can be published." },
         { status: 400 },
       );
     }
 
     const { data: project, error: projectError } = await supabase
       .from("projects")
-      .select("id,user_id")
+      .select("id,user_id,pipeline_metadata")
       .eq("id", website.projectId)
       .single();
 
@@ -105,6 +108,12 @@ export async function POST(request: Request) {
     if ((project as { user_id: string }).user_id !== user.id) {
       return NextResponse.json({ error: "You cannot publish this project." }, { status: 403 });
     }
+
+    website = mergeTemplateMetaFromPipeline(
+      website,
+      (project as { pipeline_metadata?: import("@/lib/pipeline/types").PipelineMetadata })
+        .pipeline_metadata,
+    );
 
     const subscription = await creditService.ensureSubscription(supabase, user.id);
     try {

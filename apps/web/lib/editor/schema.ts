@@ -61,7 +61,9 @@ export type WebsiteMeta = {
   socialImage: string | null;
   lang: string;
   templateId?: string;
-  renderMode?: "cinematic_scroll" | "schema";
+  renderMode?: "cinematic_scroll" | "schema" | "template_html";
+  templateReplacementImageUrl?: string | null;
+  templateContentOverrides?: Record<string, string> | null;
   cinematicExperience?: import("@/lib/cinematic/types").CinematicExperience;
 };
 

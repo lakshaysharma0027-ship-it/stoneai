@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { MarketingShell } from "@/components/marketing/MarketingShell";
 
 const CTA_COPY = {
   top: {

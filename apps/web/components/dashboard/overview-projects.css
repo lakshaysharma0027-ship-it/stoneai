@@ -766,6 +766,11 @@
   pointer-events: none;
 }
 
+.project-preview-scaler .template-html-frame {
+  pointer-events: auto;
+  min-height: 100dvh;
+}
+
 .project-preview-loading,
 .project-preview-error {
   display: flex;

@@ -55,6 +55,8 @@ export function WebsiteReadyPage({
   const site = data.publishedSites.find((item) => item.project_id === projectId);
   const isPublished = site?.status === "published";
   const isCinematic = metadata?.renderMode === "cinematic_scroll";
+  const isTemplateHtml = metadata?.renderMode === "template_html";
+  const canPublish = isCinematic || isTemplateHtml;
 
   useEffect(() => {
     void data.refreshSites?.();
@@ -62,8 +64,8 @@ export function WebsiteReadyPage({
   }, [projectId, data.refreshSites, data.refreshProjects]);
 
   const openPreviewUrl = useMemo(
-    () => getProjectPreviewUrl(projectId, data.publishedSites),
-    [projectId, data.publishedSites],
+    () => getProjectPreviewUrl(projectId, data.publishedSites, project),
+    [projectId, data.publishedSites, project],
   );
   const liveUrl = site?.public_url ?? null;
   const previewLabel = isPublished ? "Live website" : "Draft preview";
@@ -164,7 +166,9 @@ export function WebsiteReadyPage({
         )}
       </div>
       <p className="wr-subtitle">
-        Your cinematic website pipeline is complete. Preview, publish, or refine with AI.
+        {isTemplateHtml
+          ? "Your template website is ready. Preview, publish, or regenerate with a new image."
+          : "Your cinematic website pipeline is complete. Preview, publish, or refine with AI."}
       </p>
 
       <div className="wr-hero-grid">
@@ -210,7 +214,7 @@ export function WebsiteReadyPage({
           <button
             type="button"
             className="wr-action-row"
-            disabled={publishing || !isCinematic}
+            disabled={publishing || !canPublish}
             onClick={() => void handlePublish()}
           >
             <Rocket size={16} />
@@ -298,7 +302,7 @@ export function WebsiteReadyPage({
               <span className="wr-edits-left">Premium only</span>
             )}
           </div>
-          {canEdit ? (
+          {canEdit && isCinematic ? (
             <>
               <textarea
                 className="wr-ai-textarea"
@@ -318,6 +322,10 @@ export function WebsiteReadyPage({
                 {editing ? "Applying edit…" : "AI edit website"}
               </button>
             </>
+          ) : isTemplateHtml ? (
+            <p className="pipeline-copy">
+              Template websites keep the original layout. Regenerate with a new image in the prompt attachments step to swap visuals.
+            </p>
           ) : (
             <div className="pipeline-locked">
               <Sparkles size={16} />

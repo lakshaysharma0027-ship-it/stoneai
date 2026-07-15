@@ -6,12 +6,17 @@ import type { TemplateSchema } from "@/lib/templateSchemas";
 import {
   CinematicScenePlanSchema,
   GeneratedWebsiteResponseSchema,
+  TemplatePersonalizationResponseSchema,
   WebsiteEditResponseSchema,
   type CinematicScenePlanResponse,
   type OpenAIGeneratedWebsiteResponse,
   type OpenAIWebsiteEditResponse,
+  type TemplatePersonalizationResponse,
 } from "@/lib/ai/structuredSchemas";
 import { cinematicSceneEditSystemPrompt, cinematicScenePlanSystemPrompt } from "@/lib/ai/prompts/cinematicPrompts";
+import { templatePersonalizationSystemPrompt } from "@/lib/ai/prompts/templatePersonalizationPrompt";
+import { normalizeTemplatePersonalization } from "@/lib/ai/normalizeTemplatePersonalization";
+import { getTemplateHtmlSlots } from "@/lib/templates/templateSlots";
 import { normalizeCinematicScenePlan } from "@/lib/ai/normalizeCinematicResponse";
 import type { EditWebsiteRequest } from "@/lib/ai/schema";
 import {
@@ -171,6 +176,28 @@ Media pipeline status (visual motion is handled separately — do NOT output URL
 Design a scene-by-scene scroll journey. Each scene needs id, title, optional subtitle/body, scrollStart (0–1), optional ctaLabel on the final scene.
 `;
 
+const templatePersonalizationInput = (request: {
+  templateId: string;
+  businessName: string;
+  prompt: string;
+  attachmentContext?: string;
+  templateSchema: TemplateSchema;
+}) => {
+  const slots = getTemplateHtmlSlots(request.templateId);
+  return `
+Template ID: ${request.templateId}
+Business name: ${request.businessName}
+User prompt: ${request.prompt}
+${request.attachmentContext ? `\nReference materials (resume, PDF, brand notes):\n${request.attachmentContext}` : ""}
+
+HTML slots to fill (return htmlSlots with each id — inner HTML only):
+${slots.length ? JSON.stringify(slots, null, 2) : "[]"}
+
+Current template schema (personalize every heading, body, logo, and feature — keep section ids and types):
+${JSON.stringify(request.templateSchema, null, 2)}
+`;
+};
+
 export const bedrockProvider = {
   async generateCinematicPlan(
     request: WebsiteGenerationInput & {
@@ -195,6 +222,31 @@ export const bedrockProvider = {
 
     return {
       data: CinematicScenePlanSchema.parse(normalized),
+      usage: result.usage,
+    };
+  },
+
+  async personalizeTemplate(request: {
+    templateId: string;
+    businessName: string;
+    prompt: string;
+    attachmentContext?: string;
+    templateSchema: TemplateSchema;
+  }): Promise<BedrockProviderResult<TemplatePersonalizationResponse>> {
+    const result = await converseJson<unknown>(
+      templatePersonalizationSystemPrompt,
+      templatePersonalizationInput(request),
+      "stoneai_template_personalization",
+    );
+
+    const normalized = normalizeTemplatePersonalization(
+      result.data,
+      request.templateSchema,
+      request.businessName,
+    );
+
+    return {
+      data: TemplatePersonalizationResponseSchema.parse(normalized),
       usage: result.usage,
     };
   },

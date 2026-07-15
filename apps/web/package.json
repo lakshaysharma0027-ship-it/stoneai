@@ -17,6 +17,7 @@
     "@repo/ui": "*",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
+    "@vercel/analytics": "^2.0.1",
     "dodopayments": "^2.36.0",
     "ffmpeg-static": "^5.2.0",
     "gsap": "^3.13.0",

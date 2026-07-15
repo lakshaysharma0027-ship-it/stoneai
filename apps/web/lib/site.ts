@@ -13,7 +13,7 @@ export const STONEAI_CONTACT_EMAIL = "contact@stoneai.in";
 export const STONEAI_X_URL = "https://x.com/StoneAIusa";
 
 export const STONEAI_DEFAULT_DESCRIPTION =
-  "From idea to live website in minutes. AI website generation, editing, publishing, domains, and templates for premium teams.";
+  "StoneAI is an AI website builder that turns ideas into live sites in minutes. Generate, edit, and publish premium websites with 3D visuals, custom domains, and no code.";
 
 export const STONEAI_COMPANY = {
   name: "StoneAI",

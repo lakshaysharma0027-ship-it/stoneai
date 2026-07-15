@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllArticleSlugs } from "@/lib/blog/registry";
 import { getAllAlternativeSlugs } from "@/content/blog/alternatives/registry";
 import { getAllTemplateSeoSlugs } from "@/content/blog/templates-seo/registry";
+import { getAllIndustrySlugs } from "@/content/industries/registry";
 import { categories } from "@/content/blog/categories";
 import { STONEAI_SITE_URL } from "@/lib/site";
 
@@ -16,11 +17,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/blog",
     "/faq",
     "/about",
+    "/company",
+    "/press",
+    "/media-kit",
     "/contact",
     "/docs",
     "/privacy",
     "/terms",
-    "/login",
     "/signup",
   ];
 
@@ -42,14 +45,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${STONEAI_SITE_URL}/alternatives/${slug}`,
     lastModified,
     changeFrequency: "monthly" as const,
-    priority: 0.85,
+    priority: 0.9,
   }));
 
   const templateSeo = getAllTemplateSeoSlugs().map((slug) => ({
     url: `${STONEAI_SITE_URL}/templates/${slug}`,
     lastModified,
     changeFrequency: "monthly" as const,
-    priority: 0.8,
+    priority: 0.85,
+  }));
+
+  const industries = getAllIndustrySlugs().map((slug) => ({
+    url: `${STONEAI_SITE_URL}/ai-website-builder-for/${slug}`,
+    lastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.88,
   }));
 
   return [
@@ -57,11 +67,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${STONEAI_SITE_URL}${path}`,
       lastModified,
       changeFrequency: (path === "" ? "weekly" : "monthly") as "weekly" | "monthly",
-      priority: path === "" ? 1 : path === "/pricing" || path === "/blog" ? 0.9 : 0.7,
+      priority: path === "" ? 1 : path === "/pricing" || path === "/blog" ? 0.9 : 0.75,
     })),
     ...blogArticles,
     ...blogCategories,
     ...alternatives,
     ...templateSeo,
+    ...industries,
   ];
 }

@@ -38,6 +38,13 @@ import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperienc
 import { saveProjectWebsiteRecord } from "@/lib/sites/saveProjectWebsite";
 import { buildPromptAttachmentContext } from "@/lib/pipeline/promptAttachments.server";
 import { validatePromptAttachments } from "@/lib/pipeline/validatePromptAttachments.server";
+import {
+  isTemplateOnlyGeneration,
+  resolveTemplateReplacementImage,
+} from "@/lib/templates/templateSiteHtml";
+import { getTemplateSchemaById } from "@/lib/templateSchemas";
+import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
+import { createWebsite } from "@/lib/editor/websiteFactory";
 
 const presetHeroById = (id?: string | null) =>
   nanoBananaGallery.find((item) => item.id === id) ?? nanoBananaGallery[0];
@@ -69,6 +76,28 @@ const cinematicStubSchema = (
     },
   ],
 });
+
+const resolveHeroImageUrl = (
+  input: PipelineGenerateRequest,
+  planId: ReturnType<typeof normalizeBillingPlanId>,
+  attachments: PipelineGenerateRequest["promptAttachments"] = [],
+): string | undefined => {
+  if (planHasFeature(planId, "media_upload") && input.heroImageUpload?.trim()) {
+    return input.heroImageUpload.trim();
+  }
+
+  if (planHasFeature(planId, "preset_gallery") && input.presetHeroImageId?.trim()) {
+    const preset = presetHeroById(input.presetHeroImageId);
+    if (preset?.src) return preset.src;
+  }
+
+  const attachmentImage = attachments?.find((file) => file.type === "image");
+  if (attachmentImage?.url?.trim()) {
+    return attachmentImage.url.trim();
+  }
+
+  return undefined;
+};
 
 export const pipelineService = {
   async generate(
@@ -132,11 +161,27 @@ export const pipelineService = {
 
     planLimitService.assertHasCredits(subscription, totalCredits, "run the generation pipeline");
 
+    if (isTemplateOnlyGeneration(input)) {
+      return pipelineService.generateFromTemplate(
+        supabase,
+        userId,
+        input,
+        subscription,
+        planId,
+        websitePrompt,
+        businessName,
+        promptAttachments,
+        attachmentContext,
+        creativeBrief,
+        totalCredits,
+      );
+    }
+
     generationLocks.acquirePipeline(userId);
     try {
-      if (planHasFeature(planId, "media_upload") && input.heroImageUpload?.trim()) {
-        heroImageUrl = input.heroImageUpload.trim();
-      } else if (planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
+      heroImageUrl = resolveHeroImageUrl(input, planId, promptAttachments);
+
+      if (!heroImageUrl && planHasFeature(planId, "first_image_prompt") && input.firstImagePrompt?.trim()) {
         assertGeminiGenerationAllowed(subscription, "nano_banana");
         await planLimitService.assertWithinActionLimit(supabase, {
           userId,
@@ -148,25 +193,22 @@ export const pipelineService = {
           capability: "hero_image",
           aspectRatio: "16:9",
         });
-      heroImageUrl = imageResult.assetUrl;
-      if (imageResult.assetUrl) {
-        await recentMediaService.record(supabase, userId, {
-          mediaType: "image",
-          capability: "pipeline_first_frame",
-          prompt: input.firstImagePrompt.trim(),
-          assetUrl: imageResult.assetUrl,
-          creditsUsed: getCreditCost("media_image_generate"),
-          model: process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image",
-        });
-      }
-      await creditService.consumeCredits(supabase, {
+        heroImageUrl = imageResult.assetUrl;
+        if (imageResult.assetUrl) {
+          await recentMediaService.record(supabase, userId, {
+            mediaType: "image",
+            capability: "pipeline_first_frame",
+            prompt: input.firstImagePrompt.trim(),
+            assetUrl: imageResult.assetUrl,
+            creditsUsed: getCreditCost("media_image_generate"),
+            model: process.env.GOOGLE_NANO_BANANA_MODEL ?? "gemini-2.5-flash-image",
+          });
+        }
+        await creditService.consumeCredits(supabase, {
           userId,
           eventType: "media_image_generate",
           description: "Pipeline hero image (Nano Banana)",
         });
-      } else if (planHasFeature(planId, "preset_gallery")) {
-        const preset = presetHeroById(input.presetHeroImageId);
-        heroImageUrl = preset?.src;
       }
 
       completedStages.push("image_generation");
@@ -540,5 +582,155 @@ export const pipelineService = {
       websiteSchema,
       pipelineMetadata: nextMetadata,
     };
+  },
+
+  async generateFromTemplate(
+    supabase: SupabaseClient,
+    userId: string,
+    input: PipelineGenerateRequest,
+    _subscription: Awaited<ReturnType<typeof creditService.ensureSubscription>>,
+    planId: ReturnType<typeof normalizeBillingPlanId>,
+    websitePrompt: string,
+    businessName: string,
+    promptAttachments: NonNullable<PipelineGenerateRequest["promptAttachments"]>,
+    attachmentContext: string,
+    creativeBrief: string,
+    _totalCredits: number,
+  ): Promise<PipelineGenerateResponse> {
+    const templateId = input.templateId!.trim();
+    const templateSchema = getTemplateSchemaById(templateId);
+    if (!templateSchema) {
+      throw new Error(`Template "${templateId}" was not found.`);
+    }
+
+    const replacementImageUrl = resolveTemplateReplacementImage(input, promptAttachments);
+    const projectId = crypto.randomUUID();
+    const completedStages: PipelineStageId[] = [
+      "prompt_input",
+      "image_generation",
+      "motion_generation",
+      "frame_extraction",
+      "website_build",
+      "website_ready",
+    ];
+
+    generationLocks.acquirePipeline(userId);
+    try {
+      const personalized = await bedrockProvider.personalizeTemplate({
+        templateId,
+        businessName,
+        prompt: creativeBrief,
+        attachmentContext: attachmentContext || undefined,
+        templateSchema,
+      });
+
+      let websiteSchema = personalized.data.websiteSchema as TemplateSchema;
+
+      if (replacementImageUrl) {
+        for (const section of websiteSchema.sections) {
+          if (section.content && (section.type === "hero" || section.type === "gallery")) {
+            if (!section.content.image && !section.content.backgroundImage) {
+              section.content.image = replacementImageUrl;
+            } else if (section.content.image) {
+              section.content.image = replacementImageUrl;
+            } else if (section.content.backgroundImage) {
+              section.content.backgroundImage = replacementImageUrl;
+            }
+          }
+        }
+      }
+
+      const templateContentOverrides = personalized.data.htmlSlots ?? {};
+      const projectName = personalized.data.projectName || businessName;
+
+      await creditService.consumeCredits(supabase, {
+        userId,
+        eventType: "generate_website",
+        description: "Template website build",
+      });
+
+      const website = templateSchemaToWebsite(projectId, projectName, websiteSchema);
+      website.meta = {
+        ...website.meta,
+        templateId,
+        renderMode: "template_html",
+        templateReplacementImageUrl: replacementImageUrl ?? null,
+        templateContentOverrides,
+        title: personalized.data.seo.title || projectName,
+        description: personalized.data.seo.description || websitePrompt.slice(0, 160),
+      };
+
+      const pipelineMetadata: PipelineMetadata = {
+        templateId,
+        websitePrompt,
+        businessName,
+        promptAttachments: promptAttachments.length ? promptAttachments : undefined,
+        firstImagePrompt: input.firstImagePrompt ?? null,
+        lastImagePrompt: input.lastImagePrompt ?? null,
+        veoPrompt: input.veoPrompt ?? null,
+        presetHeroImageId: input.presetHeroImageId ?? null,
+        heroImageUpload: sanitizeStoredUpload(input.heroImageUpload),
+        lastFrameImageUpload: sanitizeStoredUpload(input.lastFrameImageUpload),
+        motionVideoUpload: sanitizeStoredUpload(input.motionVideoUpload),
+        heroImageReady: Boolean(replacementImageUrl),
+        lastFrameImageReady: false,
+        motionVideoReady: false,
+        renderMode: "template_html",
+        templateReplacementImageUrl: replacementImageUrl ?? null,
+        templateContentOverrides,
+        cinematicExperience: null,
+        aiEditsRemaining: planHasFeature(planId, "ai_website_edit")
+          ? PLAN_ACTION_LIMITS[planId].aiEdits
+          : 0,
+        aiEditsUsed: 0,
+        completedStages,
+      };
+
+      const { data, error } = await supabase
+        .from("projects")
+        .insert({
+          id: projectId,
+          user_id: userId,
+          name: projectName,
+          template_id: templateId,
+          website_schema: websiteSchema,
+          pipeline_metadata: pipelineMetadata,
+        })
+        .select("id,name")
+        .single();
+
+      if (error) throw error;
+
+      try {
+        await saveProjectWebsiteRecord(supabase, userId, projectId, website);
+      } catch (saveError) {
+        await supabase.from("projects").delete().eq("id", projectId).eq("user_id", userId);
+        throw saveError;
+      }
+
+      await aiPersistenceService.recordHistory(supabase, {
+        userId,
+        projectId,
+        prompt: websitePrompt,
+        generatedSchema: websiteSchema,
+        generationType: "generate",
+      });
+      await aiPersistenceService.recordUsage(supabase, {
+        userId,
+        projectId,
+        requestType: "generate",
+        usage: personalized.usage,
+      });
+
+      return {
+        projectId,
+        projectName: (data as { name: string }).name,
+        websiteSchema,
+        pipelineMetadata,
+        publicPreviewPath: `/preview/${projectId}`,
+      };
+    } finally {
+      generationLocks.releasePipeline(userId);
+    }
   },
 };

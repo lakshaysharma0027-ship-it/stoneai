@@ -46,7 +46,9 @@ export type PipelineMetadata = {
   motionVideoReady?: boolean;
   /** Cinematic scroll experience payload (frames + scenes) */
   cinematicExperience?: import("@/lib/cinematic/types").CinematicExperience | null;
-  renderMode?: "cinematic_scroll" | "schema";
+  renderMode?: "cinematic_scroll" | "schema" | "template_html";
+  templateReplacementImageUrl?: string | null;
+  templateContentOverrides?: Record<string, string> | null;
   frameSource?: "video" | "interpolated" | "hero_only";
   aiEditsRemaining: number;
   aiEditsUsed: number;

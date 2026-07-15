@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { CinematicWebsiteShell } from "@/components/cinematic/CinematicWebsiteShell";
+import { TemplateHtmlFrame } from "@/components/sites/TemplateHtmlFrame";
 import type {
   ButtonComponentProps,
   ContactFormComponentProps,
@@ -242,7 +243,20 @@ function RenderSection({ section }: { section: Section }) {
   );
 }
 
-export function WebsiteRenderer({ website }: { website: Website }) {
+export function WebsiteRenderer({
+  website,
+  templateHtmlSrc,
+}: {
+  website: Website;
+  /** Override iframe src for template_html mode (e.g. public slug route). */
+  templateHtmlSrc?: string;
+}) {
+  if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+    const src =
+      templateHtmlSrc ?? `/api/projects/${website.projectId}/template-html`;
+    return <TemplateHtmlFrame src={src} title={website.meta.title || website.name} />;
+  }
+
   if (
     website.meta.renderMode === "cinematic_scroll" &&
     website.meta.cinematicExperience

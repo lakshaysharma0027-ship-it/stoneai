@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ContentBlock } from "@/lib/blog/types";
 import { BlogCTA } from "./BlogCTA";
+import { ProsConsSection } from "./ProsConsSection";
 
 function renderInlineLinks(text: string) {
   const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g);
@@ -94,6 +95,21 @@ export function ContentRenderer({ blocks }: { blocks: ContentBlock[] }) {
                 Related:{" "}
                 <Link href={`/blog/${block.slug}`}>{block.label}</Link>
               </p>
+            );
+          case "internal-href":
+            return (
+              <p key={index} className="blog-internal-link">
+                Related:{" "}
+                <Link href={block.href}>{block.label}</Link>
+              </p>
+            );
+          case "pros-cons":
+            return (
+              <ProsConsSection
+                key={index}
+                stoneai={block.stoneai}
+                competitor={block.competitor}
+              />
             );
           default:
             return null;

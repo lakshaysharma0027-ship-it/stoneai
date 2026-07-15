@@ -863,6 +863,91 @@
   }
 }
 
+.seo-migration-cta {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 14px;
+  color: var(--blog-muted);
+  margin-top: 8px;
+}
+
+.seo-migration-cta a {
+  color: #fff;
+  font-weight: 700;
+}
+
+.seo-pros-cons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.seo-pros-cons-card {
+  border: 1px solid var(--blog-line);
+  border-radius: 18px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.seo-pros-cons-card h3 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.seo-pros-cons-card h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--blog-muted);
+  margin: 16px 0 8px;
+}
+
+.seo-pros-cons-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.seo-pros-cons-card li {
+  font-size: 14px;
+  color: var(--blog-soft);
+  margin-bottom: 6px;
+}
+
+.seo-pros-cons-card ul.cons li {
+  opacity: 0.85;
+}
+
+.seo-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+  margin: 28px 0;
+}
+
+.seo-stat {
+  text-align: center;
+  min-width: 100px;
+}
+
+.seo-stat strong {
+  display: block;
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+
+.seo-stat span {
+  font-size: 12px;
+  color: var(--blog-muted);
+}
+
+@media (max-width: 900px) {
+  .seo-pros-cons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .blog-layout,
   .seo-landing {

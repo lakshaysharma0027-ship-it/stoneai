@@ -1,5 +1,38 @@
 import type { AlternativePage } from "@/lib/blog/types";
-import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison } from "../blocks";
+import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison, prosCons } from "../blocks";
+
+const stoneaiProsCons = {
+  pros: [
+    "Marketing-first AI generation with copy, structure, and visuals in one prompt",
+    "Native 3D and cinematic hero sections without third-party embeds",
+    "Integrated AI image and video generation inside one workspace",
+    "One-click publishing with custom domains and HTTPS included",
+    "Visual editor accessible to founders and marketers without code",
+  ],
+  cons: [
+    "Not optimized for full-stack app prototypes with auth and databases",
+    "Less suited for engineering teams iterating on application logic",
+    "Smaller developer ecosystem than code-first AI builders",
+    "Highly bespoke app interactions still need a developer toolchain",
+  ],
+};
+
+const lovableProsCons = {
+  pros: [
+    "Rapid AI app prototyping from natural language prompts",
+    "Strong for full-stack MVPs with working UI and code output",
+    "Fast iteration in code editor with live preview",
+    "Popular with product teams validating technical concepts",
+    "Active community and fast-moving feature releases",
+  ],
+  cons: [
+    "Marketing polish often requires additional design and deployment work",
+    "Not focused on cinematic 3D websites or integrated AI media",
+    "Publishing and custom domains typically need separate configuration",
+    "Output skews toward app scaffolds rather than conversion-ready sites",
+    "Less ideal for agencies shipping polished client marketing sites weekly",
+  ],
+};
 
 export const lovableAlternative: AlternativePage = {
   slug: "lovable",
@@ -66,6 +99,10 @@ export const lovableAlternative: AlternativePage = {
     },
   ],
   relatedArticleSlugs: ["stoneai-vs-lovable", "best-lovable-alternatives", "best-ai-website-builders-2026"],
+  prosCons: {
+    stoneai: stoneaiProsCons,
+    competitor: lovableProsCons,
+  },
   content: [
     ctaTop(),
     h2("why-teams-switch", "Why teams switch from Lovable to StoneAI"),
@@ -91,6 +128,7 @@ export const lovableAlternative: AlternativePage = {
       ["Client deliverables", "Strong", "Moderate"],
       ["Time to live URL", "Minutes", "Varies"],
     ]),
+    prosCons(stoneaiProsCons, { name: "Lovable", ...lovableProsCons }),
     ctaMiddle(),
     h2("who-should-choose", "Who should choose StoneAI over Lovable"),
     ul([

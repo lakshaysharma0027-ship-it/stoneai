@@ -157,6 +157,23 @@ export const ContentGenerationResponseSchema = z.object({
   seoDescription: z.string(),
 });
 
+export const TemplatePersonalizationResponseSchema = z.object({
+  projectName: z.string(),
+  seo: z.object({
+    title: z.string(),
+    description: z.string(),
+  }),
+  websiteSchema: z.object({
+    id: z.string(),
+    sections: z.array(SectionSchema),
+  }),
+  htmlSlots: z.record(z.string(), z.string()).optional(),
+});
+
+export type TemplatePersonalizationResponse = z.infer<
+  typeof TemplatePersonalizationResponseSchema
+>;
+
 export type OpenAIGeneratedWebsiteResponse = z.infer<
   typeof GeneratedWebsiteResponseSchema
 >;

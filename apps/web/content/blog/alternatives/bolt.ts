@@ -1,5 +1,38 @@
 import type { AlternativePage } from "@/lib/blog/types";
-import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison } from "../blocks";
+import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison, prosCons } from "../blocks";
+
+const stoneaiProsCons = {
+  pros: [
+    "Marketing-first AI generation with conversion-ready sections",
+    "Native 3D and cinematic experiences without code scaffolding",
+    "Integrated AI image and video generation in one workspace",
+    "Built-in publishing with custom domains—no DevOps setup",
+    "Visual editor for non-developers shipping client sites fast",
+  ],
+  cons: [
+    "Not built for full-stack apps with auth, databases, and APIs",
+    "Less flexibility for custom application logic than code-first tools",
+    "Smaller developer community than Bolt for technical MVPs",
+    "Complex SaaS products still need engineering beyond marketing sites",
+  ],
+};
+
+const boltProsCons = {
+  pros: [
+    "Rapid full-stack app generation from natural language",
+    "Working code output for MVPs with logic and backends",
+    "Strong for developers validating product concepts quickly",
+    "Live preview and code iteration in the browser",
+    "Popular for technical teams shipping app prototypes fast",
+  ],
+  cons: [
+    "Marketing sites often look like generic prototypes until polished",
+    "Publishing and custom domains require separate deployment setup",
+    "Limited native 3D, cinematic layouts, and integrated AI media",
+    "Non-developers struggle with deployment and code maintenance",
+    "Less suited for agency client marketing deliverables at volume",
+  ],
+};
 
 export const boltAlternative: AlternativePage = {
   slug: "bolt",
@@ -66,6 +99,10 @@ export const boltAlternative: AlternativePage = {
     },
   ],
   relatedArticleSlugs: ["stoneai-vs-bolt", "best-bolt-alternatives", "best-ai-website-builders-2026"],
+  prosCons: {
+    stoneai: stoneaiProsCons,
+    competitor: boltProsCons,
+  },
   content: [
     ctaTop(),
     h2("why-teams-switch-bolt", "Why teams switch from Bolt to StoneAI"),
@@ -98,6 +135,7 @@ export const boltAlternative: AlternativePage = {
       ["Publishing + domains", "Built-in", "Via deployment"],
       ["Time to live marketing URL", "Minutes to hours", "Days (with polish)"],
     ]),
+    prosCons(stoneaiProsCons, { name: "Bolt", ...boltProsCons }),
     ctaMiddle(),
     h2("where-stoneai-wins", "Where StoneAI wins for website launches"),
     h3("design-quality-out-of-box", "Design quality out of the box"),

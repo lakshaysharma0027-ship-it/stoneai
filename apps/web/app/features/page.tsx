@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Features",
+export const metadata: Metadata = buildPageMetadata({
+  title: "StoneAI Features — AI Website Builder",
   description: "Explore StoneAI features for AI website generation, visual editing, publishing, domains, images, and video.",
-  alternates: { canonical: "/features" },
-};
+  path: "/features",
+});
 
 const features = [
   ["AI Generation", "Describe your website in natural language and StoneAI builds a complete, editable site structure."],

@@ -31,6 +31,11 @@ export const categories: BlogCategory[] = [
     name: "Pricing",
     description: "Pricing breakdowns, ROI analysis, and cost comparisons for website builders.",
   },
+  {
+    slug: "trends",
+    name: "Trends",
+    description: "Website design trends, AI disruption, and the future of web experiences.",
+  },
 ];
 
 export const categoryMap = Object.fromEntries(categories.map((c) => [c.slug, c]));

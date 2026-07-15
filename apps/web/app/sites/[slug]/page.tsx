@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { rehydrateCinematicExperience } from "@/lib/cinematic/rehydrateExperience";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -37,8 +37,14 @@ export default async function SitePage({ params }: SitePageProps) {
 
   await supabase.rpc("record_site_page_view", { target_site_id: site.id });
 
-  let website = site.publishedSchema;
-  const experience = website.meta.cinematicExperience;
+  const website = site.publishedSchema;
+
+  if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+    redirect(`/api/sites/${slug}/template-html`);
+  }
+
+  let hydratedWebsite = website;
+  const experience = hydratedWebsite.meta.cinematicExperience;
   if (experience) {
     const rehydrated = await rehydrateCinematicExperience(
       supabase,
@@ -46,14 +52,14 @@ export default async function SitePage({ params }: SitePageProps) {
       site.projectId,
       experience,
     );
-    website = {
-      ...website,
+    hydratedWebsite = {
+      ...hydratedWebsite,
       meta: {
-        ...website.meta,
+        ...hydratedWebsite.meta,
         cinematicExperience: rehydrated,
       },
     };
   }
 
-  return <WebsiteRenderer website={website} />;
+  return <WebsiteRenderer website={hydratedWebsite} />;
 }

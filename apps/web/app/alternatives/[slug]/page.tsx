@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/blog/Breadcrumbs";
 import { ContentRenderer } from "@/components/blog/ContentRenderer";
 import { FAQSection } from "@/components/blog/FAQSection";
 import { BlogCTA } from "@/components/blog/BlogCTA";
+import { ProsConsSection } from "@/components/blog/ProsConsSection";
 import { RelatedArticles } from "@/components/blog/ArticleCards";
 import { getAlternativeBySlug, getAllAlternativeSlugs } from "@/content/blog/alternatives/registry";
 import { getArticleBySlug } from "@/lib/blog/registry";
@@ -108,6 +109,13 @@ export default async function AlternativePage({ params }: Props) {
             </tbody>
           </table>
         </div>
+
+        {page.prosCons && (
+          <ProsConsSection
+            stoneai={page.prosCons.stoneai}
+            competitor={{ name: page.competitor, ...page.prosCons.competitor }}
+          />
+        )}
 
         <div className="seo-features-grid">
           {page.features.map((f) => (

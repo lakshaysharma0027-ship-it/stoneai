@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "FAQ",
+export const metadata: Metadata = buildPageMetadata({
+  title: "StoneAI FAQ — AI Website Builder",
   description: "Answers to common questions about StoneAI credits, publishing, templates, custom domains, and billing.",
-  alternates: { canonical: "/faq" },
-};
+  path: "/faq",
+});
 
 const faqs = [
   [

@@ -34,6 +34,9 @@ const footerColumns: FooterColumn[] = [
     title: "Resources",
     links: [
       { href: "/blog", label: "Blog" },
+      { href: "/press", label: "Press" },
+      { href: "/media-kit", label: "Media Kit" },
+      { href: "/company", label: "Company" },
       { href: "/faq", label: "FAQ" },
       { href: "/docs", label: "Documentation" },
     ],
@@ -44,6 +47,8 @@ const footerColumns: FooterColumn[] = [
       { href: "/alternatives/lovable", label: "Lovable Alternative" },
       { href: "/alternatives/framer", label: "Framer Alternative" },
       { href: "/alternatives/bolt", label: "Bolt Alternative" },
+      { href: "/alternatives/webflow", label: "Webflow Alternative" },
+      { href: "/ai-website-builder-for/saas", label: "SaaS Website Builder" },
     ],
   },
   {

@@ -5,6 +5,7 @@ import { templateSchemaToWebsite } from "@/lib/editor/applyTemplateSchema";
 import type { Website } from "@/lib/editor/schema";
 import type { PipelineMetadata } from "@/lib/pipeline/types";
 import type { TemplateSchema } from "@/lib/templateSchemas";
+import { mergeTemplateMetaFromPipeline } from "@/lib/templates/resolveTemplateSiteOptions";
 
 const isWebsite = (value: unknown): value is Website => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -72,6 +73,22 @@ export async function loadProjectWebsite(
       baseExperience,
     );
     return cinematicExperienceToWebsite(projectId, rehydrated);
+  }
+
+  if (metadata?.renderMode === "template_html") {
+    if (draftWebsite) {
+      return mergeTemplateMetaFromPipeline(draftWebsite, metadata);
+    }
+
+    const schema = (project as { website_schema?: unknown }).website_schema;
+    if (isTemplateSchema(schema)) {
+      const website = templateSchemaToWebsite(
+        projectId,
+        (project as { name?: string }).name ?? "Generated Website",
+        schema,
+      );
+      return mergeTemplateMetaFromPipeline(website, metadata);
+    }
   }
 
   let website: Website | null = draftWebsite;

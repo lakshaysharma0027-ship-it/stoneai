@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Website } from "@/lib/editor/schema";
 import { WebsiteRenderer } from "@/components/sites/WebsiteRenderer";
+import { TemplateHtmlFrame } from "@/components/sites/TemplateHtmlFrame";
 
 export function ProjectPreviewFrame({
   projectId,
@@ -64,6 +65,19 @@ export function ProjectPreviewFrame({
     return (
       <div className={`project-preview-frame project-preview-error ${className ?? ""}`}>
         <span>{error ?? "Preview unavailable"}</span>
+      </div>
+    );
+  }
+
+  if (website.meta.renderMode === "template_html" && website.meta.templateId) {
+    return (
+      <div
+        className={`project-preview-frame${compact ? " project-preview-frame-compact" : ""} ${className ?? ""}`}
+      >
+        <TemplateHtmlFrame
+          src={`/api/projects/${projectId}/template-html`}
+          title={website.meta.title || website.name}
+        />
       </div>
     );
   }

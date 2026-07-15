@@ -1,5 +1,38 @@
 import type { AlternativePage } from "@/lib/blog/types";
-import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison } from "../blocks";
+import { h2, h3, p, ul, ctaTop, ctaMiddle, ctaBottom, link, comparison, prosCons } from "../blocks";
+
+const stoneaiProsCons = {
+  pros: [
+    "Full-site AI generation from a single prompt—no canvas skills required",
+    "Native 3D and cinematic layouts without Spline or custom components",
+    "Integrated AI image and video generation in one workspace",
+    "One-click publishing with custom domains and HTTPS",
+    "Accessible to founders and marketers without design-tool training",
+  ],
+  cons: [
+    "Less pixel-level control over bespoke interactions",
+    "Not ideal for teams with Figma files and dedicated Framer designers",
+    "Smaller template and community ecosystem than Framer",
+    "Highly custom animation systems may still need a design canvas",
+  ],
+};
+
+const framerProsCons = {
+  pros: [
+    "Industry-leading interactive design canvas with scroll animations",
+    "Excellent Figma-to-web workflow for design-led teams",
+    "Mature hosting, CMS, and publishing infrastructure",
+    "Strong community, templates, and learning resources",
+    "Pixel-perfect control for unique brand experiences",
+  ],
+  cons: [
+    "Steep learning curve for non-designers and busy founders",
+    "Manual build time measured in hours or days, not minutes",
+    "No native AI full-site generation or integrated video pipeline",
+    "3D experiences require third-party embeds or custom components",
+    "Designer hours inflate total cost for volume client work",
+  ],
+};
 
 export const framerAlternative: AlternativePage = {
   slug: "framer",
@@ -66,6 +99,10 @@ export const framerAlternative: AlternativePage = {
     },
   ],
   relatedArticleSlugs: ["stoneai-vs-framer", "best-framer-alternatives", "best-ai-website-builders-2026"],
+  prosCons: {
+    stoneai: stoneaiProsCons,
+    competitor: framerProsCons,
+  },
   content: [
     ctaTop(),
     h2("why-search-framer-alternative", "Why teams search for a Framer alternative"),
@@ -98,6 +135,7 @@ export const framerAlternative: AlternativePage = {
       ["AI images + video", "Integrated", "Not in core workflow"],
       ["Designer skill required", "Low", "Moderate to high"],
     ]),
+    prosCons(stoneaiProsCons, { name: "Framer", ...framerProsCons }),
     ctaMiddle(),
     h2("where-stoneai-wins", "Where StoneAI wins over Framer"),
     h3("speed-to-launch", "Speed to launch"),
