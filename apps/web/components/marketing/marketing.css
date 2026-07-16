@@ -204,6 +204,151 @@
   padding-left: 18px;
 }
 
+.founders-section {
+  margin-bottom: 40px;
+}
+
+.founders-eyebrow {
+  margin: 0 0 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: #d7d7dc;
+  font-weight: 800;
+}
+
+.founders-heading {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -0.04em;
+  margin: 0 0 12px;
+  color: #fff;
+}
+
+.founders-lead {
+  color: var(--soft);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0 0 28px;
+  max-width: 640px;
+}
+
+.founders-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.founder-card {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.founder-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.founder-photo-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.founder-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.founder-body {
+  padding: 22px 24px 26px;
+}
+
+.founder-body h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.founder-role {
+  margin: 4px 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #d7d7dc;
+}
+
+.founder-bio {
+  margin: 0 0 16px;
+  color: var(--soft);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.founder-focus {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.founder-focus li {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #b8b8c0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.founders-section--homepage {
+  padding: 118px 0;
+  margin-bottom: 0;
+  background: #080809;
+}
+
+.founders-section--homepage .container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.founders-eyebrow--homepage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.founders-eyebrow--homepage::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+.founders-heading--homepage {
+  font-size: clamp(2.5rem, 5vw, 4.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.06em;
+  margin: 0 0 16px;
+}
+
+.founders-lead--homepage {
+  font-size: 17px;
+  margin-bottom: 48px;
+  max-width: 680px;
+}
+
 @media (max-width: 900px) {
   .marketing-nav-links,
   .marketing-nav-cta {
@@ -290,5 +435,9 @@
 
   .marketing-page .lead {
     font-size: 15px;
+  }
+
+  .founders-grid {
+    grid-template-columns: 1fr;
   }
 }

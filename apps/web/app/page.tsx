@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { FoundersSection } from "@/components/marketing/FoundersSection";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import {
@@ -297,6 +298,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <FoundersSection variant="homepage" />
 
       <section id="faq" className="section faq-section">
         <div className="container faq-grid">

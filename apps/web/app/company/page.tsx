@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FoundersSection } from "@/components/marketing/FoundersSection";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { BlogCTA } from "@/components/blog/BlogCTA";
 import { JsonLd } from "@/components/blog/JsonLd";
@@ -42,6 +43,8 @@ export default function CompanyPage() {
               <li>Creatives building portfolio and studio sites</li>
             </ul>
           </section>
+
+          <FoundersSection />
 
           <section>
             <h2>Locations</h2>

@@ -24,3 +24,28 @@ export const STONEAI_COMPANY = {
   xUrl: STONEAI_X_URL,
   locations: "New York, USA + New Delhi, IN",
 } as const;
+
+export type StoneAIFounder = {
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+  focus: string[];
+};
+
+export const STONEAI_FOUNDERS: readonly StoneAIFounder[] = [
+  {
+    name: "Aurnav Sharma",
+    role: "Co-founder",
+    image: "/team/aurnav-sharma.jpg",
+    bio: "Aurnav architects StoneAI's core generation engine — from prompt-to-layout pipelines and visual editing systems to the infrastructure that ships sites to production in seconds. He obsesses over making AI output feel handcrafted, not templated.",
+    focus: ["AI generation pipelines", "Visual editor architecture", "Publishing infrastructure"],
+  },
+  {
+    name: "Lakshay Sharma",
+    role: "Co-founder",
+    image: "/team/lakshay-sharma.jpg",
+    bio: "Lakshay leads product and platform engineering at StoneAI, building the workflows founders and agencies rely on every day — credits, domains, media generation, and the dashboard that ties it all together. He ships fast and thinks in systems.",
+    focus: ["Product engineering", "Platform & integrations", "Media generation workflows"],
+  },
+] as const;

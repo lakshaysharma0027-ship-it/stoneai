@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FoundersSection } from "@/components/marketing/FoundersSection";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { STONEAI_APP_URL, STONEAI_COMPANY, STONEAI_DEFAULT_DESCRIPTION } from "@/lib/site";
@@ -25,6 +26,8 @@ export default function AboutPage() {
               publishing infrastructure, custom domains, and media workflows in one platform.
             </p>
           </section>
+
+          <FoundersSection />
 
           <section>
             <h2>Where we operate</h2>

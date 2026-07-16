@@ -1,4 +1,4 @@
-import { STONEAI_COMPANY, STONEAI_DEFAULT_DESCRIPTION, STONEAI_SITE_URL } from "@/lib/site";
+import { STONEAI_COMPANY, STONEAI_FOUNDERS, STONEAI_DEFAULT_DESCRIPTION, STONEAI_SITE_URL } from "@/lib/site";
 import type { FAQItem } from "@/lib/blog/types";
 
 export function organizationSchema() {
@@ -13,6 +13,13 @@ export function organizationSchema() {
     description: STONEAI_DEFAULT_DESCRIPTION,
     logo: `${STONEAI_SITE_URL}/brand/stoneai-logo.jpg`,
     foundingLocation: STONEAI_COMPANY.locations,
+    founder: STONEAI_FOUNDERS.map((founder) => ({
+      "@type": "Person",
+      name: founder.name,
+      jobTitle: founder.role,
+      image: `${STONEAI_SITE_URL}${founder.image}`,
+      description: founder.bio,
+    })),
   };
 }
 
